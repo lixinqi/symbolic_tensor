@@ -108,16 +108,34 @@ def get_edit_distance_ratio_backward_impl(
     return actual_grad
 
 
+from symbolic_tensor.function import symbolic_grad_registry
+
+
 class GetEditDistanceRatio(Function):
     @staticmethod
     def forward(ctx, actual, expected):
         ctx.save_for_backward(actual, expected)
+        # save_for_backward strips custom attributes; preserve them manually
+        ctx.st_attrs = {}
+        for name, tensor in [("actual", actual), ("expected", expected)]:
+            attrs = {}
+            for attr in ("st_relative_to", "st_tensor_uid"):
+                if hasattr(tensor, attr):
+                    attrs[attr] = getattr(tensor, attr)
+            ctx.st_attrs[name] = attrs
         return get_edit_distance_ratio_impl(actual, expected)
 
     @staticmethod
     def backward(ctx, grad_output):
         actual, expected = ctx.saved_tensors
+        # Restore custom st_* attributes stripped by save_for_backward
+        for name, tensor in [("actual", actual), ("expected", expected)]:
+            for attr, val in ctx.st_attrs[name].items():
+                setattr(tensor, attr, val)
         actual_grad = get_edit_distance_ratio_backward_impl(grad_output, actual, expected)
+        # Register symbolic grad keyed by the forward tensor's uid,
+        # so downstream backward (SymbolicTransform) can retrieve it
+        symbolic_grad_registry.register(actual.st_tensor_uid, actual_grad)
         return actual_grad, None
 
 

@@ -1,16 +1,20 @@
 from symbolic_tensor.llm_client.agent_task import AgentTask
 from symbolic_tensor.llm_client.coding_agent_task_handler import CodingAgentTaskHandler
 from symbolic_tensor.llm_client.raw_llm_task_handler import RawLlmTaskHandler
-
+import time
+import sys
 
 class TaskHandler:
     def __call__(self, all_tasks, llm_method: str) -> None:
+        start = time.time()
         if llm_method == "coding_agent":
             CodingAgentTaskHandler()(all_tasks)
         elif llm_method == "raw_llm_api":
             RawLlmTaskHandler()(all_tasks)
         else:
             raise ValueError(f"Unknown llm_method: {llm_method}")
+        end = time.time()
+        # print(f"Finished processing tasks in {end-start:.2f} seconds", file=sys.stderr)
 
 
 if __name__ == "__main__":

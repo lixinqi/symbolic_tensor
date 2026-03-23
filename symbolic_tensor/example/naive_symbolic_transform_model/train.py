@@ -6,18 +6,16 @@ Save loss of each iteration to /tmp/loss.log.
 """
 import os
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
 import torch
 
 from symbolic_tensor.tensor_util.make_tensor import make_tensor
-from symbolic_tensor.function.symbolic_transform_forward import symbolic_transform_forward
-from symbolic_tensor.function.symbolic_transform_backward import symbolic_transform_backward
-from symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio_impl
+from symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio
 from symbolic_tensor.optimizer.symbolic_sgd import SymbolicSGD
 from symbolic_tensor.example.naive_symbolic_transform_model.model import NaiveModel
+from symbolic_tensor.function import symbolic_grad_registry
 
 # Source anthropic env vars
 result = subprocess.run(
@@ -60,7 +58,7 @@ def main():
         # ── Load dataset ──
         # Input: Python files, Expected: Viba files
         pairs = [
-            # ("seq.py", "seq.viba"),
+            ("seq.py", "seq.viba"),
             ("branch.py", "branch.viba"),
             ("loop.py", "loop.viba"),
         ]
@@ -121,63 +119,43 @@ def main():
             print(f"Iteration {iteration}/{NUM_ITERATIONS}")
             print(f"{'─' * 60}")
 
-            # Forward
+            # Zero gradients
+            optimizer.zero_grad()
+
+            # Forward through model (autograd-tracked)
             print("\n  [Forward]")
-            output, selected_indexes = symbolic_transform_forward(
-                input_tensor,
-                model.transform.experience,
-                forward_prompt=FORWARD_PROMPT,
-                topk=len(pairs),
-            )
+            output, selected_indexes = model(input_tensor)
 
             for i in range(output.numel()):
                 out_text = read_storage(output, i)
                 print(f"    output[{i}] (first 80): {repr(out_text[:80])}")
 
-            # Compute loss: edit distance ratio between output and expected
+            # Loss: edit distance ratio via autograd Function
             print("\n  [Loss]")
-            loss = get_edit_distance_ratio_impl(output, expected_tensor)
+            loss = get_edit_distance_ratio(output, expected_tensor)
             mean_loss = loss.mean().item()
             losses.append(mean_loss)
             print(f"    Per-sample losses: {[f'{l:.4f}' for l in loss.tolist()]}")
             print(f"    Mean loss: {mean_loss:.4f}")
 
-            # Backward
+            # Backward through full autograd graph:
+            #   MeanBackward -> GetEditDistanceRatioBackward (produces diff text)
+            #   -> SymbolicTransformBackward (LLM computes grad for input & experience)
             print("\n  [Backward]")
-            # Create gradient: diff between output and expected as text feedback
-            grad_texts = []
-            for i in range(output.numel()):
-                out_text = read_storage(output, i)
-                exp_text = read_storage(expected_tensor, i)
-                if out_text.strip() == exp_text.strip():
-                    grad_texts.append("No change needed. Output matches expected.")
-                else:
-                    grad_texts.append(
-                        f"The output does not match expected.\n"
-                        f"Expected output:\n{exp_text}\n\n"
-                        f"Actual output:\n{out_text}\n\n"
-                        f"Please update the experience so future translations "
-                        f"produce output closer to the expected Viba code."
-                    )
+            loss.mean().backward()
 
-            grad_output = make_tensor(grad_texts, tmpdir)
-            grad_output.data.fill_(1.0)
-
-            grad_input, grad_experience = symbolic_transform_backward(
-                grad_output,
-                input_tensor,
-                output,
-                model.transform.experience,
-                selected_experience_qkv_indexes_list=selected_indexes,
-                forward_prompt=FORWARD_PROMPT,
-                topk=len(pairs),
-            )
-
-            model.transform.experience.grad = grad_experience
-
-            for i in range(min(grad_experience.numel(), 6)):
-                gt = read_storage(grad_experience, i)
-                print(f"    grad_exp[{i}]: {repr(gt[:60])}")
+            # Show gradient info
+            grad_experience = model.transform.experience.grad
+            # Restore symbolic attributes stripped by autograd (peek by uid, don't consume)
+            symbolic_grad = symbolic_grad_registry.peek(model.transform.experience.st_tensor_uid)
+            if symbolic_grad is not None:
+                grad_experience = symbolic_grad
+            if grad_experience is not None and hasattr(grad_experience, "st_tensor_uid"):
+                for i in range(min(grad_experience.numel(), 9)):
+                    gt = read_storage(grad_experience, i)
+                    print(f"    grad_exp[{i}]: {repr(gt[:60])}")
+            else:
+                print("    (no symbolic gradient on experience)")
 
             # Optimizer step
             print("\n  [Optimizer Step]")
@@ -186,9 +164,6 @@ def main():
             exp_after = read_storage(model.transform.experience, 2)
             changed = exp_before != exp_after
             print(f"    Experience[0].value changed: {changed}")
-
-            # Reset coefficients for next iteration
-            model.transform.experience.data.fill_(1.0)
 
             print(f"\n  Iteration {iteration} loss: {mean_loss:.4f}")
 

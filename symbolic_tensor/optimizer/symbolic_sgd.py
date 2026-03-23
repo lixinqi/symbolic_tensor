@@ -10,6 +10,7 @@ from symbolic_tensor.tensor_util.slice_tensor import slice_tensor
 from symbolic_tensor.tensor_util.dump_view import dump_view
 from symbolic_tensor.llm_client.agent_task import AgentTask
 from symbolic_tensor.llm_client.task_handler import TaskHandler
+from symbolic_tensor.function import symbolic_grad_registry
 
 
 def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:
@@ -124,6 +125,13 @@ class SymbolicSGD(torch.optim.Optimizer):
 
                 grad = param.grad
 
+                # Restore symbolic attributes stripped by autograd
+                if hasattr(param, "st_tensor_uid"):
+                    symbolic_grad = symbolic_grad_registry.pop(param.st_tensor_uid)
+                    if symbolic_grad is not None:
+                        grad = symbolic_grad
+                        param.grad = grad
+
                 # ── Numeric channel ──
                 # standard SGD: param.data -= lr * grad.data
                 param.data.add_(grad.data, alpha=-lr)
@@ -174,6 +182,7 @@ class SymbolicSGD(torch.optim.Optimizer):
                         workspace_dir=workspace_dir,
                         output_relative_dir="mutable_param_dir",
                         prompt=prompt,
+                        todo_file_content_hint="",  # match all files (params have real text, not TODO)
                     ))
                     flat_copyback_info.append((param_dir, param_view))
 

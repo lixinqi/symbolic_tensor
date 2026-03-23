@@ -7,6 +7,7 @@ from typing import Any, Tuple
 from symbolic_tensor.function.symbolic_transform_forward import symbolic_transform_forward
 from symbolic_tensor.function.symbolic_transform_backward import symbolic_transform_backward
 from symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
+from symbolic_tensor.function import symbolic_grad_registry
 
 
 class SymbolicTransform(torch.autograd.Function):
@@ -25,6 +26,14 @@ class SymbolicTransform(torch.autograd.Function):
 
         # Save tensors for backward
         ctx.save_for_backward(input, output, experience)
+        # save_for_backward strips custom attributes; preserve them manually
+        ctx.st_attrs = {}
+        for name, tensor in [("input", input), ("output", output), ("experience", experience)]:
+            attrs = {}
+            for attr in ("st_relative_to", "st_tensor_uid"):
+                if hasattr(tensor, attr):
+                    attrs[attr] = getattr(tensor, attr)
+            ctx.st_attrs[name] = attrs
         # Save non-tensor state
         ctx.selected_experience_qkv_indexes_list = selected_experience_qkv_indexes_list
         ctx.forward_prompt = forward_prompt
@@ -37,9 +46,19 @@ class SymbolicTransform(torch.autograd.Function):
     def backward(ctx, grad_output, grad_selected_indexes=None):
         input, output, experience = ctx.saved_tensors
 
-        # If grad_output is a plain tensor (from autograd, e.g. loss.backward()),
-        # wrap it as a symbolic tensor so backward can process it.
-        if not hasattr(grad_output, "st_relative_to"):
+        # Restore custom st_* attributes stripped by save_for_backward
+        for name, tensor in [("input", input), ("output", output), ("experience", experience)]:
+            for attr, val in ctx.st_attrs[name].items():
+                setattr(tensor, attr, val)
+
+        # Check if a symbolic gradient was registered by an upstream backward
+        # (autograd strips st_* attrs when passing gradients between Function nodes)
+        # Look up by output tensor's uid (registered by GetEditDistanceRatio.backward)
+        symbolic_grad = symbolic_grad_registry.pop(output.st_tensor_uid)
+        if symbolic_grad is not None:
+            grad_output = symbolic_grad
+        elif not hasattr(grad_output, "st_relative_to"):
+            # No registered symbolic grad and no st_* attrs: wrap as TODO
             symbolic_grad_output = todo_tensor_like(output)
             symbolic_grad_output.data.copy_(grad_output.data)
             grad_output = symbolic_grad_output
@@ -54,6 +73,11 @@ class SymbolicTransform(torch.autograd.Function):
             ctx.topk,
             llm_method=ctx.llm_method,
         )
+
+        # Register symbolic grads keyed by the original parameter tensor uids
+        # so the optimizer can retrieve them (autograd strips st_* attrs)
+        symbolic_grad_registry.register(input.st_tensor_uid, grad_input)
+        symbolic_grad_registry.register(experience.st_tensor_uid, grad_experience)
 
         # Return grads for (input, experience, forward_prompt, topk, llm_method)
         return grad_input, grad_experience, None, None, None
