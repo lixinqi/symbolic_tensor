@@ -158,11 +158,11 @@ def symbolic_transform_forward(
         )
         # Record selected indexes (list of tensors, one per dim)
         flat_selected_indexes.append(select_experience_query_indexes)
-
         # Replace last index tensor with full slice to keep q/k/v together
         select_experience_indexes = _replace_last_tensor_with_full_slice(
             select_experience_query_indexes, experience.size()[-1]
         )
+        # print(f"{select_experience_indexes=}")
 
         # Slice experience to get relevant entries
         experience_sliced_view = slice_view(experience, select_experience_indexes)

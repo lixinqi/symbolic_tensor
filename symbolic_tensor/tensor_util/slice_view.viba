@@ -8,3 +8,5 @@ slice_view :=
     <- ($selected_paths NestedList[pathlib.Path] <- $input <- $slice_tensors)
     <- ($ret <- $make_tensor <- $selected_paths <- $symlink True)
     <- Assert[len(ret.size) == len($input.size) - count_0_rank_tensor_elements[$slice_tensors] - count_int_element[$slice_tensors]]
+
+# add corner test slice_tensors = [torch.tensor([], dtype=torch.long), slice(None,None,None)]

@@ -136,7 +136,10 @@ def select_qkv_indexes(
 
     # Extract coordinates from selected file paths and unzip to tensor list
     coordinates = [_extract_coordinates(p, qkv_data_view_dir) for p in selected_paths]
-    return _unzip_to_tensor_list(coordinates)
+    ret = _unzip_to_tensor_list(coordinates)
+    if len(ret) == 0:
+        return [torch.tensor([], dtype=torch.long)] * len(weight_tensor.shape)
+    return ret
 
 
 if __name__ == "__main__":

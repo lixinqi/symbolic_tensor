@@ -89,6 +89,14 @@ def slice_tensor(
         if not collapses:
             output_shape.append(len(indices))
 
+    # Handle empty output (any dimension is 0)
+    if 0 in output_shape:
+        ret = make_tensor([], input.st_relative_to, symlink=False)
+        reshaped = ret.view(output_shape)
+        reshaped.st_relative_to = ret.st_relative_to
+        reshaped.st_tensor_uid = ret.st_tensor_uid
+        return reshaped
+
     # Generate all coordinate combinations
     all_indices = [idx for idx, _ in per_dim]
     selected_paths: List[Path] = []
@@ -179,5 +187,17 @@ if __name__ == "__main__":
         run_test("Not symlink", not os.path.islink(stored))
         with open(stored) as f:
             run_test("(1,0) -> 'z'", f.read() == "z")
+
+    # Test 5: Empty tensor index (corner case)
+    print("Test 5: Empty tensor index")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        data = [["a", "b"], ["c", "d"]]
+        t = mt(data, tmpdir)
+        result = slice_tensor(t, [torch.tensor([], dtype=torch.long), slice(None)])
+        run_test("Shape is [0, 2]", list(result.shape) == [0, 2], [0, 2], list(result.shape))
+        run_test("numel is 0", result.numel() == 0)
+        run_test("Not symlink storage", not os.path.islink(
+            os.path.join(tmpdir, result.st_tensor_uid, "storage")) if os.path.exists(
+            os.path.join(tmpdir, result.st_tensor_uid, "storage")) else True)
 
     print("\nAll tests completed.")

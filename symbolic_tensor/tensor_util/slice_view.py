@@ -97,6 +97,14 @@ def slice_view(
         if not collapses:
             output_shape.append(len(indices))
 
+    # Handle empty output (any dimension is 0)
+    if 0 in output_shape:
+        ret = make_tensor([], input.st_relative_to, symlink=True)
+        reshaped = ret.view(output_shape)
+        reshaped.st_relative_to = ret.st_relative_to
+        reshaped.st_tensor_uid = ret.st_tensor_uid
+        return reshaped
+
     # Generate all coordinate combinations
     all_indices = [idx for idx, _ in per_dim]
     selected_paths: List[Path] = []
@@ -253,5 +261,14 @@ if __name__ == "__main__":
         link = os.path.join(tmpdir, result.st_tensor_uid, "storage", "0", "data")
         target = os.readlink(link)
         run_test("Symlink is relative", not os.path.isabs(target))
+
+    # Test 9: Empty tensor index (corner case)
+    print("Test 9: Empty tensor index")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        data = [["a", "b"], ["c", "d"]]
+        t = mt(data, tmpdir)
+        result = slice_view(t, [torch.tensor([], dtype=torch.long), slice(None)])
+        run_test("Shape is [0, 2]", list(result.shape) == [0, 2], [0, 2], list(result.shape))
+        run_test("numel is 0", result.numel() == 0)
 
     print("\nAll tests completed.")

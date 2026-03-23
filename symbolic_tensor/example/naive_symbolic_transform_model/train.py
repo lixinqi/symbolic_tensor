@@ -88,13 +88,10 @@ def main():
         # Experience: [query_keywords, key_python, value_viba] per entry
         experience_entries = []
         for i, (py_name, viba_name) in enumerate(pairs):
-            py_content = read_storage(input_tensor, i)
-            viba_content = viba_contents[i]
-            # Extract keywords from python code for query
-            keywords = py_name.replace(".py", "") + "\n" + "python\nviba\ntranslate"
-            experience_entries.append([keywords, py_content, viba_content])
+            experience_entries.append(["", "", ""])
 
         experience_tensor = make_tensor(experience_entries, tmpdir)
+        print("experience_tensor:\n", experience_tensor.st_pack())
 
         # ── Create model and optimizer ──
         model = NaiveModel(forward_prompt=FORWARD_PROMPT, topk=len(pairs))
