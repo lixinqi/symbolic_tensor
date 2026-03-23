@@ -92,6 +92,10 @@ symbolic_transform_backward :=
         - Original output: f"{workspace_dir}/const_output_view"
         - Experience entries used during forward: f"{workspace_dir}/const_experience_view"
           where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
+        - Each line in query files only contains one summary key word for current experience.
+          which used for calculate similarity between inputs and experience.
+        - Key files contain source domain semantics.
+        - Value files contain target domain semantics.
 
         Compute and write:
         1. Input gradient in f"{workspace_dir}/mutable_grad_input_dir":

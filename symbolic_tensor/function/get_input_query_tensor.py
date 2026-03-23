@@ -70,7 +70,7 @@ def get_input_query_tensor(
             "You are a semantic grep keyword generator.\n"
             f"Given the symbolic tensor view in \"{input_view_dir}\",\n"
             f"please generate the query keywords into corresponding files in \"{output_view_dir}\".\n"
-            "Each line in an output file should contain only a single keyword "
+            "Each line in an output file should contain only a single summary keyword "
             "that would be used for grep/query-like operations.\n"
             "The keywords of files are used for calculating similarity between files.\n"
             "All \"TODO\" in output files should be replaced with keywords.\n"

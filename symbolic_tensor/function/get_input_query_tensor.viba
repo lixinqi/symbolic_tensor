@@ -16,7 +16,7 @@ get_input_query_tensor :=
         you are a semantic grep key word generator.
         given the symbolic tensor view in f"{tmp_dir}/input_view".
         please generate the query key words into corresponding file in f"{tmp_dir}/mutable_output_dir".
-        each line in a output file contains only single key word that used for grep/query like things.
+        each line in a output file contains only single summary key word that used for grep/query like things.
         the key words of files are used for calucating simmularity between files.
         all "TODO" in output files should be replaced with key words.
         the length of key words list should be kept small for it's a semantic summary.
