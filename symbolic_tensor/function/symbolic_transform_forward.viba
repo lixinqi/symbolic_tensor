@@ -8,7 +8,7 @@ symbolic_transform_forward :=
     <- $experience Experience[Symbolic[torch.Tensor]]
     <- $forward_prompt Prompt # default ""
     <- $topk int # default 16
-    <- $method ("coding_agent" | "raw_llm_api") # default coding_agent
+    <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
     # inline
     <- ($output
         <- Import[symbolic_tensor/tensor_util/todo_tensor_like.viba]
@@ -20,7 +20,7 @@ symbolic_transform_forward :=
     <- ($input_query
         <- Import[symbolic_tensor/function/get_input_query_tensor.viba]
         <- $input
-        <- $method)
+        <- $llm_method)
     <- (NestList[$scalar_input_view Symbolic[torch.Tensor]] <- NestList[$slice_view] <- $input)
     <- ($batch_input_file_content str <- $scalar_input_view)
     <- ($select_experience_query_indexes list[torch.Tensor[int]]
@@ -68,24 +68,13 @@ symbolic_transform_forward :=
     ''')
     <- ($agent_task AgentTask <- $workspace_dir <- "mutable_output_dir" <- $prompt)
     <- ($all_tasks <- NestList[$agent_task])
-    <- (void <- GenerateOutput[$method] <- $all_tasks)
+    <- (void <- Import[symbolic_tensor/llm_client/task_handler.viba] <- $all_tasks <- $llm_method)
+
     # copy back: LLM Write tool replaces symlinks with regular files,
     # so read from view files and write back to tensor storage.
     <- (void <- copy_back_to_storage_view <- f"{workspace_dir}/mutable_output_dir" <- $scalar_output_view)
 
 AgentTask := Import[symbolic_tensor/llm_client/agent_task.viba]
-
-GenerateOutput["coding_agent"] :=
-    void
-    <- NestList[AgentTask]
-    # inline
-    <- Import[symbolic_tensor/llm_client/coding_agent_task_handler.viba]
-
-GenerateOutput["raw_llm_api"] :=
-    void
-    <- NestList[AgentTask]
-    # inline
-    <- Import[symbolic_tensor/llm_client/raw_llm_task_handler.viba]
 
 # be carefull there claude code instance called in coding_agent_query.
 # make sure env var CLAUDECODE unset.

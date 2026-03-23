@@ -1,5 +1,4 @@
 import os
-import asyncio
 import tempfile
 import itertools
 import torch
@@ -9,7 +8,8 @@ from symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 from symbolic_tensor.tensor_util.slice_view import slice_view
 from symbolic_tensor.tensor_util.slice_tensor import slice_tensor
 from symbolic_tensor.tensor_util.dump_view import dump_view
-from symbolic_tensor.llm_client.coding_agent_query import coding_agent_query
+from symbolic_tensor.llm_client.agent_task import AgentTask
+from symbolic_tensor.llm_client.task_handler import TaskHandler
 
 
 def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:
@@ -105,6 +105,7 @@ def symbolic_transform_backward(
     selected_experience_qkv_indexes_list: Any,
     forward_prompt: str = "",
     topk: int = 16,
+    llm_method: str = "raw_llm_api",
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Backward pass of the symbolic transform.
@@ -232,17 +233,12 @@ def symbolic_transform_backward(
                 "Replace all TODO with computed text diffs.\n"
             )
 
-            # Ensure CLAUDECODE env var is unset
-            env_backup = os.environ.pop("CLAUDECODE", None)
-            try:
-                async def _run_query():
-                    async for _ in coding_agent_query(prompt=prompt, cwd=workspace_dir, allowed_tools=["Read", "Edit", "Write"]):
-                        pass
-
-                asyncio.run(_run_query())
-            finally:
-                if env_backup is not None:
-                    os.environ["CLAUDECODE"] = env_backup
+            agent_task = AgentTask(
+                workspace_dir=workspace_dir,
+                output_relative_dir=["mutable_grad_input_dir", "mutable_grad_experience_dir"],
+                prompt=prompt,
+            )
+            TaskHandler()([agent_task], llm_method)
 
             # Copy results back from mutable dir through view symlinks to parent storage
             _copy_back_to_storage_view(grad_input_dir, scalar_grad_input_view)
@@ -337,54 +333,56 @@ if __name__ == "__main__":
         run_test("exp[1] from element 1", grad_experience.data[1, 0].item() == 2.0, 2.0, grad_experience.data[1, 0].item())
 
     # Test 5: Full backward (symbolic channel, requires LLM)
-    print("Test 5: Full backward with LLM")
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_tensor = make_tensor(["Hello world in English"], tmpdir)
-        exp_data = [
-            ["greeting\nhello\nworld", "Hello world in English", "Bonjour le monde en francais"],
-            ["farewell\ngoodbye", "Goodbye in English", "Au revoir en francais"],
-        ]
-        exp_tensor = make_tensor(exp_data, tmpdir)
-        output_tensor = make_tensor(["Bonjour le monde en francais"], tmpdir)
-        grad_output_tensor = make_tensor(
-            ["The translation should use formal French: 'Bonjour le monde en francais' -> 'Bonjour au monde en francais'"],
-            tmpdir,
-        )
-        grad_output_tensor.data.fill_(1.0)
+    for method in ["coding_agent", "raw_llm_api"]:
+        print(f"Test 5: Full backward with LLM (llm_method={method})")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_tensor = make_tensor(["Hello world in English"], tmpdir)
+            exp_data = [
+                ["greeting\nhello\nworld", "Hello world in English", "Bonjour le monde en francais"],
+                ["farewell\ngoodbye", "Goodbye in English", "Au revoir en francais"],
+            ]
+            exp_tensor = make_tensor(exp_data, tmpdir)
+            output_tensor = make_tensor(["Bonjour le monde en francais"], tmpdir)
+            grad_output_tensor = make_tensor(
+                ["The translation should use formal French: 'Bonjour le monde en francais' -> 'Bonjour au monde en francais'"],
+                tmpdir,
+            )
+            grad_output_tensor.data.fill_(1.0)
 
-        sel_indexes = [[torch.tensor([0, 1], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)]]
+            sel_indexes = [[torch.tensor([0, 1], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)]]
 
-        grad_input, grad_experience = symbolic_transform_backward(
-            grad_output_tensor, input_tensor, output_tensor, exp_tensor,
-            selected_experience_qkv_indexes_list=sel_indexes,
-            forward_prompt="Translate the English text to French.",
-            topk=2,
-        )
+            grad_input, grad_experience = symbolic_transform_backward(
+                grad_output_tensor, input_tensor, output_tensor, exp_tensor,
+                selected_experience_qkv_indexes_list=sel_indexes,
+                forward_prompt="Translate the English text to French.",
+                topk=2,
+                llm_method=method,
+            )
 
-        run_test("grad_input shape matches input", list(grad_input.shape) == list(input_tensor.shape))
-        run_test("grad_experience shape matches experience", list(grad_experience.shape) == list(exp_tensor.shape))
+            run_test("grad_input shape matches input", list(grad_input.shape) == list(input_tensor.shape))
+            run_test("grad_experience shape matches experience", list(grad_experience.shape) == list(exp_tensor.shape))
 
-        # Check grad_input text diff
-        root = os.path.join(tmpdir, grad_input.st_tensor_uid, "storage")
-        path = os.path.join(root, "0", "data")
-        if os.path.isfile(path):
-            with open(path) as f:
-                content = f.read()
-            run_test("grad_input text diff not TODO", "TODO" not in content)
-            print(f"  grad_input text: {repr(content[:120])}")
-
-        # Check grad_experience text diffs
-        root = os.path.join(tmpdir, grad_experience.st_tensor_uid, "storage")
-        for i in range(grad_experience.numel()):
-            digits = list(str(i))
-            path = os.path.join(root, os.path.join(*digits), "data")
+            # Check grad_input text diff
+            root = os.path.join(tmpdir, grad_input.st_tensor_uid, "storage")
+            path = os.path.join(root, "0", "data")
             if os.path.isfile(path):
                 with open(path) as f:
                     content = f.read()
-                print(f"  grad_experience[{i}]: TODO={'TODO' == content.strip()} {repr(content[:80])}")
+                run_test("grad_input text diff not TODO", "TODO" not in content)
+                print(f"  grad_input text: {repr(content[:120])}")
 
-        # Numeric channel checks
-        run_test("grad_input coeff == 1.0", grad_input.data[0].item() == 1.0)
-        run_test("grad_experience coeff accumulated", grad_experience.data[0, 0].item() == 1.0)
+            # Check grad_experience text diffs
+            root = os.path.join(tmpdir, grad_experience.st_tensor_uid, "storage")
+            for i in range(grad_experience.numel()):
+                digits = list(str(i))
+                path = os.path.join(root, os.path.join(*digits), "data")
+                if os.path.isfile(path):
+                    with open(path) as f:
+                        content = f.read()
+                    print(f"  grad_experience[{i}]: TODO={'TODO' == content.strip()} {repr(content[:80])}")
+
+            # Numeric channel checks
+            run_test("grad_input coeff == 1.0", grad_input.data[0].item() == 1.0)
+            run_test("grad_experience coeff accumulated", grad_experience.data[0, 0].item() == 1.0)
 
     print("\nAll tests completed.")

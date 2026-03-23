@@ -17,6 +17,7 @@ symbolic_transform_backward :=
     <- $selected_experience_qkv_indexes_list NestList[list[torch.Tensor[int]]]
     <- $forward_prompt Prompt # default ""
     <- $topk int # default 16
+    <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
     # inline
     <- ($grad_input
         <- Import[symbolic_tensor/tensor_util/todo_tensor_like.viba]
@@ -101,15 +102,15 @@ symbolic_transform_backward :=
 
         Replace all TODO with computed text diffs.
     ''')
-    # IMPORTANT: pre-resolve symlinks BEFORE LLM runs.
-    # LLM Edit tool breaks intermediate symlinks (slice_view -> parent),
-    # so we must resolve to real parent storage paths while chain is intact.
-    <- $llm_query Import[symbolic_tensor/llm_client/coding_agent_query.py].coding_agent_query
-    <- $do_for_one_batch (void <- $llm_query <- $prompt <- $workspace_dir)
-    <- (void <- do_for_all <- NestList[$do_for_one_batch])
+    <- ($agent_task AgentTask <- $workspace_dir <- ["mutable_grad_input_dir", "mutable_grad_experience_dir"] <- $prompt)
+    <- ($all_tasks <- NestList[$agent_task])
+    <- (void <- Import[symbolic_tensor/llm_client/task_handler.viba] <- $all_tasks <- $llm_method)
     # copy back using pre-resolved paths (bypasses broken symlinks)
     <- (void <- copy_back_to_storage_view <- f"{workspace_dir}/mutable_grad_input_dir" <- $scalar_grad_input_view)
     <- (void <- copy_back_to_storage_view <- <- f"{workspace_dir}/mutable_grad_experience_dir" <- $grad_experience_sliced_view)
+
+AgentTask := Import[symbolic_tensor/llm_client/agent_task.viba]
+
 
 # be carefull there claude code instance called in coding_agent_query.
 # make sure env var CLAUDECODE unset.
@@ -134,3 +135,4 @@ symbolic_transform_backward :=
 # when experience has fewer entries than topk.
 
 # add tests in __main__ block
+# test both coding_agent and raw_llm_api

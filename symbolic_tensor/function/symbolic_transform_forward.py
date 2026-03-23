@@ -12,8 +12,7 @@ from symbolic_tensor.tensor_util.dump_view import dump_view
 from symbolic_tensor.function.get_input_query_tensor import get_input_query_tensor
 from symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes
 from symbolic_tensor.llm_client.agent_task import AgentTask
-from symbolic_tensor.llm_client.coding_agent_task_handler import CodingAgentTaskHandler
-from symbolic_tensor.llm_client.raw_llm_task_handler import RawLlmTaskHandler
+from symbolic_tensor.llm_client.task_handler import TaskHandler
 
 
 def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:
@@ -97,7 +96,7 @@ def symbolic_transform_forward(
     experience: torch.Tensor,
     forward_prompt: str = "",
     topk: int = 16,
-    method: str = "coding_agent",
+    llm_method: str = "raw_llm_api",
 ) -> Tuple[torch.Tensor, Any]:
     """
     Forward pass of the symbolic transform: translate input to output using
@@ -131,7 +130,7 @@ def symbolic_transform_forward(
     output = todo_tensor_like(input)
 
     # Generate input query keywords
-    input_query = get_input_query_tensor(input, llm_method=method)
+    input_query = get_input_query_tensor(input, llm_method=llm_method)
 
     # Phase 1: Build requests per scalar element
     coords_list = _scalar_slice_indices(input.size())
@@ -197,15 +196,10 @@ def symbolic_transform_forward(
         flat_tasks.append(AgentTask(workspace_dir=workspace_dir, output_relative_dir="mutable_output_dir", prompt=prompt))
         flat_copyback_info.append((output_dir, scalar_output_view))
 
-    # Phase 2: Dispatch to GenerateOutput[method]
+    # Phase 2: Dispatch to TaskHandler
     all_tasks = _build_nested_result(flat_tasks, list(input.size()))
 
-    if method == "coding_agent":
-        CodingAgentTaskHandler()(all_tasks)
-    elif method == "raw_llm_api":
-        RawLlmTaskHandler()(all_tasks)
-    else:
-        raise ValueError(f"Unknown transform method: {method}")
+    TaskHandler()(all_tasks, llm_method)
 
     # Phase 3: Copy back results and cleanup
     for output_dir, scalar_output_view in flat_copyback_info:
@@ -248,7 +242,7 @@ if __name__ == "__main__":
                 print(f"    expected: {expected}")
                 print(f"    actual:   {actual}")
 
-    print("Test 1: English to French translation (method=coding_agent)")
+    print("Test 1: English to French translation (llm_method=coding_agent)")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_data = ["Hello world in English"]
         input_tensor = make_tensor(input_data, tmpdir)
@@ -265,7 +259,7 @@ if __name__ == "__main__":
             input_tensor, experience_tensor,
             forward_prompt="Translate the English text to French.",
             topk=2,
-            method="coding_agent",
+            llm_method="coding_agent",
         )
 
         run_test("Output shape matches input", list(output.shape) == list(input_tensor.shape))
@@ -283,7 +277,7 @@ if __name__ == "__main__":
                 run_test(f"Output {i} not TODO", "TODO" not in content)
                 print(f"  Output {i}: {repr(content)}")
 
-    print("\nTest 2: English to French translation (method=raw_llm_api)")
+    print("\nTest 2: English to French translation (llm_method=raw_llm_api)")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_data = ["Hello world in English"]
         input_tensor = make_tensor(input_data, tmpdir)
@@ -300,7 +294,7 @@ if __name__ == "__main__":
             input_tensor, experience_tensor,
             forward_prompt="Translate the English text to French.",
             topk=2,
-            method="raw_llm_api",
+            llm_method="raw_llm_api",
         )
 
         run_test("Output shape matches input", list(output.shape) == list(input_tensor.shape))

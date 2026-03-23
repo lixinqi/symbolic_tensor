@@ -10,27 +10,6 @@ from symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 
 
 class SymbolicTransform(torch.autograd.Function):
-    """
-    torch.autograd.Function wrapping symbolic_transform_forward and
-    symbolic_transform_backward.
-
-    Usage:
-        output, selected_indexes = SymbolicTransform.apply(
-            input, experience, forward_prompt, topk
-        )
-
-    forward(ctx, input, experience, forward_prompt="", topk=16)
-        -> (output, selected_experience_qkv_indexes_list)
-
-    backward(ctx, grad_output, grad_selected_indexes=None)
-        grad_output has two channels:
-          a) coefficient (float) — semi-differentiable, flows through autograd
-          b) text diff (str) — symbolic gradient stored in tensor files
-        -> (grad_input, grad_experience, None, None)
-
-    selected_experience_qkv_indexes_list contains detached index tensors (no grad).
-    """
-
     @staticmethod
     def forward(
         ctx,
@@ -38,9 +17,10 @@ class SymbolicTransform(torch.autograd.Function):
         experience: torch.Tensor,
         forward_prompt: str = "",
         topk: int = 16,
+        llm_method: str = "raw_llm_api",
     ) -> Tuple[torch.Tensor, Any]:
         output, selected_experience_qkv_indexes_list = symbolic_transform_forward(
-            input, experience, forward_prompt, topk
+            input, experience, forward_prompt, topk, llm_method=llm_method
         )
 
         # Save tensors for backward
@@ -49,6 +29,7 @@ class SymbolicTransform(torch.autograd.Function):
         ctx.selected_experience_qkv_indexes_list = selected_experience_qkv_indexes_list
         ctx.forward_prompt = forward_prompt
         ctx.topk = topk
+        ctx.llm_method = llm_method
 
         return output, selected_experience_qkv_indexes_list
 
@@ -58,8 +39,6 @@ class SymbolicTransform(torch.autograd.Function):
 
         # If grad_output is a plain tensor (from autograd, e.g. loss.backward()),
         # wrap it as a symbolic tensor so backward can process it.
-        # The coefficient channel carries the autograd values;
-        # the text diff channel gets "TODO" (no upstream symbolic gradient).
         if not hasattr(grad_output, "st_relative_to"):
             symbolic_grad_output = todo_tensor_like(output)
             symbolic_grad_output.data.copy_(grad_output.data)
@@ -73,10 +52,11 @@ class SymbolicTransform(torch.autograd.Function):
             ctx.selected_experience_qkv_indexes_list,
             ctx.forward_prompt,
             ctx.topk,
+            llm_method=ctx.llm_method,
         )
 
-        # Return grads for (input, experience, forward_prompt, topk)
-        return grad_input, grad_experience, None, None
+        # Return grads for (input, experience, forward_prompt, topk, llm_method)
+        return grad_input, grad_experience, None, None, None
 
 
 symbolic_transform = SymbolicTransform.apply
@@ -125,6 +105,7 @@ if __name__ == "__main__":
             input_tensor, experience_tensor,
             "Translate the English text to French.",
             2,
+            "raw_llm_api",
         )
 
         run_test("Output shape matches input", list(output.shape) == list(input_tensor.shape))
@@ -140,7 +121,7 @@ if __name__ == "__main__":
             run_test("Output not TODO", "TODO" not in content)
             print(f"  Output: {repr(content[:120])}")
 
-    # Test 2: Forward + backward (direct call, no loss.backward)
+    # Test 2: Forward + backward (direct call)
     print("\nTest 2: Forward + backward (direct call)")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_tensor = make_tensor(["Hello world in English"], tmpdir)
@@ -155,6 +136,7 @@ if __name__ == "__main__":
             input_tensor, experience_tensor,
             forward_prompt="Translate the English text to French.",
             topk=2,
+            llm_method="raw_llm_api",
         )
 
         run_test("Output has st attrs", hasattr(output, "st_relative_to"))
@@ -171,6 +153,7 @@ if __name__ == "__main__":
             selected_experience_qkv_indexes_list=selected_indexes,
             forward_prompt="Translate the English text to French.",
             topk=2,
+            llm_method="raw_llm_api",
         )
 
         run_test("grad_input shape matches", list(grad_input.shape) == list(input_tensor.shape))
