@@ -1,0 +1,28 @@
+pack_dir :=
+    $ret str
+    <- $root_dir str
+    # inline
+    <- ($dir_struct str
+        <- Import[seedir].seedir
+        <- $root_dir)
+    <- (list[$file_path str, $file_content str]
+        <- recursively_find_all_file_content
+        <- get_original_file_content_if_is_sym_link
+        <- $root_dir)
+    <- ($relative_file_path str <- file_path)
+    <- $ret_template '''
+        # Directories structure
+        ```
+        {dir_struct}
+        ```
+
+        # Files
+
+        ## File: {relative_file_path}
+        ```
+        {file_content}
+        ```
+    '''
+    # repeat the '## File:' section
+
+# Use temp directory in tests

@@ -3,3 +3,4 @@ AgentTask :=
     * $workspace_dir str
     * $output_relative_dir str
     * $prompt str
+    * $todo_file_content_hint str # default "TODO"
