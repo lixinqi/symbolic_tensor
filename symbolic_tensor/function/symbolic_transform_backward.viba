@@ -106,7 +106,11 @@ symbolic_transform_backward :=
            How should each experience entry (query, key, value) change to improve the output?
            Notice, it's possible that there are existed Experience gradients accumulated in mutable_grad_experience_dir in previous iteration. You should merge them.
 
-        Replace all TODO with computed text diffs.
+        Replace all TODO with computed Gradient files.
+
+        Gradient files format:
+        1. Gradient files should be like output of `diff -u --label data --label data original.txt modified.txt`.
+        2. Gradient files will be applied by cmd `patch -i backward.diff /forward/location/data`
     ''')
     <- ($agent_task AgentTask <- $workspace_dir <- ["mutable_grad_input_dir", "mutable_grad_experience_dir"] <- $prompt)
     <- ($all_tasks <- NestList[$agent_task])

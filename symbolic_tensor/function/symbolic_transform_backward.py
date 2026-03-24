@@ -223,11 +223,12 @@ def symbolic_transform_backward(
             compute_instructions += (
                 f"{'2' if input.requires_grad else '1'}. Experience gradients in \"{grad_experience_dir}\":\n"
                 "   How should each experience entry (query, key, value) change to improve the output?\n"
-                "   IMPORTANT: You MUST write gradients for ALL experience entries in the directory,\n"
-                "   not just the first one. Each subdirectory corresponds to one experience entry.\n"
-                "   If an entry doesn't need changes, write 'No change needed' (not TODO).\n"
-                "   If there are existing gradients accumulated from previous iterations, merge them.\n\n"
-                "Replace ALL TODO files with computed text diffs.\n"
+                "   Notice, it's possible that there are existed Experience gradients accumulated in\n"
+                "   mutable_grad_experience_dir in previous iteration. You should merge them.\n\n"
+                "Replace all TODO with computed Gradient files.\n\n"
+                "Gradient files format:\n"
+                "1. Gradient files should be like output of `diff -u --label data --label data original.txt modified.txt`.\n"
+                "2. Gradient files will be applied by cmd `patch -i backward.diff /forward/location/data`\n"
             )
 
             prompt = (

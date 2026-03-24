@@ -47,7 +47,7 @@ class SymbolicTransformModule(nn.Module):
 
 if __name__ == "__main__":
     from symbolic_tensor.tensor_util.make_tensor import make_tensor
-    from symbolic_tensor.function.copy import copy_impl
+    from symbolic_tensor.function.st_copy import copy_impl
 
     # Source anthropic env vars
     result = subprocess.run(

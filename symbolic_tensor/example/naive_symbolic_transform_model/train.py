@@ -91,7 +91,6 @@ def main():
             experience_entries.append(["", "", ""])
 
         experience_tensor = make_tensor(experience_entries, tmpdir)
-        print("experience_tensor:\n", experience_tensor.st_pack())
 
         # ── Create model and optimizer ──
         model = NaiveModel(forward_prompt=FORWARD_PROMPT, topk=len(pairs))
@@ -157,7 +156,9 @@ def main():
             # Optimizer step
             print("\n  [Optimizer Step]")
             exp_before = read_storage(model.transform.experience, 2)
+
             optimizer.step()
+
             exp_after = read_storage(model.transform.experience, 2)
             changed = exp_before != exp_after
             print(f"    Experience[0].value changed: {changed}")
