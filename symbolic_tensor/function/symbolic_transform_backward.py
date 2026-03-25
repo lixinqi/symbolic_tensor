@@ -37,6 +37,16 @@ def _replace_last_tensor_with_full_slice(
     return result
 
 
+def _replace_last_tensor_with_slice(
+    index_tensors: List[torch.Tensor],
+    last_dim_slice: slice,
+) -> List[Union[torch.Tensor, slice]]:
+    """Replace the last index tensor with a specific slice on the last dimension."""
+    result: List[Union[torch.Tensor, slice]] = list(index_tensors[:-1])
+    result.append(last_dim_slice)
+    return result
+
+
 def _flatten_nested_indexes(
     nested: Any,
     shape: List[int],
@@ -266,13 +276,11 @@ def symbolic_transform_backward_grad_experience(
 ) -> torch.Tensor:
     """Compute grad_experience by iterating per experience entry via transposed sparse coordinates.
 
-    Uses convert_nested_list_coordinates_to_pairs_coordinates + transpose_pairs_coordinates
-    to invert the forward's index mapping: for each experience entry, gather all input elements
-    that used it and present them together to the LLM.
+    Runs TWO passes per experience entry — one for query gradient (slice(1,2)) and one for
+    value gradient (slice(2,3)) — with different prompt suffixes. This ensures query gradients
+    use input-domain semantics and value gradients use output-domain semantics.
     """
     # Pad each leaf's indexes to topk with random experience indexes before transposing.
-    # When experience is empty and forward selects nothing, random padding ensures
-    # gradient flows to different experience entries, not just entry 0.
     input_shape = list(input.size())
     flat_indexes = _flatten_nested_indexes(
         selected_experience_qkv_indexes_list, input_shape
@@ -293,78 +301,98 @@ def symbolic_transform_backward_grad_experience(
     # ── Numeric channel ──
     grad_experience.data.zero_()
 
-    # Collect all tasks, then batch-call TaskHandler
+    # GradExprTypeList: two gradient types with different slices and prompt suffixes
+    GRAD_EXP_TYPES = [
+        {
+            "name": "query",
+            "last_dim_slice": slice(1, 2, None),
+            "prompt_suffix": "Please generate query file(s) with same semantic domain of input.\n",
+        },
+        {
+            "name": "value",
+            "last_dim_slice": slice(2, 3, None),
+            "prompt_suffix": "Please generate value file(s) with same semantic domain of output.\n",
+        },
+    ]
+
+    # Collect all tasks across both grad types, then batch-call TaskHandler
     all_tasks = []
     task_contexts = []  # (workspace_dir, grad_experience_dir, grad_experience_sliced_view)
 
     for sole_exp_point, multi_output_points in transposed:
-        # Convert scalar tensors to ints, replace last dim with full slice for q/k/v
         int_exp_point = [t.item() for t in sole_exp_point]
-        select_experience_indexes = int_exp_point[:-1] + [slice(None)]
 
-        # Numeric: set coefficient to 1.0 for this experience entry
-        grad_experience.data[tuple(select_experience_indexes)] = 1.0
+        for grad_exp_type in GRAD_EXP_TYPES:
+            last_dim_slice = grad_exp_type["last_dim_slice"]
+            prompt_suffix = grad_exp_type["prompt_suffix"]
 
-        # Symbolic channel: slice all relevant tensors
-        grad_output_sliced = slice_view(grad_output, multi_output_points)
-        input_sliced = slice_view(input, multi_output_points)
-        output_sliced = slice_view(output, multi_output_points)
-        experience_sliced_view = slice_view(experience, select_experience_indexes)
-        grad_experience_sliced_view = slice_view(grad_experience, select_experience_indexes)
-        # Assign TODO to the selected portion of grad_experience (unselected stays "")
-        assign_tensor(grad_experience_sliced_view, todo_tensor_like(grad_experience_sliced_view))
-        grad_experience_sliced_value = slice_tensor(grad_experience, select_experience_indexes)
+            # Replace last dim with the type-specific slice
+            select_experience_indexes = _replace_last_tensor_with_slice(
+                [torch.tensor(c) for c in int_exp_point], last_dim_slice
+            )
 
-        workspace_dir = tempfile.mkdtemp()
-        grad_output_view_dir = os.path.join(workspace_dir, "const_grad_output_view")
-        input_view_dir = os.path.join(workspace_dir, "const_input_view")
-        output_view_dir = os.path.join(workspace_dir, "const_output_view")
-        experience_view_dir = os.path.join(workspace_dir, "const_experience_view")
-        grad_experience_dir = os.path.join(workspace_dir, "mutable_grad_experience_dir")
+            # Numeric: set coefficient to 1.0 for this experience entry's slice
+            grad_experience.data[tuple(select_experience_indexes)] = 1.0
 
-        dump_view(grad_output_sliced, grad_output_view_dir, "txt")
-        dump_view(input_sliced, input_view_dir, "txt")
-        dump_view(output_sliced, output_view_dir, "txt")
-        dump_view(experience_sliced_view, experience_view_dir, "txt")
-        dump_view(grad_experience_sliced_value, grad_experience_dir, "txt")
+            # Symbolic channel: slice all relevant tensors
+            grad_output_sliced = slice_view(grad_output, multi_output_points)
+            input_sliced = slice_view(input, multi_output_points)
+            output_sliced = slice_view(output, multi_output_points)
+            experience_sliced_view = slice_view(experience, select_experience_indexes)
+            grad_experience_sliced_view = slice_view(grad_experience, select_experience_indexes)
+            # Assign TODO to the selected portion of grad_experience (unselected stays "")
+            assign_tensor(grad_experience_sliced_view, todo_tensor_like(grad_experience_sliced_view))
+            grad_experience_sliced_value = slice_tensor(grad_experience, select_experience_indexes)
 
-        prompt = (
-            "You are a symbolic gradient calculator for backward pass.\n\n"
-            f"{forward_prompt}\n\n"
-            "During forward pass, the input was translated to output using experience entries.\n"
-            "Now given the output gradient (how output should change), compute gradients for\n"
-            "experience.\n\n"
-            "Context (read-only):\n"
-            f"- Output gradient (text diff): \"{grad_output_view_dir}\"\n"
-            f"- Original input: \"{input_view_dir}\"\n"
-            f"- Original output: \"{output_view_dir}\"\n"
-            f"- Experience entries used during forward: \"{experience_view_dir}\"\n"
-            "  where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value\n"
-            "  Each line in query files only contains one summary key word for current experience,\n"
-            "  which is used for calculating similarity between inputs and experience.\n"
-            "  Key files contain source domain semantics.\n"
-            "  Value files contain target domain semantics.\n\n"
-            f"Compute and write:\n"
-            f"1. Experience gradients in \"{grad_experience_dir}\":\n"
-            "   How should each experience entry (query, key, value) change to improve the output?\n"
-            "   Notice, there maybe be multiple grad_output. You should merge them into grad_experience.\n\n"
-            "Replace all TODO with computed Gradient files.\n\n"
-            "Gradient files format:\n"
-            "1. Gradient files must be like output of `diff -u --label data --label data original.txt modified.txt`.\n"
-            "2. Gradient files will be applied by cmd `patch -i backward.diff /forward/location/data`\n"
-            f"3. Gradient files of \"{grad_experience_dir}/<xxx>/data\" must be able to be applied to \"{experience_view_dir}/<xxx>/data\"\n\n"
-            "NOTICE: All files MUST end with a newline. NEVER include '\\ No newline at end of file' in diff output.\n"
-            "NOTICE: All files MUST end with a newline. NEVER include '\\ No newline at end of file' in diff output.\n"
-            "NOTICE: All files MUST end with a newline. NEVER include '\\ No newline at end of file' in diff output.\n"
-        )
+            workspace_dir = tempfile.mkdtemp()
+            grad_output_view_dir = os.path.join(workspace_dir, "const_grad_output_view")
+            input_view_dir = os.path.join(workspace_dir, "const_input_view")
+            output_view_dir = os.path.join(workspace_dir, "const_output_view")
+            experience_view_dir = os.path.join(workspace_dir, "const_experience_view")
+            grad_experience_dir = os.path.join(workspace_dir, "mutable_grad_experience_dir")
 
-        agent_task = AgentTask(
-            workspace_dir=workspace_dir,
-            output_relative_dir=["mutable_grad_experience_dir"],
-            prompt=prompt,
-        )
-        all_tasks.append(agent_task)
-        task_contexts.append((workspace_dir, grad_experience_dir, grad_experience_sliced_view))
+            dump_view(grad_output_sliced, grad_output_view_dir, "txt")
+            dump_view(input_sliced, input_view_dir, "txt")
+            dump_view(output_sliced, output_view_dir, "txt")
+            dump_view(experience_sliced_view, experience_view_dir, "txt")
+            dump_view(grad_experience_sliced_value, grad_experience_dir, "txt")
+
+            prompt = (
+                "You are a symbolic gradient calculator for backward pass.\n\n"
+                f"{forward_prompt}\n\n"
+                "During forward pass, the input was translated to output using experience entries.\n"
+                "Now given the output gradient (how output should change), compute gradients for\n"
+                "experience.\n\n"
+                "Context (read-only):\n"
+                f"- Output gradient (text diff): \"{grad_output_view_dir}\"\n"
+                f"- Original input: \"{input_view_dir}\"\n"
+                f"- Original output: \"{output_view_dir}\"\n"
+                f"- Experience entries used during forward: \"{experience_view_dir}\"\n"
+                "  where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value\n"
+                "  Each line in query files only contains one summary key word for current experience,\n"
+                "  which is used for calculating similarity between inputs and experience.\n"
+                "  Key files contain source domain semantics.\n"
+                "  Value files contain target domain semantics.\n\n"
+                f"Compute and write:\n"
+                f"1. Experience gradients in \"{grad_experience_dir}\":\n"
+                "   How should each experience entry (query, key, value) change to improve the output?\n"
+                "   Notice, there maybe be multiple grad_output. You should merge them into grad_experience.\n\n"
+                "Replace all TODO with computed Gradient files.\n\n"
+                "Gradient files format:\n"
+                "1. Gradient files must be like output of `diff -u --label data --label data original.txt modified.txt`.\n"
+                "2. Gradient files will be applied by cmd `patch -i backward.diff /forward/location/data`\n"
+                f"3. Gradient files of \"{grad_experience_dir}/<xxx>/data\" must be able to be applied to \"{experience_view_dir}/<xxx>/data\"\n\n"
+                "NOTICE: All files MUST end with a newline. NEVER include '\\ No newline at end of file' in diff output.\n\n"
+                f"{prompt_suffix}"
+            )
+
+            agent_task = AgentTask(
+                workspace_dir=workspace_dir,
+                output_relative_dir=["mutable_grad_experience_dir"],
+                prompt=prompt,
+            )
+            all_tasks.append(agent_task)
+            task_contexts.append((workspace_dir, grad_experience_dir, grad_experience_sliced_view))
 
     # Batch LLM call
     if all_tasks:
@@ -481,8 +509,16 @@ if __name__ == "__main__":
     flat = _flatten_nested_indexes(nested, [2])
     run_test("Flat length is 2", len(flat) == 2)
 
-    # Test 4: Numeric channel — grad_input pass-through, grad_experience zeros + set 1.0
-    print("Test 4: Numeric channel")
+    # Test 4a: Helper — _replace_last_tensor_with_slice
+    print("Test 4a: _replace_last_tensor_with_slice")
+    idx = [torch.tensor(0), torch.tensor(1), torch.tensor(2)]
+    result_slice = _replace_last_tensor_with_slice(idx, slice(1, 2, None))
+    run_test("Length preserved", len(result_slice) == 3)
+    run_test("First two are tensors", isinstance(result_slice[0], torch.Tensor) and isinstance(result_slice[1], torch.Tensor))
+    run_test("Last is slice(1,2)", result_slice[2] == slice(1, 2, None))
+
+    # Test 4: Numeric channel — grad_input pass-through, grad_experience zeros + set 1.0 per type slice
+    print("Test 4: Numeric channel (GradExprTypeList)")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_data = ["text_a", "text_b"]
         input_tensor = make_tensor(input_data, tmpdir)
@@ -498,7 +534,7 @@ if __name__ == "__main__":
         grad_input.data.copy_(grad_out.data)
         run_test("grad_input coeff copied", torch.all(grad_input.data == 2.0).item())
 
-        # grad_experience: zeros + set 1.0 for used entries
+        # grad_experience: zeros + set 1.0 per type slice (query=1:2, value=2:3)
         sel_indexes = [
             [torch.tensor([0], dtype=torch.long), torch.tensor([0], dtype=torch.long)],
             [torch.tensor([0, 1], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)],
@@ -506,17 +542,27 @@ if __name__ == "__main__":
         pairs = convert_nested_list_coordinates_to_pairs_coordinates(sel_indexes)
         transposed = transpose_pairs_coordinates(pairs)
 
-        grad_experience = todo_tensor_like(exp_tensor)
+        grad_experience = empty_tensor_like(exp_tensor)
         grad_experience.data.zero_()
+        GRAD_SLICES = [slice(1, 2, None), slice(2, 3, None)]
         for sole_exp_point, multi_output_points in transposed:
             int_exp_point = [t.item() for t in sole_exp_point]
-            select_exp_idx = int_exp_point[:-1] + [slice(None)]
-            grad_experience.data[tuple(select_exp_idx)] = 1.0
+            for s in GRAD_SLICES:
+                select_exp_idx = _replace_last_tensor_with_slice(
+                    [torch.tensor(c) for c in int_exp_point], s
+                )
+                grad_experience.data[tuple(select_exp_idx)] = 1.0
 
-        run_test("exp[0] coeff is 1.0", grad_experience.data[0, 0].item() == 1.0,
-                 1.0, grad_experience.data[0, 0].item())
-        run_test("exp[1] coeff is 1.0", grad_experience.data[1, 0].item() == 1.0,
-                 1.0, grad_experience.data[1, 0].item())
+        run_test("exp[0] query coeff is 1.0", grad_experience.data[0, 1].item() == 1.0,
+                 1.0, grad_experience.data[0, 1].item())
+        run_test("exp[0] value coeff is 1.0", grad_experience.data[0, 2].item() == 1.0,
+                 1.0, grad_experience.data[0, 2].item())
+        run_test("exp[0] key coeff is 0.0", grad_experience.data[0, 0].item() == 0.0,
+                 0.0, grad_experience.data[0, 0].item())
+        run_test("exp[1] query coeff is 1.0", grad_experience.data[1, 1].item() == 1.0,
+                 1.0, grad_experience.data[1, 1].item())
+        run_test("exp[1] value coeff is 1.0", grad_experience.data[1, 2].item() == 1.0,
+                 1.0, grad_experience.data[1, 2].item())
 
     # Test 5: Full backward with LLM (raw_llm_api only, single batch)
     print("Test 5: Full backward with LLM (single input)")
@@ -560,7 +606,10 @@ if __name__ == "__main__":
 
         # Numeric checks
         run_test("grad_input coeff == 1.0", grad_input.data[0].item() == 1.0)
-        run_test("grad_experience coeff for used entries", grad_experience.data[0, 0].item() == 1.0)
+        # GradExprTypeList: query (dim 1) and value (dim 2) get 1.0, key (dim 0) stays 0.0
+        run_test("grad_exp[0] query coeff 1.0", grad_experience.data[0, 1].item() == 1.0)
+        run_test("grad_exp[0] value coeff 1.0", grad_experience.data[0, 2].item() == 1.0)
+        run_test("grad_exp[0] key coeff 0.0", grad_experience.data[0, 0].item() == 0.0)
 
     # Test 6: Multi-batch backward (2 inputs, raw_llm_api)
     print("Test 6: Multi-batch backward (2 inputs)")
@@ -597,9 +646,13 @@ if __name__ == "__main__":
         run_test("grad_input shape [2]", list(grad_input.shape) == [2])
         run_test("grad_experience shape [2, 3]", list(grad_experience.shape) == [2, 3])
 
-        # Both experience entries should have coeff 1.0 (both used)
-        run_test("exp[0] coeff 1.0", grad_experience.data[0, 0].item() == 1.0)
-        run_test("exp[1] coeff 1.0", grad_experience.data[1, 0].item() == 1.0)
+        # Both experience entries should have query/value coeff 1.0, key coeff 0.0
+        run_test("exp[0] query coeff 1.0", grad_experience.data[0, 1].item() == 1.0)
+        run_test("exp[0] value coeff 1.0", grad_experience.data[0, 2].item() == 1.0)
+        run_test("exp[0] key coeff 0.0", grad_experience.data[0, 0].item() == 0.0)
+        run_test("exp[1] query coeff 1.0", grad_experience.data[1, 1].item() == 1.0)
+        run_test("exp[1] value coeff 1.0", grad_experience.data[1, 2].item() == 1.0)
+        run_test("exp[1] key coeff 0.0", grad_experience.data[1, 0].item() == 0.0)
 
         # Both grad_inputs should have text diffs
         for i in range(2):

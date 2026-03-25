@@ -93,7 +93,7 @@ def main():
         experience_tensor = make_tensor(experience_entries, tmpdir)
 
         # ── Create model and optimizer ──
-        model = NaiveModel(forward_prompt=FORWARD_PROMPT, topk=len(pairs))
+        model = NaiveModel(forward_prompt=FORWARD_PROMPT, topk=1)
         model.load_experience(experience_tensor)
 
         optimizer = SymbolicSGD(
