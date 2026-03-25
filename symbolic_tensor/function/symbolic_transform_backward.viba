@@ -120,25 +120,31 @@ symbolic_transform_backward_grad_experience :=
     <- $topk int # default 16
     <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
     # inline
-    <- ($padded_select_indexes list[torch.Tensor[int]]
-        <- pad_random_indexes_to_topk_with_none_experience_indexes # only add queries, i.e. last dim == 0
-        <- $select_experience_query_indexes
+    <- ($none_experience_indexes list[torch.Tensor[int]]
+        <- select_random_indexes_with_none_experience_indexes # only add queries, i.e. last dim == 0
         <- $topk
         <- $experience)
+    <- ($padded_select_indexes list[torch.Tensor[int]]
+        <- select_prefix_topk
+        <- $topk
+        <- shuffle
+        <- merge_list
+        <- $select_experience_query_indexes
+        <- $none_experience_indexes)
     <- ($selected_experience_qkv_indexes_list <- NestedList[$padded_select_indexes])
     <- (list[$sole_grad_experience_point list[torch.Tensor[Index]],
              $multi_grad_output_points list[torch.Tensor[Index]]]
         <- Import[symbolic_tensor/sparse_util/transpose_pairs_coordinates.viba]
         <- Import[sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.viba]
         <- $selected_experience_qkv_indexes_list)
-    <- (GradExprTypeList[$grad_exp_type GradExpType] <- [GradQuery, GradValue])
-    <- (PromptSuffix[GradQuery] = '''
-            Please generate query file(s) with same semantic domain of input.
+    <- (GradExprTypeList[$grad_exp_type GradExpType] <- [GradKey, GradValue])
+    <- (PromptSuffix[GradKey] = '''
+            Please generate key file(s) with same semantic domain of inputs.
         ''')
     <- (PromptSuffix[GradValue] = '''
-            Please generate value file(s) with same semantic domain of output.
+            Please generate value file(s) with same semantic domain of outputs.
         ''')
-    <- (LasTimeSlice[GradQuery] = slice(1, 2, None))
+    <- (LasTimeSlice[GradKey] = slice(1, 2, None))
     <- (LasTimeSlice[GradValue] = slice(2, 3, None))
     <- ($select_experience_indexes <- replace_last_tensor_with_slice <- LasTimeSlice[$grad_exp_type] <- $sole_grad_experience_point)
     

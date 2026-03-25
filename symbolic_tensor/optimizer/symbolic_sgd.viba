@@ -31,21 +31,40 @@ step :=
 
     # for each param_group, for each param with grad:
     <- ($lr float <- $param_group['lr'])
-    <- (list[$param Symbolic[torch.Tensor]] <- $param_group['params'])
-    <- (list[$grad Symbolic[torch.Tensor]] <- $param.grad)
+    <- (ParamList[$param Symbolic[torch.Tensor]] <- $param_group['params'])
+    <- (ParamList[$grad Symbolic[torch.Tensor]] <- $param.grad)
+
+    <- ($raw_selected_param_points <- nonzero <- $param.grad)
+    <- ($kv_points <- replace_last_tensor_with_slice <- $raw_selected_param_points <- slice(1, 3, None))
 
     # ── Numeric channel ──
-    <- (void <- '''param.data = (1 - lr) * param.data + lr * grad.data''')
+    <- (void <- '''param.data = (1 - lr) * param.data + lr * grad.data''' <- $select_param_points)
 
     # ── Symbolic channel ──
-    <- (list[$storage_elem_file_ralative_path str] <- $param)
+    <- ($kv_param <- $slice_view <- $param <- $kv_points)
+    <- (list[$storage_elem_file_ralative_path str] <- $kv_points)
     <- ($param_storage_root_dir str <- $param.st_relative_to <- $param.st_tensor_uid)
     <- ($grad_storage_root_dir str <- $grad.st_relative_to <- $grad.st_tensor_uid)
     <- ($param_elem_file_ralative_path str <- $param_storage_root_dir <- $storage_elem_file_ralative_path)
     <- ($grad_elem_file_ralative_path str <- $grad_storage_root_dir <- $storage_elem_file_ralative_path)
     <- (void <- remove_rej_file <- f"{param_elem_file_ralative_path}.rej")
     <- (void <- '''patch --no-backup-if-mismatch --fuzz=3 -i {grad_elem_file_ralative_path} {param_elem_file_ralative_path}''')
-
+    
+    # update queries
+    <- ($kv_queries
+        <- Import[symbolic_tensor/function/get_input_query_tensor.viba]
+        <- $kv_param)
+    <- (NestedList[($query_from_key_file_path, $query_from_value_file_path)] <- $kv_queries.st_file_paths)
+    <- ($query_for_kv_content str
+        <- unique
+        <- sort
+        <- join_with_newline
+        <- Path.read_text
+        <- ($query_from_key_file_path, $query_from_value_file_path))
+    <- ($query_points <- replace_last_tensor_with_slice <- $raw_selected_param_points <- slice(0, 1, None))
+    <- ($query_view <- $slice_view <- $param <- $query_points)
+    <- (NestedList[$query_file_path str] <- $query_view.st_file_paths)
+    <- (void <- write_file <- $query_file_path <- $query_for_kv_content)
 
 zero_grad :=
     void

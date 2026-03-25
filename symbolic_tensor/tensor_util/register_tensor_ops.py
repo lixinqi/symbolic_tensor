@@ -11,10 +11,10 @@ def st_assign(lvalue, rvalue):
     from symbolic_tensor.tensor_util.assign_tensor import assign_tensor
     return assign_tensor(lvalue, rvalue)
 
-torch.Tensor.st_assign = st_pack
+torch.Tensor.st_assign = st_assign
 
 def st_file_paths(tensor):
-    from symbolic_tensor.fs_util.get_nested_list_file_pathes import get_nested_list_file_path
-    return get_nested_list_file_path(tensor)
+    from symbolic_tensor.fs_util.get_nested_list_file_pathes import get_nested_list_file_pathes
+    return get_nested_list_file_pathes(tensor)
 
 torch.Tensor.st_file_paths = st_file_paths

@@ -114,6 +114,43 @@ def _pad_random_indexes_to_topk_with_none_experience_indexes(
     return padded
 
 
+def _select_random_indexes_with_none_experience_indexes(
+    topk: int,
+    experience: torch.Tensor,
+) -> List[torch.Tensor]:
+    """Generate topk random experience indexes (last dim always 0 for query)."""
+    ndim = len(experience.size())
+    result = []
+    for d in range(ndim):
+        if d == ndim - 1:
+            result.append(torch.zeros(topk, dtype=torch.long))
+        else:
+            result.append(torch.randint(0, experience.size(d), (topk,)))
+    return result
+
+
+def _merge_and_shuffle_and_select_prefix_topk(
+    select_experience_query_indexes: List[torch.Tensor],
+    none_experience_indexes: List[torch.Tensor],
+    topk: int,
+) -> List[torch.Tensor]:
+    """Merge selected indexes with none-experience indexes, shuffle, then take first topk."""
+    if not select_experience_query_indexes:
+        merged = none_experience_indexes
+    else:
+        merged = [
+            torch.cat([sel, none])
+            for sel, none in zip(select_experience_query_indexes, none_experience_indexes)
+        ]
+    # Shuffle: use same permutation across all dims
+    total_len = len(merged[0])
+    perm = torch.randperm(total_len)
+    shuffled = [t[perm] for t in merged]
+    # Select prefix topk
+    selected = [t[:topk] for t in shuffled]
+    return selected
+
+
 def _build_nested_result(flat_results: List[Any], shape: List[int]) -> Any:
     """Reshape a flat list of results into a nested list matching the given shape."""
     if not shape:
@@ -280,15 +317,16 @@ def symbolic_transform_backward_grad_experience(
     value gradient (slice(2,3)) — with different prompt suffixes. This ensures query gradients
     use input-domain semantics and value gradients use output-domain semantics.
     """
-    # Pad each leaf's indexes to topk with random experience indexes before transposing.
+    # Two-step padding: generate random none-experience indexes, merge with selected, shuffle, take topk
     input_shape = list(input.size())
     flat_indexes = _flatten_nested_indexes(
         selected_experience_qkv_indexes_list, input_shape
     )
-    padded_flat = [
-        _pad_random_indexes_to_topk_with_none_experience_indexes(idx, topk, experience)
-        for idx in flat_indexes
-    ]
+    padded_flat = []
+    for idx in flat_indexes:
+        none_indexes = _select_random_indexes_with_none_experience_indexes(topk, experience)
+        padded = _merge_and_shuffle_and_select_prefix_topk(idx, none_indexes, topk)
+        padded_flat.append(padded)
     padded_nested = _build_nested_result(padded_flat, input_shape)
 
     # Convert padded indexes to pairs, then transpose
@@ -304,14 +342,14 @@ def symbolic_transform_backward_grad_experience(
     # GradExprTypeList: two gradient types with different slices and prompt suffixes
     GRAD_EXP_TYPES = [
         {
-            "name": "query",
+            "name": "key",
             "last_dim_slice": slice(1, 2, None),
-            "prompt_suffix": "Please generate query file(s) with same semantic domain of input.\n",
+            "prompt_suffix": "Please generate key file(s) with same semantic domain of inputs.\n",
         },
         {
             "name": "value",
             "last_dim_slice": slice(2, 3, None),
-            "prompt_suffix": "Please generate value file(s) with same semantic domain of output.\n",
+            "prompt_suffix": "Please generate value file(s) with same semantic domain of outputs.\n",
         },
     ]
 
@@ -502,6 +540,24 @@ if __name__ == "__main__":
     indexes = [torch.tensor([0, 1], dtype=torch.long)]
     padded = _pad_indexes_to_topk_with_none_experience_indexes(indexes, 2, exp_tensor)
     run_test("Length unchanged", len(padded[0]) == 2)
+
+    # Test 2a: Helper — _select_random_indexes_with_none_experience_indexes
+    print("Test 2a: _select_random_indexes_with_none_experience_indexes")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        exp_data = [["q0", "k0", "v0"], ["q1", "k1", "v1"]]
+        exp_tensor = make_tensor(exp_data, tmpdir)
+        none_idx = _select_random_indexes_with_none_experience_indexes(3, exp_tensor)
+        run_test("ndim tensors returned", len(none_idx) == 2, 2, len(none_idx))
+        run_test("Each has length 3", len(none_idx[0]) == 3 and len(none_idx[1]) == 3)
+        run_test("Last dim always 0", torch.all(none_idx[-1] == 0).item())
+
+    # Test 2b: Helper — _merge_and_shuffle_and_select_prefix_topk
+    print("Test 2b: _merge_and_shuffle_and_select_prefix_topk")
+    sel = [torch.tensor([10, 20], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)]
+    none = [torch.tensor([30, 40, 50], dtype=torch.long), torch.tensor([0, 0, 0], dtype=torch.long)]
+    merged = _merge_and_shuffle_and_select_prefix_topk(sel, none, 3)
+    run_test("Merged length is topk=3", len(merged[0]) == 3, 3, len(merged[0]))
+    run_test("All values from union", all(v.item() in {10, 20, 30, 40, 50} for v in merged[0]))
 
     # Test 3: Helper — _flatten_nested_indexes
     print("Test 3: Flatten nested indexes")
