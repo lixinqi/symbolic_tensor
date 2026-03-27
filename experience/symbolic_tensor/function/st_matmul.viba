@@ -1,20 +1,20 @@
 
 # Re-export default prompt callables for public API
-default_prompt_for_output := Import[experience/symbolic_tensor/function/symbolic_transform_forward.viba].default_prompt_for_output
+default_prompt_for_output := Import[experience/symbolic_tensor/function/st_matmul_forward.viba].default_prompt_for_output
 default_prompt_for_query := Import[experience/symbolic_tensor/function/get_query_tensor.viba].default_prompt_for_query
-default_prompt_for_grad_input := Import[experience/symbolic_tensor/function/symbolic_transform_backward.viba].default_prompt_for_grad_input
-default_prompt_for_grad_exp_key := Import[experience/symbolic_tensor/function/symbolic_transform_backward.viba].default_prompt_for_grad_exp_key
-default_prompt_for_grad_exp_value := Import[experience/symbolic_tensor/function/symbolic_transform_backward.viba].default_prompt_for_grad_exp_value
+default_prompt_for_grad_input := Import[experience/symbolic_tensor/function/st_matmul_backward.viba].default_prompt_for_grad_input
+default_prompt_for_grad_exp_key := Import[experience/symbolic_tensor/function/st_matmul_backward.viba].default_prompt_for_grad_exp_key
+default_prompt_for_grad_exp_value := Import[experience/symbolic_tensor/function/st_matmul_backward.viba].default_prompt_for_grad_exp_value
 default_retrieval_method := Import[experience/symbolic_tensor/function/select_qkv_indexes.viba].default_retrieval_method
 
 OutputPromptCallable := $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_experience_view str <- $const_input_view str <- $mutable_output_dir str)
 QueryPromptCallable := Import[experience/symbolic_tensor/function/get_query_tensor.viba].QueryPromptCallable
-BackwardPromptCallable := Import[experience/symbolic_tensor/function/symbolic_transform_backward.viba].BackwardPromptCallable
+BackwardPromptCallable := Import[experience/symbolic_tensor/function/st_matmul_backward.viba].BackwardPromptCallable
 RetrievalMethodCallable := Import[experience/symbolic_tensor/function/select_qkv_indexes.viba].RetrievalMethodCallable
 
-SymbolicTransform := torch.autograd.Function[
-    $forward Import[experience/symbolic_tensor/function/symbolic_transform_forward.viba],
-    $backward Import[experience/symbolic_tensor/function/symbolic_transform_backward.viba],
+StMatmul := torch.autograd.Function[
+    $forward Import[experience/symbolic_tensor/function/st_matmul_forward.viba],
+    $backward Import[experience/symbolic_tensor/function/st_matmul_backward.viba],
     # ctx saves all prompt callables for backward
     $ctx.output_prompt OutputPromptCallable # default None
     $ctx.query_prompt QueryPromptCallable # default None
@@ -28,6 +28,6 @@ SymbolicTransform := torch.autograd.Function[
     $ctx.llm_env dict[str, str] # default None
 ]
 
-symbolic_transform := SymbolicTransform.apply
+st_matmul := StMatmul.apply
 
 # add tests in __main__ block

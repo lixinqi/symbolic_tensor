@@ -1,7 +1,7 @@
-OutputPromptCallable := Import[experience/symbolic_tensor/function/symbolic_transform.viba].OutputPromptCallable
-QueryPromptCallable := Import[experience/symbolic_tensor/function/symbolic_transform.viba].QueryPromptCallable
-BackwardPromptCallable := Import[experience/symbolic_tensor/function/symbolic_transform.viba].BackwardPromptCallable
-RetrievalMethodCallable := Import[experience/symbolic_tensor/function/symbolic_transform.viba].RetrievalMethodCallable
+OutputPromptCallable := Import[experience/symbolic_tensor/function/st_matmul.viba].OutputPromptCallable
+QueryPromptCallable := Import[experience/symbolic_tensor/function/st_matmul.viba].QueryPromptCallable
+BackwardPromptCallable := Import[experience/symbolic_tensor/function/st_matmul.viba].BackwardPromptCallable
+RetrievalMethodCallable := Import[experience/symbolic_tensor/function/st_matmul.viba].RetrievalMethodCallable
 
 NaiveModel := torch.nn.Module
 
@@ -18,6 +18,6 @@ __init__ :=
     <- $retrieval_method RetrievalMethodCallable # default None
     <- $llm_env dict[str, str] # default None
     # inline
-    <- Import[experience/symbolic_tensor/module/symbolic_transform.py]
+    <- Import[experience/symbolic_tensor/module/st_matmul.py]
 
 forward := ...

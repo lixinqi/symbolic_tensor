@@ -5,7 +5,7 @@ import tempfile
 import torch
 
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
-from experience.symbolic_tensor.function.symbolic_transform_forward import symbolic_transform_forward
+from experience.symbolic_tensor.function.st_matmul_forward import st_matmul_forward
 
 
 def run_benchmark(input_data, experience_data, topk, method):
@@ -15,7 +15,7 @@ def run_benchmark(input_data, experience_data, topk, method):
         experience_tensor = make_tensor(experience_data, tmpdir)
 
         t0 = time.time()
-        output, selected_indexes = symbolic_transform_forward(
+        output, selected_indexes = st_matmul_forward(
             input_tensor, experience_tensor,
             topk=topk,
             method=method,

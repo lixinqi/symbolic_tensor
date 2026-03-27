@@ -135,7 +135,7 @@ class GetEditDistanceRatio(Function):
                 setattr(tensor, attr, val)
         actual_grad = get_edit_distance_ratio_backward_impl(grad_output, actual, expected)
         # Register symbolic grad keyed by the forward tensor's uid,
-        # so downstream backward (SymbolicTransform) can retrieve it
+        # so downstream backward (StMatmul) can retrieve it
         symbolic_grad_registry.register(actual.st_tensor_uid, actual_grad)
         return actual_grad, None
 

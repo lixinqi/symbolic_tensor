@@ -31,7 +31,7 @@ default_prompt_for_output :=
         Replace TODO in f"{mutable_output_dir}" with target semantic text.
     ''')
 
-symbolic_transform_forward :=
+st_matmul_forward :=
     ($output Symboilc[torch.Tensor], $selected_experience_qkv_indexes_list NestList[list[torch.Tensor[int]]])
     <- $input Symboilc[torch.Tensor]
     <- $experience ExperienceTensor[Symbolic[torch.Tensor]]

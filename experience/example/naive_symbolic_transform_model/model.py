@@ -4,7 +4,7 @@ import torch.nn as nn
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from experience.symbolic_tensor.module.symbolic_transform import SymbolicTransformModule
+from experience.symbolic_tensor.module.st_matmul import StMatmulModule
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 
 
@@ -15,7 +15,7 @@ class NaiveModel(nn.Module):
     """
     Naive symbolic transform model.
 
-    Wraps a single SymbolicTransformModule layer.
+    Wraps a single StMatmulModule layer.
     Experience is loaded from the experience/ directory if available,
     otherwise initialized with seed examples.
 
@@ -45,7 +45,7 @@ class NaiveModel(nn.Module):
         llm_env: Optional[Dict[str, str]] = None,
     ):
         super().__init__()
-        self.transform = SymbolicTransformModule(
+        self.transform = StMatmulModule(
             experience_shape=[1, 3],
             output_prompt=output_prompt,
             query_prompt=query_prompt,

@@ -279,7 +279,7 @@ def default_prompt_for_grad_exp_value(
     )
 
 
-def symbolic_transform_backward_grad_input(
+def st_matmul_backward_grad_input(
     grad_output: torch.Tensor,
     input: torch.Tensor,
     output: torch.Tensor,
@@ -371,7 +371,7 @@ def symbolic_transform_backward_grad_input(
     return grad_input
 
 
-def symbolic_transform_backward_grad_experience(
+def st_matmul_backward_grad_experience(
     grad_output: torch.Tensor,
     input: torch.Tensor,
     output: torch.Tensor,
@@ -485,7 +485,7 @@ def symbolic_transform_backward_grad_experience(
     return grad_experience
 
 
-def symbolic_transform_backward(
+def st_matmul_backward(
     grad_output: torch.Tensor,
     input: torch.Tensor,
     output: torch.Tensor,
@@ -522,13 +522,13 @@ def symbolic_transform_backward(
     Returns:
         (grad_input, grad_experience) — grad_input is None if input doesn't require grad.
     """
-    grad_input = symbolic_transform_backward_grad_input(
+    grad_input = st_matmul_backward_grad_input(
         grad_output, input, output, experience,
         selected_experience_qkv_indexes_list,
         grad_input_prompt, task_prompt, topk, llm_method, llm_env,
     )
 
-    grad_experience = symbolic_transform_backward_grad_experience(
+    grad_experience = st_matmul_backward_grad_experience(
         grad_output, input, output, experience,
         selected_experience_qkv_indexes_list,
         grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk, llm_method, llm_env,
@@ -552,7 +552,7 @@ if __name__ == "__main__":
             os.environ[key] = val
     os.environ.pop("CLAUDECODE", None)
 
-    print("Running symbolic_transform_backward tests...\n")
+    print("Running st_matmul_backward tests...\n")
 
     def run_test(name: str, condition: bool, expected=None, actual=None):
         if condition:
@@ -687,7 +687,7 @@ if __name__ == "__main__":
 
         sel_indexes = [[torch.tensor([0, 1], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)]]
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output_tensor, input_tensor, output_tensor, exp_tensor,
             selected_experience_qkv_indexes_list=sel_indexes,
             topk=2,
@@ -738,7 +738,7 @@ if __name__ == "__main__":
             [torch.tensor([1, 0], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)],
         ]
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output_tensor, input_tensor, output_tensor, exp_tensor,
             selected_experience_qkv_indexes_list=sel_indexes,
             topk=2,

@@ -4,12 +4,12 @@ import tempfile
 import torch
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from experience.symbolic_tensor.function.symbolic_transform_forward import (
-    symbolic_transform_forward,
+from experience.symbolic_tensor.function.st_matmul_forward import (
+    st_matmul_forward,
     default_prompt_for_output,
 )
-from experience.symbolic_tensor.function.symbolic_transform_backward import (
-    symbolic_transform_backward,
+from experience.symbolic_tensor.function.st_matmul_backward import (
+    st_matmul_backward,
     default_prompt_for_grad_input,
     default_prompt_for_grad_exp_key,
     default_prompt_for_grad_exp_value,
@@ -20,7 +20,7 @@ from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_
 from experience.symbolic_tensor.function import symbolic_grad_registry
 
 
-class SymbolicTransform(torch.autograd.Function):
+class StMatmul(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx,
@@ -37,7 +37,7 @@ class SymbolicTransform(torch.autograd.Function):
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
     ) -> Tuple[torch.Tensor, Any]:
-        output, selected_experience_qkv_indexes_list = symbolic_transform_forward(
+        output, selected_experience_qkv_indexes_list = st_matmul_forward(
             input, experience, output_prompt, query_prompt, task_prompt, topk,
             retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env
         )
@@ -85,7 +85,7 @@ class SymbolicTransform(torch.autograd.Function):
             symbolic_grad_output.data.copy_(grad_output.data)
             grad_output = symbolic_grad_output
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output,
             input,
             output,
@@ -112,7 +112,7 @@ class SymbolicTransform(torch.autograd.Function):
         return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None
 
 
-symbolic_transform = SymbolicTransform.apply
+st_matmul = StMatmul.apply
 
 
 if __name__ == "__main__":
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             os.environ[key] = val
     os.environ.pop("CLAUDECODE", None)
 
-    print("Running SymbolicTransform (autograd.Function) tests...\n")
+    print("Running StMatmul (autograd.Function) tests...\n")
 
     def run_test(name: str, condition: bool, expected=None, actual=None):
         if condition:
@@ -141,7 +141,7 @@ if __name__ == "__main__":
                 print(f"    actual:   {actual}")
 
     # Test 1: Forward pass via .apply()
-    print("Test 1: Forward pass via SymbolicTransform.apply")
+    print("Test 1: Forward pass via StMatmul.apply")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_data = ["Hello world in English"]
         input_tensor = make_tensor(input_data, tmpdir)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         experience_tensor = make_tensor(experience_data, tmpdir)
         experience_tensor.requires_grad_(True)
 
-        output, selected_indexes = SymbolicTransform.apply(
+        output, selected_indexes = StMatmul.apply(
             input_tensor, experience_tensor,
             None,  # output_prompt
             None,  # query_prompt
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        output, selected_indexes = symbolic_transform_forward(
+        output, selected_indexes = st_matmul_forward(
             input_tensor, experience_tensor,
             output_prompt=None,
             topk=2,
@@ -207,7 +207,7 @@ if __name__ == "__main__":
         )
         grad_output.data.fill_(1.0)
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output, input_tensor, output, experience_tensor,
             selected_experience_qkv_indexes_list=selected_indexes,
             topk=2,

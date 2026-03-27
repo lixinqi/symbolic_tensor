@@ -131,7 +131,7 @@ default_prompt_for_grad_exp_value :=
 
 BackwardPromptCallable := $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_grad_output_view str <- $const_input_view str <- $const_output_view str <- $const_experience_view str <- $mutable_dir str)
 
-symbolic_transform_backward :=
+st_matmul_backward :=
     ($grad_input Symbolic[torch.Tensor], $grad_experience ExperienceTensor[Symbolic[torch.Tensor]])
     <- $grad_output Symbolic[torch.Tensor]
     # saved from forward ctx
@@ -146,10 +146,10 @@ symbolic_transform_backward :=
     <- $topk int # default 16
     <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
     <- $llm_env dict[str, str] # default None
-    <- ($grad_input <- symbolic_transform_backward_grad_input <- ... <- If[$input.requires_grad] <- Else[None])
-    <- symbolic_transform_backward_grad_experience
+    <- ($grad_input <- st_matmul_backward_grad_input <- ... <- If[$input.requires_grad] <- Else[None])
+    <- st_matmul_backward_grad_experience
 
-symbolic_transform_backward_grad_input :=
+st_matmul_backward_grad_input :=
     $grad_input Symbolic[torch.Tensor]
     <- $grad_output Symbolic[torch.Tensor]
     # saved from forward ctx
@@ -216,7 +216,7 @@ symbolic_transform_backward_grad_input :=
         <- $scalar_grad_input_value)
     <- (void <- $scalar_grad_input_view.st_assign <- $diff)
 
-symbolic_transform_backward_grad_experience :=
+st_matmul_backward_grad_experience :=
     $grad_experience ExperienceTensor[Symbolic[torch.Tensor]]
     <- $grad_output Symbolic[torch.Tensor]
     # saved from forward ctx

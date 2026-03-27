@@ -5,8 +5,8 @@ import torch
 
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 from experience.symbolic_tensor.optimizer.symbolic_sgd import SymbolicSGD
-from experience.symbolic_tensor.function.symbolic_transform_forward import symbolic_transform_forward
-from experience.symbolic_tensor.function.symbolic_transform_backward import symbolic_transform_backward
+from experience.symbolic_tensor.function.st_matmul_forward import st_matmul_forward
+from experience.symbolic_tensor.function.st_matmul_backward import st_matmul_backward
 
 
 def read_storage(tensor, flat_index):
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
         # ── First forward ──
         print("\n  === Iteration 1: Forward ===")
-        output1, selected_indexes1 = symbolic_transform_forward(
+        output1, selected_indexes1 = st_matmul_forward(
             input_tensor, experience_tensor,
             topk=2,
         )
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         )
         grad_output.data.fill_(1.0)
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output, input_tensor, output1, experience_tensor,
             selected_experience_qkv_indexes_list=selected_indexes1,
             topk=2,
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print("\n  === Iteration 2: Forward (after optimizer step) ===")
         # Reset coefficient to 1.0 so tensor is usable
         experience_tensor.data.fill_(1.0)
-        output2, selected_indexes2 = symbolic_transform_forward(
+        output2, selected_indexes2 = st_matmul_forward(
             input_tensor, experience_tensor,
             topk=2,
         )
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
         # ── First forward ──
         print("\n  === Iteration 1: Forward ===")
-        output1, selected_indexes1 = symbolic_transform_forward(
+        output1, selected_indexes1 = st_matmul_forward(
             input_tensor, experience_tensor,
             topk=2,
         )
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         )
         grad_output.data.fill_(1.0)
 
-        grad_input, grad_experience = symbolic_transform_backward(
+        grad_input, grad_experience = st_matmul_backward(
             grad_output, input_tensor, output1, experience_tensor,
             selected_experience_qkv_indexes_list=selected_indexes1,
             topk=2,
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         # ── Second forward with updated experience ──
         print("\n  === Iteration 2: Forward (after optimizer step) ===")
         experience_tensor.data.fill_(1.0)
-        output2, selected_indexes2 = symbolic_transform_forward(
+        output2, selected_indexes2 = st_matmul_forward(
             input_tensor, experience_tensor,
             topk=2,
         )
