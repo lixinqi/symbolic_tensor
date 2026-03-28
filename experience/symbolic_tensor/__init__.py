@@ -1,5 +1,5 @@
 from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor as none
-from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_like_tensor as none
+from experience.symbolic_tensor.tensor_util.none_tensor_like import none_tensor_like
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as tensor
 
 import experience.symbolic_tensor.tensor_util.register_tensor_ops
