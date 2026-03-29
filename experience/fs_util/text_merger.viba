@@ -1,0 +1,29 @@
+
+kFrameMarker := "===ST-MERGED-CONTENT===ST-MERGED-CONTENT===ST-MERGED-CONTENT==="
+
+frame_to_str :=
+    str
+    <- $frame ($index int, $coefficient float, $content str)
+    # inline
+    <- ($indented_content str <- {
+        prepend two spaces for each line of $content.
+    })
+    <- f"{kFrameMarker}\nindex: {index}\ncoefficient: {coefficient}\ncontent:\n\n{indented_content}"
+
+pack :=
+    str
+    <- list[$frame ($index int, $coefficient float, $text str)]
+    # inline
+    <- frame_to_str
+    <- { join with "\n" }
+
+unpack :=
+    list[$frame ($index int, $coefficient float, $text str)]
+    <- $merged str
+    # inline
+    <- { reversion of `pack` }
+
+TextMerger :=
+    NoDataMemberClass
+    * $pack ClassMethod[pack]
+    * $unpack ClassMethod[unpack]

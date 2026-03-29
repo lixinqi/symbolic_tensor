@@ -1,0 +1,16 @@
+
+TestMerger := Import[experience/fs_util/text_merger.viba]
+
+st_reduce_forward :=
+    Symbolic[torch.Tensor]
+    <- $input Symbolic[torch.Tensor]
+    <- $axis int # default -1, meaning last dim. no tuple supported.
+    <- $text_merger Optional[CompatibleTo[TestMerger]] # default this TestMerger
+    # inline
+    <- {
+        Shape propagation is the same like torch.sum.
+    }
+    <- $text_merger.pack
+    <- {
+        Merge axis of $input into a scalar tensor.
+    }
