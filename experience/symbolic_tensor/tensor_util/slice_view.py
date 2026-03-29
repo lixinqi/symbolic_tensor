@@ -111,6 +111,12 @@ def slice_view(
     for combo in itertools.product(*all_indices):
         selected_paths.append(_get_storage_path(input, list(combo)))
 
+    # Touch storage files that don't exist yet (e.g., from make_none_tensor)
+    for p in selected_paths:
+        if not p.exists():
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.touch()
+
     # Build nested list matching output shape
     if output_shape:
         nested_paths = _build_nested(selected_paths, output_shape)
@@ -270,5 +276,34 @@ if __name__ == "__main__":
         result = slice_view(t, [torch.tensor([], dtype=torch.long), slice(None)])
         run_test("Shape is [0, 2]", list(result.shape) == [0, 2], [0, 2], list(result.shape))
         run_test("numel is 0", result.numel() == 0)
+
+    # Test 10: slice_view on make_none_tensor, write through view updates original
+    print("Test 10: slice_view(make_none_tensor) + assign_tensor")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
+        from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
+
+        none_t = make_none_tensor([2, 3], tmpdir)
+        view = slice_view(none_t, [0, torch.tensor([1, 2])])
+        run_test("View shape is [2]", list(view.shape) == [2])
+
+        # Symlinks should exist (not dangling)
+        view_root = os.path.join(tmpdir, view.st_tensor_uid, "storage")
+        link0 = os.path.join(view_root, "0", "data")
+        run_test("View symlink exists", os.path.islink(link0))
+        target_real = os.path.realpath(link0)
+        run_test("Target file exists (touched)", os.path.isfile(target_real))
+
+        # Write through view via assign_tensor
+        src = mt(["hello", "world"], tmpdir)
+        assign_tensor(view, src)
+
+        # Verify original none_t storage was updated
+        orig_root = os.path.join(tmpdir, none_t.st_tensor_uid, "storage")
+        # flat index for (0,1) = 0*3+1 = 1, (0,2) = 0*3+2 = 2
+        with open(os.path.join(orig_root, "1", "data")) as f:
+            run_test("Original [0,1] = 'hello'", f.read() == "hello")
+        with open(os.path.join(orig_root, "2", "data")) as f:
+            run_test("Original [0,2] = 'world'", f.read() == "world")
 
     print("\nAll tests completed.")
