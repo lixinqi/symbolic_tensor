@@ -1,0 +1,13 @@
+assign_view :=
+    void
+    <- $lvalue Symbolic[torch.Tensor]
+    <- $rvalue Symboilc[torch.Tensor]
+    # inline
+    <- { assert ShapeEquals[$lvalue, $rvalue] }
+    <- $get_index (int <- $tensor Symboilc[torch.Tensor] <- $coordinates list[int] <- tensor.strides)
+    <- (list[$coordinates list[int]] <- get_coordinates_list <- $lvalue.shape)
+    <- { lvalue[coordinates] = rvalue[coordinates] }
+    <- ($lvalue_index int <- $get_index <- $lvalue <- $coordinates)
+    <- ($rvalue_index int <- $get_index <- $rvalue <- $coordinates)
+    <- { touch file_path_of(rvalue_index)/data if file_path_of(rvalue_index) not exists }
+    <- (void <- sym_link <- $target ($lvalue_index) <- $original ($rvalue_index) <- ...)
