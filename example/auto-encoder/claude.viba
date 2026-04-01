@@ -17,7 +17,7 @@ task_description :=
         <- $baseline_output
         <- $ground_truth_content_tensor)
 
-BaselineCodingAgentModel :=
+BaselineCodingAgentModel[torch.nn.Module] :=
     $baseline_output SymblicTensor[($total_batch_size,)]
     <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
     <- $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]]

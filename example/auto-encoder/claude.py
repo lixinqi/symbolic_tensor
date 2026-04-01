@@ -3,25 +3,26 @@
 Pipeline:
   PrepareDataSet -> BaselineCodingAgentModel -> get_edit_distance_ratio
 
-PrepareDataSet:
-  - Fetch all .py files from experience/
-  - Build (1, num_files) symbolic tensors for paths and contents
-  - Per batch: copy, mask a random range in one file, record ground truth
-  - Stack into (batch_size, num_files) tensors
-
-BaselineCodingAgentModel:
-  - Merge path+content per file via st_attention (all files attend to last column)
-  - coding_agent on merged (batch,) tensor
+BaselineCodingAgentModel[nn.Module]:
+  1. Stack path + content → (batch, num_files, 2)
+  2. merge(axis=-1) → (batch, num_files) — path+content merged per file
+  3. st_attention with prefix→last mask → (batch, num_files) — last col has all context
+  4. slice_tensor last col → (batch,)
+  5. coding_agent → (batch,) output
 """
 
 import os
-import copy
 import random
 import tempfile
 import torch
+import torch.nn as nn
 from typing import List, Tuple
 
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
+from experience.symbolic_tensor.tensor_util.slice_tensor import slice_tensor
+from experience.symbolic_tensor.function.st_stack import st_stack_forward
+from experience.symbolic_tensor.function.merge_forward import merge_forward
+from experience.symbolic_tensor.function.st_attention import st_attention
 from experience.symbolic_tensor.function.coding_agent import coding_agent
 from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio_impl
 
@@ -29,6 +30,9 @@ from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit
 kMaskedHint = "<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>"
 
 EXPERIENCE_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "experience")
+
+# Truncate non-masked file contents to this many lines to fit LLM context
+_MAX_CONTEXT_LINES = 15
 
 
 def _read_storage(tensor: torch.Tensor, flat_index: int) -> str:
@@ -39,17 +43,6 @@ def _read_storage(tensor: torch.Tensor, flat_index: int) -> str:
     )
     with open(path) as f:
         return f.read()
-
-
-def _write_storage(tensor: torch.Tensor, flat_index: int, content: str):
-    digits = list(str(flat_index))
-    path = os.path.join(
-        tensor.st_relative_to, tensor.st_tensor_uid,
-        "storage", os.path.join(*digits), "data",
-    )
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
 
 
 # ── PrepareDataSet ──
@@ -76,13 +69,11 @@ def _fetch_all_files(root_dir: str) -> List[Tuple[str, str]]:
 def _find_maskable_range(content: str) -> Tuple[int, int]:
     """Find the range of lines eligible for masking: skip comments and __main__ block."""
     lines = content.splitlines(keepends=True)
-    # Find __main__ block start
     main_start = len(lines)
     for i, line in enumerate(lines):
         if line.strip().startswith("if __name__"):
             main_start = i
             break
-    # Find first non-comment, non-blank, non-import line
     code_start = 0
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -98,7 +89,6 @@ def _get_random_mask_range(content: str, min_size: int = 20) -> Tuple[int, int, 
     code_start, main_start = _find_maskable_range(content)
     maskable_len = main_start - code_start
     if maskable_len < min_size:
-        # File too small — mask whatever we can
         mask_len = max(1, maskable_len)
         start = code_start
     else:
@@ -111,6 +101,14 @@ def _get_random_mask_range(content: str, min_size: int = 20) -> Tuple[int, int, 
 def _apply_mask(content: str, start: int, end: int) -> str:
     lines = content.splitlines(keepends=True)
     return "".join(lines[:start] + [kMaskedHint + "\n"] + lines[end:])
+
+
+def _truncate_content(content: str, max_lines: int) -> str:
+    """Truncate to first max_lines lines, append ellipsis if truncated."""
+    lines = content.splitlines(keepends=True)
+    if len(lines) <= max_lines:
+        return content
+    return "".join(lines[:max_lines]) + "...\n"
 
 
 def prepare_dataset(
@@ -127,13 +125,11 @@ def prepare_dataset(
         file_info: list of "file_path:start-end" for logging
     """
     files = _fetch_all_files(dataset_dir)
-    # Filter files with enough maskable code (>= 20 lines outside __main__)
     files = [(fp, fc) for fp, fc in files
              if _find_maskable_range(fc)[1] - _find_maskable_range(fc)[0] >= 20]
     num_files = len(files)
     assert num_files > 0, f"No sufficiently large .py files in {dataset_dir}"
 
-    # Base tensors: (1, num_files) — shared template
     file_paths = [fp for fp, _ in files]
     file_contents = [fc for _, fc in files]
 
@@ -149,8 +145,14 @@ def prepare_dataset(
         masked_content = _apply_mask(fc, start, end)
 
         batch_paths = list(file_paths)
-        batch_contents = list(file_contents)
-        batch_contents[file_idx] = masked_content
+        batch_contents = []
+        for f_i, fc_i in enumerate(file_contents):
+            if f_i == file_idx:
+                # Masked file: full content with mask
+                batch_contents.append(masked_content)
+            else:
+                # Non-masked: truncate to save tokens for st_attention merge
+                batch_contents.append(_truncate_content(fc_i, _MAX_CONTEXT_LINES))
 
         all_masked_paths.append(batch_paths)
         all_masked_contents.append(batch_contents)
@@ -166,73 +168,66 @@ def prepare_dataset(
 
 # ── BaselineCodingAgentModel ──
 
-def _build_prefix_to_last_mask(batch_size: int, num_files: int) -> torch.Tensor:
-    """Build attention mask: all files attend to last column (concat context → last).
+class BaselineCodingAgentModel(nn.Module):
+    """Baseline model from claude.viba.
 
-    Shape: (batch, num_files, num_files), dtype bool.
-    mask[b, i, j] = True means position i attends to position j.
-    Last column (j=num_files-1) attends to ALL positions (gathers full context).
-    Other columns attend only to themselves (identity).
+    Pipeline:
+      1. Stack (path, content) → (batch, num_files, 2)
+      2. merge(axis=-1) → (batch, num_files)
+      3. st_attention(prefix→last mask) → (batch, num_files)
+      4. slice last col → (batch,)
+      5. coding_agent → (batch,)
     """
-    mask = torch.eye(num_files, dtype=torch.bool).unsqueeze(0).expand(batch_size, -1, -1).clone()
-    # Last row attends to all columns
-    mask[:, num_files - 1, :] = True
-    return mask
 
+    def __init__(self, llm_method: str = "raw_llm_api"):
+        super().__init__()
+        self.llm_method = llm_method
 
-def baseline_coding_agent_model(
-    masked_path_tensor: torch.Tensor,
-    masked_content_tensor: torch.Tensor,
-    llm_method: str = "raw_llm_api",
-) -> torch.Tensor:
-    """BaselineCodingAgentModel from claude.viba (simplified for token limits).
+    def forward(
+        self,
+        masked_path_tensor: torch.Tensor,
+        masked_content_tensor: torch.Tensor,
+    ) -> torch.Tensor:
+        batch_size, num_files = masked_path_tensor.shape
+        tmpdir = masked_path_tensor.st_relative_to
 
-    Instead of st_attention over all files (exceeds context),
-    merge path+content per file, then provide only the masked file's
-    merged content plus a file listing as context.
-    """
-    batch_size, num_files = masked_path_tensor.shape
-    tmpdir = masked_path_tensor.st_relative_to
+        # Step 1: st_stack(path, content, dim=-1) → (batch, num_files, 2)
+        stacked_tensor = st_stack_forward(
+            [masked_path_tensor, masked_content_tensor], dim=-1,
+        )
+        # shape: (batch, num_files, 2)
 
-    # Build (batch,) input: for each batch, find the masked file and
-    # provide it with a file listing as context
-    input_data = []
-    for b in range(batch_size):
-        # Find the masked file (the one containing kMaskedHint)
-        file_listing = []
-        masked_file_content = None
-        masked_file_path = None
-        for f in range(num_files):
-            flat_idx = b * num_files + f
-            path_text = _read_storage(masked_path_tensor, flat_idx)
-            content_text = _read_storage(masked_content_tensor, flat_idx)
-            file_listing.append(path_text)
-            if kMaskedHint in content_text:
-                masked_file_content = content_text
-                masked_file_path = path_text
+        # Step 2: merge(axis=-1) → (batch, num_files)
+        # Merges path+content per file via TextMerger.pack
+        path_and_contents = merge_forward(stacked_tensor, axis=-1)
+        # shape: (batch, num_files)
 
-        context = f"# Repository files ({num_files} total):\n"
-        context += "\n".join(f"  {fp}" for fp in file_listing)
-        context += f"\n\n# Target file: {masked_file_path}\n"
-        context += f"# Lines masked with {kMaskedHint}\n\n"
-        context += masked_file_content
-        input_data.append(context)
+        # Step 3: st_attention with prefix→last mask
+        # Last position attends to all → gathers full context
+        attention_mask = torch.eye(num_files, dtype=torch.bool).unsqueeze(0).expand(batch_size, -1, -1).clone()
+        attention_mask[:, num_files - 1, :] = True
+        merged = st_attention(path_and_contents, attention_mask, return_view=True)
+        # shape: (batch, num_files) — last col has all files merged
 
-    input_tensor = make_tensor(input_data, tmpdir)
+        # Step 4: slice last column → (batch,)
+        last_col_idx = [slice(None), num_files - 1]
+        merged_context = slice_tensor(merged, last_col_idx)
 
-    task_prompt = (
-        "You are an auto-encoder for source code.\n"
-        f"The input contains a Python file with a masked region marked by {kMaskedHint}.\n"
-        "Your task: reconstruct ONLY the masked lines.\n"
-        "Output ONLY the missing source code lines. No explanations."
-    )
+        # Step 5: coding_agent
+        task_prompt = (
+            "You are an auto-encoder for source code.\n"
+            f"The input contains Python files from a repository packed with frame markers.\n"
+            f"One file has a masked region marked by {kMaskedHint}.\n"
+            "Your task: reconstruct ONLY the masked lines.\n"
+            "Output ONLY the missing source code lines. No explanations."
+        )
 
-    output = coding_agent(
-        input_tensor,
-        task_prompt=task_prompt,
-        llm_method=llm_method,
-    )
-    return output
+        output = coding_agent(
+            merged_context,
+            task_prompt=task_prompt,
+            llm_method=self.llm_method,
+        )
+        return output
 
 
 # ── Main ──
@@ -250,10 +245,9 @@ def run_experiment(total_batch_size: int = 16, llm_method: str = "raw_llm_api"):
         gt_preview = _read_storage(gt_tensor, i)[:60].replace("\n", "\\n")
         print(f"  [{i}] {info} -> {gt_preview}...")
 
-    print(f"\nRunning baseline (llm_method={llm_method})...")
-    output = baseline_coding_agent_model(
-        masked_path_tensor, masked_content_tensor, llm_method=llm_method,
-    )
+    print(f"\nRunning BaselineCodingAgentModel (llm_method={llm_method})...")
+    model = BaselineCodingAgentModel(llm_method=llm_method)
+    output = model(masked_path_tensor, masked_content_tensor)
 
     loss = get_edit_distance_ratio_impl(output, gt_tensor)
     print(f"\n{'='*50}")
