@@ -1,0 +1,12 @@
+todo_tensor_like :=
+    Symbolic[torch.Tensor]
+    <- $input Symbolic[torch.Tensor]
+    # inline
+    <- Import[make_tensor.viba]
+    <- (NestedList[$file_path] <- $input.st_file_paths)
+    <- ($opt_todo_content (str | None)
+        <- {
+            return None if $file_path not exists or containing empty file content.
+            return 'TODO' otherwise.
+        })
+    <- ($flatten_data NestedList[str] <- NestedList[$opt_todo_content])

@@ -1,0 +1,226 @@
+import os
+import torch
+from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
+from experience.symbolic_tensor.tensor_util.slice_view import slice_view
+from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
+from experience.symbolic_tensor.tensor_util.assign_view import assign_view
+def _get_raw_storage_path(tensor: torch.Tensor, coordinates):
+    """Get storage file path WITHOUT resolving symlinks."""
+    stride = tensor.stride()
+    flat_index = sum(c * s for c, s in zip(coordinates, stride))
+    digits = list(str(flat_index))
+    return os.path.join(
+        tensor.st_relative_to,
+        tensor.st_tensor_uid,
+        "storage",
+        os.path.join(*digits),
+        "data",
+    )
+def slice_attention_forward(
+    input: torch.Tensor,
+    attention_mask: torch.Tensor,
+    return_view: bool = False,
+) -> torch.Tensor:
+    """Scatter input elements into a 3D output according to attention mask.
+    For each active token (b, i), copies the attended input files at positions j
+    (where attention_mask[b, i, j] is True) into output[b, i, j].
+    Args:
+        input: Symbolic tensor of shape (batch, seq_len).
+        attention_mask: Bool tensor of shape (batch, seq_len, seq_len).
+        return_view: If True, use assign_view (symlinks) instead of assign_tensor (copies).
+    Returns:
+        Symbolic tensor of shape (batch, seq_len, seq_len).
+    """
+    assert input.dim() == 2, f"input must be 2D (batch, seq_len), got {input.dim()}D"
+    batch, seq_len = input.shape
+    assert attention_mask.shape == (batch, seq_len, seq_len), (
+        f"attention_mask shape {tuple(attention_mask.shape)} != expected ({batch}, {seq_len}, {seq_len})"
+    )
+    assert attention_mask.dtype == torch.bool, (
+        f"attention_mask dtype must be bool, got {attention_mask.dtype}"
+    )
+    final_output = make_none_tensor([batch, seq_len, seq_len], input.st_relative_to)
+    token_mask = attention_mask.any(dim=-1)
+    valid_token_points = list(torch.nonzero(token_mask, as_tuple=True))
+    if valid_token_points[0].numel() == 0:
+        return final_output
+    for batch_i, token_j in zip(
+        valid_token_points[0].tolist(), valid_token_points[1].tolist()
+    ):
+        prefix_indices = torch.nonzero(
+            attention_mask[batch_i, token_j, :], as_tuple=True
+        )[0]
+        token_input_view = slice_view(input, [batch_i, prefix_indices])
+        if return_view:
+            # Create symlinks directly in final_output's storage → input's storage
+            for prefix_k in prefix_indices.tolist():
+                fo_path = _get_raw_storage_path(
+                    final_output, [batch_i, token_j, prefix_k]
+                )
+                inp_path = os.path.realpath(
+                    _get_raw_storage_path(input, [batch_i, prefix_k])
+                )
+                os.makedirs(os.path.dirname(fo_path), exist_ok=True)
+                if os.path.islink(fo_path) or os.path.exists(fo_path):
+                    os.remove(fo_path)
+                rel = os.path.relpath(inp_path, os.path.dirname(fo_path))
+                os.symlink(rel, fo_path)
+        else:
+            token_output_view = slice_view(
+                final_output, [batch_i, token_j, prefix_indices]
+            )
+            assign_tensor(token_output_view, token_input_view)
+    final_output[attention_mask] = 1.0
+    return final_output
+if __name__ == "__main__":
+    import os
+    import tempfile
+    from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
+    print("Running slice_attention_forward tests...\n")
+    def run_test(name: str, condition: bool, expected=None, actual=None):
+        if condition:
+            print(f"  \u2713 {name}")
+        else:
+            print(f"  \u2717 {name}")
+            if expected is not None and actual is not None:
+                print(f"    expected: {expected}")
+                print(f"    actual:   {actual}")
+    def read_out(tensor, flat_index):
+        digits = list(str(flat_index))
+        path = os.path.join(
+            tensor.st_relative_to,
+            tensor.st_tensor_uid,
+            "storage",
+            os.path.join(*digits),
+            "data",
+        )
+        path = os.path.realpath(path)
+        if not os.path.isfile(path):
+            return None
+        with open(path) as f:
+            return f.read()
+    print("Test 1: Causal 1x3")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["a", "b", "c"]], tmpdir)
+        mask = torch.tril(torch.ones(1, 3, 3, dtype=torch.bool))
+        result = slice_attention_forward(inp, mask)
+        run_test("shape (1, 3, 3)", list(result.shape) == [1, 3, 3])
+        # Row 0: attends to [0] → output[0,0,0]='a'
+        run_test("[0,0,0]='a'", read_out(result, 0) == "a")
+        # Row 1: attends to [0,1] → output[0,1,0]='a', output[0,1,1]='b'
+        run_test("[0,1,0]='a'", read_out(result, 3) == "a")
+        run_test("[0,1,1]='b'", read_out(result, 4) == "b")
+        run_test("[0,2,0]='a'", read_out(result, 6) == "a")
+        run_test("[0,2,1]='b'", read_out(result, 7) == "b")
+        run_test("[0,2,2]='c'", read_out(result, 8) == "c")
+        run_test("[0,0,1] is zero", result[0, 0, 1].item() == 0.0)
+        run_test("[0,0,2] is zero", result[0, 0, 2].item() == 0.0)
+    print("Test 2: Partial mask")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["x", "y", "z"]], tmpdir)
+        mask = torch.zeros(1, 3, 3, dtype=torch.bool)
+        mask[0, 0, 0] = True
+        mask[0, 2, 0] = True
+        mask[0, 2, 2] = True
+        result = slice_attention_forward(inp, mask)
+        run_test("[0,0,0]='x'", read_out(result, 0) == "x")
+        run_test("[0,2,0]='x'", read_out(result, 6) == "x")
+        run_test("[0,2,2]='z'", read_out(result, 8) == "z")
+        run_test("row 1 all zero", (result[0, 1] == 0).all().item())
+    print("Test 3: Multi-batch 2x2")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["p", "q"], ["r", "s"]], tmpdir)
+        mask = torch.zeros(2, 2, 2, dtype=torch.bool)
+        mask[0, 1, 0] = True
+        mask[0, 1, 1] = True
+        mask[1, 0, 0] = True
+        result = slice_attention_forward(inp, mask)
+        run_test("shape (2, 2, 2)", list(result.shape) == [2, 2, 2])
+        run_test("b0[1,0]='p'", read_out(result, 2) == "p")
+        run_test("b0[1,1]='q'", read_out(result, 3) == "q")
+        run_test("b1[0,0]='r'", read_out(result, 4) == "r")
+        run_test("b0 row 0 zero", (result[0, 0] == 0).all().item())
+    print("Test 4: Empty mask")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["a", "b"]], tmpdir)
+        mask = torch.zeros(1, 2, 2, dtype=torch.bool)
+        result = slice_attention_forward(inp, mask)
+        run_test("all zero", (result == 0).all().item())
+    print("Test 5: Single token")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["only"]], tmpdir)
+        mask = torch.ones(1, 1, 1, dtype=torch.bool)
+        result = slice_attention_forward(inp, mask)
+        run_test("shape (1, 1, 1)", list(result.shape) == [1, 1, 1])
+        run_test("[0,0,0]='only'", read_out(result, 0) == "only")
+    print("Test 6: With causal mask + padding")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        from experience.symbolic_tensor.function.get_causal_attention_mask import (
+            get_causal_attention_mask,
+        )
+        inp = make_tensor([["hello", "world", "!"]], tmpdir)
+        token_mask = torch.tensor([[True, True, False]])
+        causal = get_causal_attention_mask(token_mask)
+        result = slice_attention_forward(inp, causal)
+        run_test("[0,0,0]='hello'", read_out(result, 0) == "hello")
+        run_test("[0,1,0]='hello'", read_out(result, 3) == "hello")
+        run_test("[0,1,1]='world'", read_out(result, 4) == "world")
+        run_test("row 2 all zero", (result[0, 2] == 0).all().item())
+    print("Test 7: Tensor values")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["a", "b"]], tmpdir)
+        mask = torch.tensor([[[True, False], [True, True]]])
+        result = slice_attention_forward(inp, mask)
+        run_test("attended positions are 1.0", result[mask].eq(1.0).all().item())
+        run_test("non-attended positions are 0.0", result[~mask].eq(0.0).all().item())
+    print("Test 8: Shape assertions")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["a", "b"]], tmpdir)
+        try:
+            slice_attention_forward(inp, torch.ones(1, 3, 3, dtype=torch.bool))
+            run_test("mask shape mismatch raises", False)
+        except AssertionError:
+            run_test("mask shape mismatch raises", True)
+        try:
+            inp1d = make_tensor(["a", "b"], tmpdir)
+            slice_attention_forward(inp1d, torch.ones(2, 2, dtype=torch.bool))
+            run_test("1D input raises", False)
+        except AssertionError:
+            run_test("1D input raises", True)
+        try:
+            slice_attention_forward(inp, torch.ones(1, 2, 2))
+            run_test("non-bool mask raises", False)
+        except AssertionError:
+            run_test("non-bool mask raises", True)
+    print("Test 9: return_view=True (symlinks)")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["alpha", "beta"]], tmpdir)
+        mask = torch.tensor([[[True, False], [True, True]]])
+        result = slice_attention_forward(inp, mask, return_view=True)
+        run_test("shape (1, 2, 2)", list(result.shape) == [1, 2, 2])
+        run_test("[0,0,0]='alpha'", read_out(result, 0) == "alpha")
+        run_test("[0,1,0]='alpha'", read_out(result, 2) == "alpha")
+        run_test("[0,1,1]='beta'", read_out(result, 3) == "beta")
+        run_test("attended are 1.0", result[mask].eq(1.0).all().item())
+        run_test("non-attended are 0.0", result[~mask].eq(0.0).all().item())
+    print("Test 10: return_view write-through")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["original"]], tmpdir)
+        mask = torch.ones(1, 1, 1, dtype=torch.bool)
+        result = slice_attention_forward(inp, mask, return_view=True)
+        run_test("reads 'original'", read_out(result, 0) == "original")
+        src_path = os.path.join(tmpdir, inp.st_tensor_uid, "storage", "0", "data")
+        with open(src_path, "w") as f:
+            f.write("modified")
+        run_test("reads 'modified' after source update", read_out(result, 0) == "modified")
+    print("Test 11: return_view=False (independent copy)")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        inp = make_tensor([["original"]], tmpdir)
+        mask = torch.ones(1, 1, 1, dtype=torch.bool)
+        result = slice_attention_forward(inp, mask, return_view=False)
+        run_test("reads 'original'", read_out(result, 0) == "original")
+        src_path = os.path.join(tmpdir, inp.st_tensor_uid, "storage", "0", "data")
+        with open(src_path, "w") as f:
+            f.write("modified")
+        run_test("still 'original' after source update", read_out(result, 0) == "original")
+    print("\nAll tests completed.")

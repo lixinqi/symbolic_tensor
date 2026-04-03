@@ -4,6 +4,7 @@ Viba DSL specification:
   kMaskedHint := "<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>"
 
   task_description := void <- $total_batch_size int <- $workspace_dir (str | None)
+    <- $dataset_dir <- { ./codebase/ }
     <- PrepareDataSet -> BaselineCodingAgentModel -> get_edit_distance
     <- { print $baseline_output.st_uid ground_truth_content_tensor.st_uid }
 
@@ -16,6 +17,7 @@ Viba DSL specification:
   PrepareDataSet :=
     ($masked_file_path_tensor, $masked_file_content_tensor, $ground_truth_content_tensor)
     <- $total_batch_size int <- $dataset_dir
+    <- { the range size should be in range (5, 10) }
 """
 
 import os
@@ -40,10 +42,8 @@ from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit
 
 kMaskedHint = "<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>"
 
-EXPERIENCE_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "experience")
-
-# Truncate non-masked file contents to this many lines to fit LLM context
-_MAX_CONTEXT_LINES = 15
+# <- ($dataset_dir <- { ./codebase/ })
+CODEBASE_DIR = os.path.join(os.path.dirname(__file__), "codebase")
 
 
 def _read_storage(tensor: torch.Tensor, flat_index: int) -> str:
@@ -81,7 +81,7 @@ def _fetch_all_files(root_dir: str) -> List[Tuple[str, str]]:
 
 
 def _find_maskable_range(content: str) -> Tuple[int, int]:
-    """Find the range of lines eligible for masking: skip comments and __main__ block."""
+    """Find the range of lines eligible for masking: skip import lines."""
     lines = content.splitlines(keepends=True)
     main_start = len(lines)
     for i, line in enumerate(lines):
@@ -97,17 +97,21 @@ def _find_maskable_range(content: str) -> Tuple[int, int]:
     return code_start, main_start
 
 
-def _get_random_mask_range(content: str, min_size: int = 20) -> Tuple[int, int, str]:
-    """Pick random line range to mask. Skips comments and __main__ block. Range >= min_size."""
+def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10) -> Tuple[int, int, str]:
+    """Pick random line range to mask. Range size in (min_size, max_size)."""
     lines = content.splitlines(keepends=True)
     code_start, main_start = _find_maskable_range(content)
     maskable_len = main_start - code_start
+
     if maskable_len < min_size:
         mask_len = max(1, maskable_len)
         start = code_start
     else:
-        mask_len = random.randint(min_size, min(maskable_len, max(min_size, maskable_len // 2)))
+        upper_bound = min(max_size, maskable_len)
+        lower_bound = min(min_size, upper_bound)
+        mask_len = random.randint(lower_bound, upper_bound)
         start = random.randint(code_start, main_start - mask_len)
+
     end = start + mask_len
     return start, end, "".join(lines[start:end])
 
@@ -116,14 +120,6 @@ def _apply_mask(content: str, start: int, end: int) -> str:
     """Replace lines [start, end) with kMaskedHint."""
     lines = content.splitlines(keepends=True)
     return "".join(lines[:start] + [kMaskedHint + "\n"] + lines[end:])
-
-
-def _truncate_content(content: str, max_lines: int) -> str:
-    """Truncate to first max_lines lines, append ellipsis if truncated."""
-    lines = content.splitlines(keepends=True)
-    if len(lines) <= max_lines:
-        return content
-    return "".join(lines[:max_lines]) + "...\n"
 
 
 def prepare_dataset(
@@ -139,10 +135,12 @@ def prepare_dataset(
         ground_truth_tensor:        Symbolic[Tensor(batch,)]
         file_info: list of "file_path:start-end" for logging
     """
-    # <- ($files list[($file_path str, $file_content)] <- { fetch all files in experience/ })
+    # <- ($files list[($file_path str, $file_content)] <- { fetch all files })
     files = _fetch_all_files(dataset_dir)
+
+    # Filter files with maskable range >= 5 lines
     files = [(fp, fc) for fp, fc in files
-             if _find_maskable_range(fc)[1] - _find_maskable_range(fc)[0] >= 20]
+             if _find_maskable_range(fc)[1] - _find_maskable_range(fc)[0] >= 5]
     num_files = len(files)
     assert num_files > 0, f"No sufficiently large .py files in {dataset_dir}"
 
@@ -156,11 +154,11 @@ def prepare_dataset(
     file_info = []
 
     # <- (list[($random_file_index int, $random_range_line_start int, $random_range_line_end int)]
-    #       <- { get multiple random ranges ... } <- $total_batch_size <- $num_files)
+    #       <- { get multiple random ranges, range size in (5, 10) } <- $total_batch_size <- $num_files)
     for _ in range(total_batch_size):
         file_idx = random.randint(0, num_files - 1)
         fp, fc = files[file_idx]
-        start, end, ground_truth = _get_random_mask_range(fc)
+        start, end, ground_truth = _get_random_mask_range(fc, min_size=5, max_size=10)
         masked_content = _apply_mask(fc, start, end)
 
         batch_paths = list(file_paths)
@@ -170,8 +168,8 @@ def prepare_dataset(
                 # Masked file: full content with mask
                 batch_contents.append(masked_content)
             else:
-                # Non-masked: truncate to save tokens for st_attention merge
-                batch_contents.append(_truncate_content(fc_i, _MAX_CONTEXT_LINES))
+                # Non-masked: full content
+                batch_contents.append(fc_i)
 
         all_masked_paths.append(batch_paths)
         all_masked_contents.append(batch_contents)
@@ -212,19 +210,15 @@ class BaselineCodingAgentModel(nn.Module):
     ) -> torch.Tensor:
         """Forward pass implementing the viba pipeline."""
         batch_size, num_files = masked_path_tensor.shape
-        tmpdir = masked_path_tensor.st_relative_to
 
         # Step 1: st_stack(path, content, dim=-1) → (batch, num_files, 2)
         # $path_and_contents <- Import[function/merge] <- { concat on last axis }
         stacked_tensor = st_stack_forward(
             [masked_path_tensor, masked_content_tensor], dim=-1,
         )
-        # shape: (batch, num_files, 2)
 
         # Step 2: merge(axis=-1) → (batch, num_files)
-        # Merges path+content per file via TextMerger.pack
         path_and_contents = merge_forward(stacked_tensor, axis=-1)
-        # shape: (batch, num_files)
 
         # Step 3: st_attention with prefix→last mask
         # $merged_path_and_contents <- { fetch last column }
@@ -232,7 +226,6 @@ class BaselineCodingAgentModel(nn.Module):
         attention_mask = torch.eye(num_files, dtype=torch.bool).unsqueeze(0).expand(batch_size, -1, -1).clone()
         attention_mask[:, num_files - 1, :] = True
         merged = st_attention(path_and_contents, attention_mask, return_view=True)
-        # shape: (batch, num_files) — last col has all files merged
 
         # Step 4: slice last column → (batch,)
         last_col_idx = [slice(None), num_files - 1]
@@ -265,6 +258,7 @@ class BaselineCodingAgentModel(nn.Module):
 def run_experiment(
     total_batch_size: int = 16,
     workspace_dir: Optional[str] = None,
+    dataset_dir: Optional[str] = None,
     llm_method: str = "raw_llm_api",
 ) -> float:
     """task_description from claude.viba.
@@ -272,13 +266,16 @@ def run_experiment(
     Args:
         total_batch_size: default 16
         workspace_dir: None means temp directory
+        dataset_dir: default is ./codebase/
         llm_method: LLM backend to use
 
     Returns:
         Mean edit distance ratio (lower is better)
     """
-    root_dir = os.path.realpath(EXPERIENCE_ROOT)
-    print(f"Dataset: {root_dir}")
+    # <- ($dataset_dir <- { ./codebase/ })
+    if dataset_dir is None:
+        dataset_dir = os.path.realpath(CODEBASE_DIR)
+    print(f"Dataset: {dataset_dir}")
 
     # <- $workspace_dir (str | None) # None means temp directory
     if workspace_dir is None:
@@ -289,7 +286,7 @@ def run_experiment(
 
     # <- PrepareDataSet
     masked_path_tensor, masked_content_tensor, gt_tensor, file_info = prepare_dataset(
-        total_batch_size, root_dir, tmpdir,
+        total_batch_size, dataset_dir, tmpdir,
     )
     print(f"Batch={total_batch_size}, files={masked_path_tensor.shape[1]}")
     for i, info in enumerate(file_info):

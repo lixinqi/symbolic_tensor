@@ -27,7 +27,7 @@ for i in range(num_iterations):
     print(f"\n{'='*50}")
     print(f"Run {i+1}/num_iterations")
     print(f"{'='*50}")
-    loss = mod.run_experiment(total_batch_size=16, workspace_dir="/workspace/code-auto-encoder/", llm_method="raw_llm_api")
+    loss = mod.run_experiment(total_batch_size=16, workspace_dir="/workspace/code-auto-encoder/", llm_method="coding_agent")
     losses.append(loss)
     print(f">>> Run {i+1} loss: {loss:.4f}")
 

@@ -1,0 +1,17 @@
+patch_tensor :=
+    $stats dict[str, int]
+    <- $lvalue Symbolic[torch.Tensor]
+    <- $rvalue Symbolic[torch.Tensor]
+    # inline
+    <- { assert ShapeEquals[$lvalue, $rvalue] }
+    <- ($stats <- {"applied": 0, "rejected": 0, "fuzzed": 0, "skipped": 0, "rej_files": 0})
+    <- $get_storage_path (str <- $tensor Symbolic[torch.Tensor] <- $coordinates list[int] <- tensor.strides)
+    <- (list[$coordinates list[int]] <- get_coordinates_list <- $lvalue.shape)
+    <- ($lvalue_path str <- $get_storage_path <- $lvalue <- $coordinates)
+    <- ($rvalue_path str <- $get_storage_path <- $rvalue <- $coordinates)
+    <- ($patch_content str <- { read $rvalue_path. skip if file missing or content empty or "TODO". })
+    <- ($lvalue_content str <- { read $lvalue_path })
+    <- (void <- {
+        if $lvalue_content empty: extract "+" lines from $patch_content skipping "+++" headers. write joined lines to $lvalue_path. mark applied.
+        otherwise: run patch --no-backup-if-mismatch --fuzz=3 on $lvalue_path with $patch_content. mark applied or rejected.
+    })

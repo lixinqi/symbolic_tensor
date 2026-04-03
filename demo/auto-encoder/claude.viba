@@ -7,7 +7,7 @@ task_description :=
     <- $total_batch_size int # default 16
     <- $workspace_dir (str | None) # None means temp directory
     #inline
-    <- { change to a git worktree of current Experience repo }
+    <- ($dataset_dir <- { ./codebase/ })
     <- { In most cases, operators on Symbolic[Tensor] should be symblic}
     <- (($file_path_tensor, $file_content_tensor, $ground_truth_content_tensor)
         <- PrepareDataSet)
@@ -72,7 +72,7 @@ PrepareDataSet :=
         <- {
             get multiple random ranges
             skip comments lines and code in __main__ block
-            the range size should be in range (20, 30)
+            the range size should be in range (5, 10)
         }
         <- $total_batch_size
         <- $num_files)

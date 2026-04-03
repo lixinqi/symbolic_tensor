@@ -1,0 +1,4 @@
+sparse_to_dense := torch.autograd.Function[
+    $forward Import[experience/symbolic_tensor/tensor_util/sparse_to_dense.viba],
+    $backward Import[experience/symbolic_tensor/tensor_util/dense_to_sparse.viba],
+]
