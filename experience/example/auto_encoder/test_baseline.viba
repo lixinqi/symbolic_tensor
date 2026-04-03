@@ -1,0 +1,21 @@
+
+
+kMaskedHint := "<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>"
+
+test_baseline :=
+    $baseline_loss list[float]
+    <- $total_batch_size int # default 16
+    <- $llm_method str # default "raw_llm_api"
+    <- $workspace_dir (str | None) # None means temp directory
+    #inline
+    <- ($dataset_dir <- { ./codebase/ })
+    <- { In most cases, operators on Symbolic[Tensor] should be symblic}
+    <- (($file_path_tensor, $file_content_tensor, $ground_truth_content_tensor)
+        <- Import[./parepare_dataset])
+    <- ($baseline_output SymblicTensor[($total_batch_size,)]
+        <- Import[./baseline_coding_agent_model])
+    <- ($baseline_loss
+        <- Import[function/get_edit_distance]
+        <- $baseline_output
+        <- $ground_truth_content_tensor)
+    <- { print $baseline_output.st_uid ground_truth_content_tensor.st_uid }

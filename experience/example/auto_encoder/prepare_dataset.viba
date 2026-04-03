@@ -1,0 +1,44 @@
+
+parepare_dataset := 
+    (
+        $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]],
+        $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]],
+        $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
+    )
+    <- $total_batch_size int
+    <- $dataset_dir
+    # inline
+    <- ($files list[($file_path str, $file_content)] <- {
+        fetch all files in experience/ 
+    })
+    <- {num_files = len(files)}
+    <- ((
+           $file_path_tensor Symbolic[Tensor(1, $num_files)],
+           $file_content_tensor Symbolic[Tensor(1, $num_files)]
+        )
+        <- unzip
+        <- $relative_to ($dataset_dir)
+        <- list[($file_path str, $file_content)])
+    <- (list[($random_file_index int, $random_range_line_start int, $random_range_line_end int)]
+        <- {
+            get multiple random ranges
+            skip comments lines and code in __main__ block
+            the range size should be in range (5, 10)
+        }
+        <- $total_batch_size
+        <- $num_files)
+    <- ((
+            $sole_masked_file_path_tensor Symbolic[Tensor(1, $num_files)], 
+            $sole_masked_file_content_tensor Symbolic[Tensor(1, $num_files)], 
+            $sole_ground_truth_content_tensor Symbolic[Tensor(1,)]
+        )
+        <- {
+            copy file $random_file_index
+            mask ($random_range_line_start, $random_range_line_end) with kMaskedHint
+        }
+        <- slice_view
+        <- $file_path_tensor
+        <- $file_content_tensor)
+    <- ($masked_file_path_tensor <- list[$sole_masked_file_path_tensor])
+    <- ($masked_file_content_tensor <- list[$sole_masked_file_content_tensor])
+    <- ($ground_truth_content_tensor <- list[$sole_ground_truth_content_tensor])

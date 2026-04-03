@@ -1,0 +1,4 @@
+sparse_to_dense := torch.autograd.Function[
+    $forward ...,
+    $backward ...,
+]

@@ -1,0 +1,32 @@
+
+BaselineCodingAgentModel[torch.nn.Module] :=
+    # forward
+    $baseline_output SymblicTensor[($total_batch_size,)]
+    <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]]
+    <- $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
+    # __init__
+    <- $llm_method str # default  "raw_llm_api"
+    #inline
+    <- (
+        $path_and_contents Symbolic[Tensor[($total_batch_size, $num_files)]]
+        <- Import[function/merge]
+        <- { concat on last axis }
+        <- $masked_file_path_tensor
+        <- $masked_file_content_tensor
+    )
+    <- (
+        $merged_path_and_contents Symbolic[Tensor[($total_batch_size,)]]
+        <- { fetch last column }
+        <- Import[function/st_attention]
+        <- { prepare special attention mask to concat prefixes to last column }
+        <- $path_and_contents
+    )
+    <- ($prompt <- { autoencoder prompt for baseline model })
+    <- (
+        $baseline_output 
+        <- Import[function/coding_agent.viba]
+        <- $merged_path_and_contents
+        <- $prompt
+        <- $llm_method
+    )

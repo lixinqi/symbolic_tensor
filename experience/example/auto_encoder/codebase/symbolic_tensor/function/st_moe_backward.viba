@@ -1,0 +1,473 @@
+
+# Prompt callables: each is a function that receives workspace dirs and returns a prompt string.
+# When None, the default is used.
+# Callable signature type alias for backward prompts:
+#   $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_grad_output_view str <- $const_input_view str
+#          <- $const_output_view str <- $const_experience_view str <- $mutable_dir str)
+
+# torch.autograd.Function backward signature:
+#   backward(ctx, grad_output, grad_selected_indexes=None)
+#     -> (grad_input, grad_experience, None*6)
+# ctx saves: input, output, experience, selected_experience_qkv_indexes_list,
+#            grad_input_prompt, grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk
+
+default_prompt_for_grad_input :=
+    $prompt str
+    <- $task_prompt str
+    <- $workspace_dir str
+    <- $const_grad_output_view str
+    <- $const_input_view str
+    <- $const_output_view str
+    <- $const_experience_view str
+    <- $mutable_grad_input_dir str
+    # inline
+    <- ($prompt <- '''
+        You are a symbolic gradient calculator for backward pass.
+
+        f"{task_prompt}"
+
+        During forward pass, the input was translated to output using experience entries.
+        Now given the output gradient (how output should change), compute gradients for
+        input and experience.
+
+        Context (read-only):
+        - Output gradient (text diff): f"{const_grad_output_view}"
+        - Original input: f"{const_input_view}"
+        - Original output: f"{const_output_view}"
+        - Experience entries used during forward: f"{const_experience_view}"
+          where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
+        - Each line in query files only contains one summary key word for current experience.
+          which used for calculate similarity between inputs and experience.
+        - Key files contain source domain semantics.
+        - Value files contain target domain semantics.
+
+        Compute and write:
+        1. Input gradient in f"{mutable_grad_input_dir}":
+           How should the input text change to improve the output?
+        2. File f"{mutable_grad_input_dir}/<xxx>/data" must be a better version of f"{const_input_view}/<xxx>/data"
+
+        Replace all TODO with source semantic files.
+    ''')
+
+default_prompt_for_grad_exp_key :=
+    $prompt str
+    <- $task_prompt str
+    <- $workspace_dir str
+    <- $const_grad_output_view str
+    <- $const_input_view str
+    <- $const_output_view str
+    <- $const_experience_view str
+    <- $mutable_grad_experience_dir str
+    # inline
+    <- ($prompt <- '''
+        You are a symbolic gradient calculator for backward pass.
+
+        f"{task_prompt}"
+
+        During forward pass, the input was translated to output using experience entries.
+        Now compute better experience entries to improve future translations.
+
+        Context (read-only):
+        - Original input: f"{const_input_view}"
+        - Original output: f"{const_output_view}"
+        - Output gradient (how output should change, in unified diff format — DO NOT copy this diff text): f"{const_grad_output_view}"
+        - Experience entries used during forward: f"{const_experience_view}"
+          where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
+        - Key files contain source domain content (same domain as input).
+        - Value files contain target domain content (same domain as output).
+
+        IMPORTANT: You must write actual content, NOT diff/patch text.
+
+        Compute and write:
+        1. Experience key in f"{mutable_grad_experience_dir}":
+           Write improved experience entries that would help produce better translations.
+        2. File f"{mutable_grad_experience_dir}/<xxx>/data" must be a better version of f"{const_experience_view}/<xxx>/data"
+
+        Replace all TODO with experience key semantic files.
+
+        You are writing KEY files.
+        Key content must be in the SAME language/format as the INPUT files (source domain).
+    ''')
+
+default_prompt_for_grad_exp_value :=
+    $prompt str
+    <- $task_prompt str
+    <- $workspace_dir str
+    <- $const_grad_output_view str
+    <- $const_input_view str
+    <- $const_output_view str
+    <- $const_experience_view str
+    <- $mutable_grad_experience_dir str
+    # inline
+    <- ($prompt <- '''
+        You are a symbolic gradient calculator for backward pass.
+
+        f"{task_prompt}"
+
+        During forward pass, the input was translated to output using experience entries.
+        Now compute better experience entries to improve future translations.
+
+        Context (read-only):
+        - Original input: f"{const_input_view}"
+        - Original output: f"{const_output_view}"
+        - Output gradient (how output should change, in unified diff format — DO NOT copy this diff text): f"{const_grad_output_view}"
+        - Experience entries used during forward: f"{const_experience_view}"
+          where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
+        - Key files contain source domain content (same domain as input).
+        - Value files contain target domain content (same domain as output).
+
+        IMPORTANT: You must write actual content, NOT diff/patch text.
+
+        Compute and write:
+        1. Experience value in f"{mutable_grad_experience_dir}":
+           Write improved experience entries that would help produce better translations.
+        2. File f"{mutable_grad_experience_dir}/<xxx>/data" must be a better version of f"{const_experience_view}/<xxx>/data"
+
+        Replace all TODO with experience value semantic files.
+
+        You are writing VALUE files.
+        Value content must be in the SAME language/format as the OUTPUT files (target domain).
+    ''')
+
+BackwardPromptCallable := $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_grad_output_view str <- $const_input_view str <- $const_output_view str <- $const_experience_view str <- $mutable_dir str)
+
+# Cold-start helper: always creates "TODO" strings regardless of file content.
+# Unlike todo_tensor_like which returns None for empty files (zeroing coefficients),
+# this ensures gradient entries are always populated.
+_force_todo_nested :=
+    $result (str | NestedList[str])
+    <- $size torch.Size
+    # inline
+    <- ($result (str | NestedList[str]) <- { return "TODO" if $size is scalar. return list of _force_todo_nested($size[1:]) repeated $size[0] times otherwise. })
+
+# Sum type: detect whether input element is plain text or merged frames
+# (from st_attention output via TextMerger.pack).
+# Plain: single content string — use current single-LLM-call logic.
+# Merged: packed frames — unpack, per-frame LLM calls, repack, then diff.
+InputContentType := 
+    Oneof
+    | $content Plain[str] 
+    | $frames Merged[list[Frame]]
+
+Frame := ($index int, $coefficient float, $content str)
+
+# Per-element task context: carries data needed for post-TaskHandler refinement.
+# PlainCtx: no extra work — LLM already wrote to scalar_grad_input_value.
+# MergedCtx: needs frame metadata + per-frame grad tensors to repack.
+ElementTaskCtx :=
+    Oneof
+    | PlainCtx
+    | $merge_ctx MergedCtx[($frames list[Frame], $frame_grad_values list[Symbolic[torch.Tensor]])]
+
+st_moe_backward :=
+    ($grad_input Symbolic[torch.Tensor], $grad_experience ExperienceTensor[Symbolic[torch.Tensor]])
+    <- $grad_output Symbolic[torch.Tensor]
+    # saved from forward ctx
+    <- $input Symbolic[torch.Tensor]
+    <- $output Symbolic[torch.Tensor]
+    <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $selected_experience_qkv_indexes_list NestedList[list[torch.Tensor[int]]]
+    <- $grad_input_prompt BackwardPromptCallable # default None
+    <- $grad_exp_key_prompt BackwardPromptCallable # default None
+    <- $grad_exp_value_prompt BackwardPromptCallable # default None
+    <- $task_prompt str # default ""
+    <- $topk int # default 16
+    <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
+    <- $llm_env dict[str, str] # default None
+    <- ($grad_input <- st_moe_backward_grad_input <- ... <- If[$input.requires_grad] <- Else[None])
+    <- st_moe_backward_grad_experience
+
+st_moe_backward_grad_input :=
+    $grad_input Symbolic[torch.Tensor]
+    <- $grad_output Symbolic[torch.Tensor]
+    # saved from forward ctx
+    <- $input Symbolic[torch.Tensor]
+    <- $output Symbolic[torch.Tensor]
+    <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $selected_experience_qkv_indexes_list NestedList[list[torch.Tensor[int]]]
+    <- $grad_input_prompt BackwardPromptCallable # default None
+    <- $task_prompt str # default ""
+    <- $topk int # default 16
+    <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
+    <- $llm_env dict[str, str] # default None
+    <- $text_merger Optional[CompatibleTo[TextMerger]] # default None, uses TextMerger
+    # inline
+    <- Notice[HasSameShape[NestedList[int], $input]]
+    <- ($grad_input
+        <- Import[experience/symbolic_tensor/tensor_util/todo_tensor_like.viba]
+        <- $input
+        <- If[$input.requires_grad]
+        <- Else[None])
+    <- $slice_view Import[experience/symbolic_tensor/tensor_util/slice_view.viba]
+    <- $slice_tensor Import[experience/symbolic_tensor/tensor_util/slice_tensor.viba]
+    <- $dump_view Import[experience/symbolic_tensor/tensor_util/dump_view.viba]
+
+    # ── Numeric channel (coefficient) ──
+    # grad_input coefficient: pass-through copy from grad_output
+    <- ($grad_input.data <- $grad_output.data <- If[$input.requires_grad])
+    <- (NestedList[$scalar_grad_output_coeff float] <- $grad_output.data)
+    <- (NestedList[$select_experience_query_indexes list[torch.Tensor[int]]]
+        <- $selected_experience_qkv_indexes_list)
+    <- ($select_experience_indexes <- replace_last_tensor_with_full_slice <- $select_experience_query_indexes)
+
+    # ── Detect input content type ──
+    # When st_attention precedes st_moe, input elements are merged content
+    # (packed frames via TextMerger). Asking LLM to generate grad for the
+    # entire merged blob is impractical. Instead, detect and handle per-frame.
+    <- $kFrameMarker Import[experience/fs_util/text_merger.viba]
+    <- ($merger <- ($text_merger | TextMerger))
+    <- ($scalar_input_content str <- read_storage <- $input)
+    <- ($input_content_type InputContentType <- detect <- $scalar_input_content <- $kFrameMarker)
+
+    # ── Symbolic channel (text diff) ──
+    # per scalar element: slice all relevant tensors
+    <- (NestedList[$scalar_grad_output Symbolic[torch.Tensor]] <- NestedList[$slice_view] <- $grad_output)
+    <- (NestedList[$scalar_input Symbolic[torch.Tensor]] <- NestedList[$slice_view] <- $input)
+    <- (NestedList[$scalar_output Symbolic[torch.Tensor]] <- NestedList[$slice_view] <- $output)
+    <- (NestedList[$scalar_grad_input_view Symbolic[torch.Tensor]] <- NestedList[$slice_view] <- $grad_input <- If[$input.requires_grad])
+    <- (NestedList[$scalar_grad_input_value Symbolic[torch.Tensor]] <- NestedList[$slice_tensor] <- $grad_input <- If[$input.requires_grad])
+    <- ($experience_sliced_view ExperienceTensor[Symbolic[torch.Tensor]]
+        <- $slice_view
+        <- $experience
+        <- $select_experience_indexes)
+    <- ($workspace_dir <- TemporaryDirectory)
+    # dump const views (read-only context for LLM)
+    <- (void <- $dump_view <- $scalar_grad_output <- f"{workspace_dir}/const_grad_output_view")
+    <- (void <- $dump_view <- $scalar_input <- f"{workspace_dir}/const_input_view")
+    <- (void <- $dump_view <- $scalar_output <- f"{workspace_dir}/const_output_view")
+    <- (void <- $dump_view <- $experience_sliced_view <- f"{workspace_dir}/const_experience_view")
+
+    # ── Per-element mixed task construction + context ──
+    # Each element is either Plain (1 AgentTask) or Merged (list[AgentTask] for frames).
+    # Context tracks what's needed for post-TaskHandler refinement.
+
+    <- (NestedList[($sole_element_task AgentTask | $element_tasks list[AgentTask],
+                   $task_ctx ElementTaskCtx)]
+        <- { match $input_content_type }
+
+        # Case Plain: single AgentTask, no post-processing needed
+        <- ({ case Plain $content }
+            <- (void <- $dump_view <- $scalar_grad_input_value <- f"{workspace_dir}/mutable_grad_input_dir" <- If[$input.requires_grad])
+            <- ($prompt <- ($grad_input_prompt | default_prompt_for_grad_input)
+                <- $task_prompt
+                <- $workspace_dir
+                <- f"{workspace_dir}/const_grad_output_view"
+                <- f"{workspace_dir}/const_input_view"
+                <- f"{workspace_dir}/const_output_view"
+                <- f"{workspace_dir}/const_experience_view"
+                <- f"{workspace_dir}/mutable_grad_input_dir")
+            <- ($sole_element_task AgentTask <- $workspace_dir <- "mutable_grad_input_dir" <- $prompt)
+            <- ($task_ctx <- PlainCtx))
+
+        # Case Merged: list[AgentTask] — one per frame
+        <- ({ case Merged $frames }
+            <- (list[$frame_workspace_dir] <- list[TemporaryDirectory])
+            <- (list[$frame_content str] <- $frames.content)
+            <- (list[$frame_input_tensor Symbolic[torch.Tensor]] <- list[make_tensor] <- $frame_content)
+            <- (list[$frame_grad_value Symbolic[torch.Tensor]] <- list[todo_tensor_like] <- $frame_input_tensor)
+            # dump per-frame const + mutable
+            <- (void <- list[$dump_view] <- $frame_input_tensor <- f"{frame_workspace_dir}/const_frame_input")
+            <- (void <- $dump_view <- $scalar_grad_output <- f"{frame_workspace_dir}/const_grad_output_view")
+            <- (void <- $dump_view <- $experience_sliced_view <- f"{frame_workspace_dir}/const_experience_view")
+            <- (void <- list[$dump_view] <- $frame_grad_value <- f"{frame_workspace_dir}/mutable_frame_grad")
+            <- ($frame_prompt <- ($grad_input_prompt | default_prompt_for_grad_input_frame)
+                <- $task_prompt
+                <- $frame_workspace_dir
+                <- f"{frame_workspace_dir}/const_grad_output_view"
+                <- f"{frame_workspace_dir}/const_frame_input"
+                <- f"{workspace_dir}/const_output_view"
+                <- f"{frame_workspace_dir}/const_experience_view"
+                <- f"{frame_workspace_dir}/mutable_frame_grad")
+            <- ($element_tasks list[AgentTask] <- list[AgentTask] <- $frame_workspace_dir <- "mutable_frame_grad" <- $frame_prompt)
+            <- ($task_ctx <- MergedCtx <- ($frames, list[$frame_grad_value]))))
+
+    # ── Single TaskHandler call with all tasks ──
+    <- ($all_tasks list[AgentTask] <- flatten <- NestedList[$sole_element_task AgentTask | $element_tasks list[AgentTask]])
+    <- (void <- Import[experience/llm_client/task_handler.viba] <- $all_tasks <- $llm_method <- $llm_env)
+
+    # ── Per-element refinement: only Merged needs repack into scalar_grad_input_value ──
+    <- (NestedList[void]
+        <- { match $task_ctx }
+        <- ({ case PlainCtx } <- void)
+        <- ({ case MergedCtx ($frames, $frame_grad_values) }
+            <- (list[$improved_frame_content str] <- list[read_storage] <- $frame_grad_values <- $storage_flat_index 0)
+            <- ($improved_frames list[Frame]
+                <- zip <- $frames.index <- $coefficient 1.0 <- $improved_frame_content)
+            <- ($improved_merged str <- $merger.pack <- $improved_frames)
+            <- (void <- write_storage <- $scalar_grad_input_value <- $storage_flat_index 0 <- $improved_merged)))
+
+    # ── Final stage: uniform diff + assign for all elements ──
+    <- (NestedList[$diff] <- $scalar_input.st_get_diff <- $scalar_grad_input_value)
+    <- (NestedList[void] <- $scalar_grad_input_view.st_assign <- $diff)
+
+default_prompt_for_grad_input_frame :=
+    $prompt str
+    <- $task_prompt str
+    <- $workspace_dir str
+    <- $const_grad_output_view str
+    <- $const_frame_input str
+    <- $const_output_view str
+    <- $const_experience_view str
+    <- $mutable_frame_grad str
+    # inline
+    <- ($prompt <- '''
+        You are a symbolic gradient calculator for backward pass.
+
+        f"{task_prompt}"
+
+        During forward pass, this input FRAME (one piece of a larger merged input)
+        was translated to output using experience entries.
+        Now given the output gradient (how output should change), compute gradient
+        for this single frame.
+
+        Context (read-only):
+        - Output gradient (text diff): f"{const_grad_output_view}"
+        - This frame's original content: f"{const_frame_input}"
+        - Original output: f"{const_output_view}"
+        - Experience entries used: f"{const_experience_view}"
+
+        Compute and write:
+        1. Improved frame content in f"{mutable_frame_grad}":
+           How should this frame's text change to improve the output?
+        2. File f"{mutable_frame_grad}/<xxx>/data" must be a better version of f"{const_frame_input}/<xxx>/data"
+
+        Replace all TODO with improved source text for this frame only.
+    ''')
+
+st_moe_backward_grad_experience :=
+    $grad_experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $grad_output Symbolic[torch.Tensor]
+    # saved from forward ctx
+    <- $input Symbolic[torch.Tensor]
+    <- $output Symbolic[torch.Tensor]
+    <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- NestedList[select_experience_query_indexes list[torch.Tensor[int]]]
+    <- $grad_exp_key_prompt BackwardPromptCallable # default None
+    <- $grad_exp_value_prompt BackwardPromptCallable # default None
+    <- $task_prompt str # default ""
+    <- $topk int # default 16
+    <- $llm_method ("coding_agent" | "raw_llm_api") # default raw_llm_api
+    <- $llm_env dict[str, str] # default None
+    # inline
+    <- ($none_experience_indexes list[torch.Tensor[int]]
+        <- select_random_indexes_with_none_experience_indexes # only add queries, i.e. last dim == 0
+        <- $topk
+        <- $experience)
+    <- ($padded_select_indexes list[torch.Tensor[int]]
+        <- select_prefix_topk
+        <- $topk
+        <- shuffle
+        <- merge_list
+        <- $select_experience_query_indexes
+        <- $none_experience_indexes)
+    <- ($selected_experience_qkv_indexes_list <- NestedList[$padded_select_indexes])
+    <- (list[$sole_grad_experience_point list[torch.Tensor[Index]],
+             $multi_grad_output_points list[torch.Tensor[Index]]]
+        <- Import[experience/sparse_util/transpose_pairs_coordinates.viba]
+        <- Import[experience/sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.viba]
+        <- $selected_experience_qkv_indexes_list)
+    # Two gradient types: key and value, each with its own prompt callable
+    <- ($grad_exp_types list[(slice, BackwardPromptCallable)]
+        <- [(slice(1, 2, None), $grad_exp_key_prompt | default_prompt_for_grad_exp_key),
+            (slice(2, 3, None), $grad_exp_value_prompt | default_prompt_for_grad_exp_value)])
+    <- ($last_dim_slice, $prompt_fn <- $grad_exp_types)
+    <- ($select_experience_indexes <- replace_last_tensor_with_slice <- $last_dim_slice <- $sole_grad_experience_point)
+
+    <- ($grad_experience
+        <- Import[experience/symbolic_tensor/tensor_util/empty_tensor_like.viba]
+        <- $experience)
+
+    <- $slice_view Import[experience/symbolic_tensor/tensor_util/slice_view.viba]
+    <- $slice_tensor Import[experience/symbolic_tensor/tensor_util/slice_tensor.viba]
+    <- $dump_view Import[experience/symbolic_tensor/tensor_util/dump_view.viba]
+
+    # ── Numeric channel (coefficient) ──
+    <- ($grad_experience.data <- zeros_like <- $experience.data)
+    <- ($grad_experience.data[select_experience_indexes] <- 1.0)
+
+    # ── Symbolic channel (text diff) ──
+    # per scalar element: slice all relevant tensors
+    <- ($grad_output_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $grad_output <- $multi_grad_output_points)
+    <- ($input_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $input <- $multi_grad_output_points)
+    <- ($output_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $output <- $multi_grad_output_points)
+    # slice experience (const) and grad_experience (mutable) with same padded indexes
+    <- ($experience_sliced_view ExperienceTensor[Symbolic[torch.Tensor]]
+        <- $slice_view
+        <- $experience
+        <- $select_experience_indexes)
+    <- ($grad_experience_sliced_view ExperienceTensor[Symbolic[torch.Tensor]]
+        <- $slice_view
+        <- $grad_experience
+        <- $select_experience_indexes)
+    # Cold-start fix: use _force_todo_nested + make_tensor + assign_tensor
+    # instead of todo_tensor_like, which returns None for empty files and
+    # zeros out the coefficient.
+    <- ($todo_data NestedList[str]
+        <- _force_todo_nested
+        <- $grad_experience_sliced_view.size())
+    <- ($todo_tensor Symbolic[torch.Tensor]
+        <- Import[experience/symbolic_tensor/tensor_util/make_tensor.viba]
+        <- $todo_data
+        <- $grad_experience.st_relative_to)
+    <- (void
+        <- Import[experience/symbolic_tensor/tensor_util/assign_tensor.viba]
+        <- $grad_experience_sliced_view
+        <- $todo_tensor)
+    # Restore coefficient to 1.0 (assign_tensor may have overwritten it)
+    <- ($grad_experience.data[select_experience_indexes] <- 1.0)
+    <- ($grad_experience_sliced_value ExperienceTensor[Symbolic[torch.Tensor]]
+        <- $slice_tensor
+        <- $grad_experience
+        <- $select_experience_indexes)
+    <- ($workspace_dir <- TemporaryDirectory)
+    # dump const views (read-only context for LLM)
+    <- (void <- $dump_view <- $grad_output_sliced_view <- f"{workspace_dir}/const_grad_output_view")
+    <- (void <- $dump_view <- $input_sliced_view <- f"{workspace_dir}/const_input_view")
+    <- (void <- $dump_view <- $output_sliced_view <- f"{workspace_dir}/const_output_view")
+    <- (void <- $dump_view <- $experience_sliced_view <- f"{workspace_dir}/const_experience_view")
+    # dump mutable views (LLM writes gradients here)
+    <- (void <- $dump_view <- $grad_experience_sliced_value <- f"{workspace_dir}/mutable_grad_experience_dir")
+    <- ($prompt <- $prompt_fn
+        <- $task_prompt
+        <- $workspace_dir
+        <- f"{workspace_dir}/const_grad_output_view"
+        <- f"{workspace_dir}/const_input_view"
+        <- f"{workspace_dir}/const_output_view"
+        <- f"{workspace_dir}/const_experience_view"
+        <- f"{workspace_dir}/mutable_grad_experience_dir")
+    <- ($agent_task AgentTask <- $workspace_dir <- "mutable_grad_experience_dir" <- $prompt)
+    <- ($all_tasks <- list[$agent_task])
+    <- (void <- Import[experience/llm_client/task_handler.viba] <- $all_tasks <- $llm_method <- $llm_env)
+    <- ($diff
+        <- $experience_sliced_view.st_get_diff
+        <- $grad_experience_sliced_value)
+    <- (void <- $grad_experience_sliced_view.st_assign <- $diff)
+
+AgentTask := Import[experience/llm_client/agent_task.viba]
+
+
+# be carefull there claude code instance called in coding_agent_query.
+# make sure env var CLAUDECODE unset.
+#
+# CRITICAL: LLM Edit tool breaks symlink chains. slice_view creates
+# tensor -> symlink -> parent_tensor. LLM Edit resolves first hop and
+# replaces symlink with regular file. Pre-resolve with os.path.realpath
+# BEFORE LLM runs to get parent's real storage path.
+#
+# Numeric channel summary:
+#   grad_input.data = grad_output.data  (pass-through)
+#   grad_experience.data = zeros, then scatter-add grad_output scalar coefficients
+#     to each selected experience entry. An experience entry used by N input elements
+#     accumulates N contributions.
+#
+# Symbolic channel summary:
+#   grad_input text diffs: LLM infers how input should change given output diff
+#   grad_experience text diffs: LLM infers how experience entries should change
+#   both written through workspace views, then copied back to tensor storage.
+#
+# pad_indexes_to_topk_with_none_experience_indexes ensures consistent topk shape
+# when experience has fewer entries than topk.
+
+# add tests in __main__ block
+# test raw_llm_api only
+# test multi-batch

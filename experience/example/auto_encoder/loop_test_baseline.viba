@@ -1,0 +1,5 @@
+loop_test_baseline :=
+    void
+    <- $num_iterations ParsedCmdArg[int] # default 1
+    <- $llm_method ParsedCmdOption[str] # default "raw_llm_api"
+    <- Import[./test_baseline]

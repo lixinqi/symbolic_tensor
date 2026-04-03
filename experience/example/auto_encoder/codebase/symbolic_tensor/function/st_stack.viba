@@ -1,0 +1,68 @@
+
+# st_stack: stack multiple symbolic tensors along a new axis (like torch.stack).
+# Inverse of merge: merge reduces an axis, st_stack inserts one.
+# Autograd supported via per-input diff propagation.
+
+st_stack_forward :=
+    $output Symbolic[Tensor[$output_shape]]
+    <- $tensors list[Symbolic[Tensor[$shape]]]
+    <- $dim int # default 0. new axis inserted at this position.
+    # inline
+    <- { assert all tensors same shape. normalize negative $dim. }
+    <- ($n int <- len($tensors))
+    <- ($shape list[int] <- $tensors[0].shape)
+    <- ($output_shape list[int] <- $shape[:$dim] + [$n] + $shape[$dim:])
+    <- ($output Symbolic[Tensor[$output_shape]] <- make_none_tensor <- $output_shape)
+    <- (void <- {
+        for each $in_coords in input shape:
+            for each $k in range($n):
+                out_coords = in_coords[:dim] + [k] + in_coords[dim:].
+                read content from $tensors[$k] at $in_coords.
+                write content to $output at $out_coords.
+                copy coefficient.
+    })
+
+st_stack_backward :=
+    $grad_inputs list[Symbolic[Tensor[$shape]] | None]
+    <- $grad_output Symbolic[Tensor[$output_shape]]
+    <- $inputs list[Symbolic[Tensor[$shape]]]
+    <- $output Symbolic[Tensor[$output_shape]]
+    <- $dim int
+    # inline
+    <- ($better_version_output Symbolic[Tensor[$output_shape]]
+        <- Import[tensor_util/st_patched]
+        <- $output
+        <- $grad_output)
+    <- ($grad_inputs list[Symbolic[Tensor[$shape]] | None] <- {
+        for each input $k in $inputs:
+            if not requires_grad: append None. continue.
+            grad_input_k = todo_tensor_like($inputs[$k]).
+            for each $in_coords in input shape:
+                out_coords = in_coords[:dim] + [k] + in_coords[dim:].
+                diff = get_diff_tensor(output[out_coords], better_version[out_coords]).
+                assign diff to grad_input_k[in_coords].
+                copy improved coefficient.
+            append grad_input_k.
+    })
+
+StStack[torch.autograd.Function] :=
+    <- Import[symbolic_grad_registry]
+    forward :=
+        $output Symbolic[Tensor[$output_shape]]
+        <- $ctx
+        <- $dim int
+        <- $tensors list[Symbolic[Tensor[$shape]]]
+        # inline
+        <- ($output <- st_stack_forward <- $tensors <- $dim)
+        <- (void <- { save $tensors, $output, $dim to ctx. preserve st_* attrs. })
+
+    backward :=
+        $grad_inputs tuple[Symbolic[Tensor[$shape]] | None, ...]
+        <- $ctx
+        <- $grad_output Symbolic[Tensor[$output_shape]]
+        # inline
+        <- ($grad_output <- { pop symbolic_grad_registry for $output.st_tensor_uid. fallback to todo_tensor_like. })
+        <- ($grad_inputs <- st_stack_backward <- $grad_output <- $inputs <- $output <- $dim)
+        <- (void <- { register symbolic_grad for each input that got grad. })
+
+st_stack := StStack.apply

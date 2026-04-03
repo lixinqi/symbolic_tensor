@@ -1,0 +1,72 @@
+
+TextMerger := Import[experience/fs_util/text_merger.viba]
+
+# merge_backward: inverse of merge_forward
+#
+# Forward packed N elements along axis into one merged string via TextMerger.pack.
+# Backward receives grad_output (unified diff of the merged output).
+#
+# Algorithm:
+#   1. Apply grad_output diff to output -> better_version_output (via st_patch)
+#   2. Unpack both original output and better_version_output
+#   3. Assert same schema: same frame count and same indices
+#   4. For each frame k: write improved content to temp tensor,
+#      compute diff vs original input element via st_get_diff,
+#      st_assign diff to grad_input element — forces backward diff format
+#
+# Numeric channel: per-frame coefficient from unpacked improved frames
+
+merge_backward :=
+    $grad_input Symbolic[torch.Tensor]
+    <- $grad_output Symbolic[torch.Tensor]
+    # saved from forward ctx
+    <- $input Symbolic[torch.Tensor]
+    <- $output Symbolic[torch.Tensor] # contains TextMerger.pack format
+    <- $axis int # default -1
+    <- $text_merger Optional[CompatibleTo[TextMerger]] # default TextMerger
+    # inline
+    <- ($grad_input
+        <- Import[experience/symbolic_tensor/tensor_util/todo_tensor_like.viba]
+        <- $input
+        <- If[$input.requires_grad]
+        <- Else[None])
+
+    # ── Numeric channel ──
+    # Coefficients are set per-frame below (step 4) from unpacked improved frames.
+    # Initialize to zero; each frame overwrites its position.
+    <- ($grad_input.data <- { torch.zeros_like(input.data) } <- If[$input.requires_grad])
+
+    # ── Symbolic channel ──
+    # For each output position:
+    # 1. Apply diff: better_version = st_patched(output, grad_output) — stateless, output unchanged
+    <- $st_patched Import[experience/symbolic_tensor/tensor_util/st_patched.viba]
+    <- ($better_version_output <- $st_patched <- $output <- $grad_output)
+    # 2. Unpack original and improved merged content
+    <- (NestedList[$output_element_content str] <- { read output element content })
+    <- ($original_frames list[($index int, $coefficient float, $text str)]
+        <- $text_merger.unpack
+        <- $output_element_content)
+    <- (NestedList[$better_version_element_content str] <- { read better_version_output element content })
+    <- ($improved_frames list[($index int, $coefficient float, $text str)]
+        <- $text_merger.unpack
+        <- $better_version_element_content)
+    # 3. Assert same schema
+    <- { assert len(original_frames) == len(improved_frames) }
+    <- { assert [f[0] for f in original_frames] == [f[0] for f in improved_frames] }
+    # 4. For each frame: coefficient + st_get_diff + st_assign -> backward diff format
+    <- $slice_view Import[experience/symbolic_tensor/tensor_util/slice_view.viba]
+    <- ($frame_index int, $improved_coefficient float, $improved_content str) <- $improved_frames
+    <- ($input_element_view Symbolic[torch.Tensor]
+        <- $slice_view
+        <- $input
+        <- { out_coords[:axis] + [frame_index] + out_coords[axis:] })
+    <- ($grad_input_element_view Symbolic[torch.Tensor]
+        <- $slice_view
+        <- $grad_input
+        <- { out_coords[:axis] + [frame_index] + out_coords[axis:] })
+    # Coefficient: write improved frame coefficient to grad_input.data
+    <- ($grad_input_element_view.data <- $improved_coefficient)
+    # Symbolic: diff against original input, assign to grad
+    <- ($improved_element_tensor <- make_tensor <- $improved_content)
+    <- ($diff <- $input_element_view.st_get_diff <- $improved_element_tensor)
+    <- (void <- $grad_input_element_view.st_assign <- $diff)

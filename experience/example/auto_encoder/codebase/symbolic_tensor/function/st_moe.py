@@ -1,0 +1,189 @@
+import os
+import subprocess
+import tempfile
+import torch
+from typing import Any, Callable, Dict, Optional, Tuple
+from experience.symbolic_tensor.function.st_moe_forward import (
+    st_moe_forward,
+    default_prompt_for_output,
+)
+from experience.symbolic_tensor.function.st_moe_backward import (
+    st_moe_backward,
+    default_prompt_for_grad_input,
+    default_prompt_for_grad_exp_key,
+    default_prompt_for_grad_exp_value,
+)
+from experience.symbolic_tensor.function.get_query_tensor import default_prompt_for_query
+from experience.symbolic_tensor.function.select_qkv_indexes import default_retrieval_method
+from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
+from experience.symbolic_tensor.function import symbolic_grad_registry
+class StMoe(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        input: torch.Tensor,
+        experience: torch.Tensor,
+        output_prompt: Optional[Callable[..., str]] = None,
+        query_prompt: Optional[Callable[..., str]] = None,
+        grad_input_prompt: Optional[Callable[..., str]] = None,
+        grad_exp_key_prompt: Optional[Callable[..., str]] = None,
+        grad_exp_value_prompt: Optional[Callable[..., str]] = None,
+        task_prompt: str = "",
+        topk: int = 16,
+        retrieval_method: Optional[Callable] = None,
+        llm_method: str = "raw_llm_api",
+        llm_env: Optional[Dict[str, str]] = None,
+    ) -> Tuple[torch.Tensor, Any]:
+        output, selected_experience_qkv_indexes_list = st_moe_forward(
+            input, experience, output_prompt, query_prompt, task_prompt, topk,
+            retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env
+        )
+        ctx.save_for_backward(input, output, experience)
+        ctx.st_attrs = {}
+        for name, tensor in [("input", input), ("output", output), ("experience", experience)]:
+            attrs = {}
+            for attr in ("st_relative_to", "st_tensor_uid"):
+                if hasattr(tensor, attr):
+                    attrs[attr] = getattr(tensor, attr)
+            ctx.st_attrs[name] = attrs
+        ctx.selected_experience_qkv_indexes_list = selected_experience_qkv_indexes_list
+        ctx.grad_input_prompt = grad_input_prompt
+        ctx.grad_exp_key_prompt = grad_exp_key_prompt
+        ctx.grad_exp_value_prompt = grad_exp_value_prompt
+        ctx.task_prompt = task_prompt
+        ctx.topk = topk
+        ctx.llm_method = llm_method
+        ctx.llm_env = llm_env
+        return output, selected_experience_qkv_indexes_list
+    @staticmethod
+    def backward(ctx, grad_output, grad_selected_indexes=None):
+        input, output, experience = ctx.saved_tensors
+        for name, tensor in [("input", input), ("output", output), ("experience", experience)]:
+            for attr, val in ctx.st_attrs[name].items():
+                setattr(tensor, attr, val)
+        # Look up by output tensor's uid (registered by GetEditDistanceRatio.backward)
+        symbolic_grad = symbolic_grad_registry.pop(output.st_tensor_uid)
+        if symbolic_grad is not None:
+            grad_output = symbolic_grad
+        elif not hasattr(grad_output, "st_relative_to"):
+            symbolic_grad_output = todo_tensor_like(output)
+            symbolic_grad_output.data.copy_(grad_output.data)
+            grad_output = symbolic_grad_output
+        grad_input, grad_experience = st_moe_backward(
+            grad_output,
+            input,
+            output,
+            experience,
+            ctx.selected_experience_qkv_indexes_list,
+            ctx.grad_input_prompt,
+            ctx.grad_exp_key_prompt,
+            ctx.grad_exp_value_prompt,
+            ctx.task_prompt,
+            ctx.topk,
+            llm_method=ctx.llm_method,
+            llm_env=ctx.llm_env,
+        )
+        if grad_input is not None:
+            symbolic_grad_registry.register(input.st_tensor_uid, grad_input)
+        symbolic_grad_registry.register(experience.st_tensor_uid, grad_experience)
+        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None
+st_moe = StMoe.apply
+if __name__ == "__main__":
+    from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
+    result = subprocess.run(
+        ["bash", "-c", "source ~/.anthropic.sh && env"],
+        capture_output=True, text=True,
+    )
+    for line in result.stdout.splitlines():
+        if "=" in line:
+            key, _, val = line.partition("=")
+            os.environ[key] = val
+    os.environ.pop("CLAUDECODE", None)
+    print("Running StMoe (autograd.Function) tests...\n")
+    def run_test(name: str, condition: bool, expected=None, actual=None):
+        if condition:
+            print(f"  \u2713 {name}")
+        else:
+            print(f"  \u2717 {name}")
+            if expected is not None and actual is not None:
+                print(f"    expected: {expected}")
+                print(f"    actual:   {actual}")
+    print("Test 1: Forward pass via StMoe.apply")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_data = ["Hello world in English"]
+        input_tensor = make_tensor(input_data, tmpdir)
+        input_tensor.requires_grad_(True)
+        experience_data = [
+            ["greeting\nhello\nworld", "Hello world in English", "Bonjour le monde en francais"],
+            ["farewell\ngoodbye", "Goodbye in English", "Au revoir en francais"],
+        ]
+        experience_tensor = make_tensor(experience_data, tmpdir)
+        experience_tensor.requires_grad_(True)
+        output, selected_indexes = StMoe.apply(
+            input_tensor, experience_tensor,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "",
+            2,
+            None,
+            "raw_llm_api",
+        )
+        run_test("Output shape matches input", list(output.shape) == list(input_tensor.shape))
+        run_test("Selected indexes returned", selected_indexes is not None)
+        run_test("Output requires grad", output.requires_grad)
+        root = os.path.join(tmpdir, output.st_tensor_uid, "storage")
+        path = os.path.join(root, "0", "data")
+        if os.path.isfile(path):
+            with open(path) as f:
+                content = f.read()
+            run_test("Output not TODO", "TODO" not in content)
+            print(f"  Output: {repr(content[:120])}")
+    print("\nTest 2: Forward + backward (direct call)")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_tensor = make_tensor(["Hello world in English"], tmpdir)
+        experience_data = [
+            ["greeting\nhello\nworld", "Hello world in English", "Bonjour le monde en francais"],
+            ["farewell\ngoodbye", "Goodbye in English", "Au revoir en francais"],
+        ]
+        experience_tensor = make_tensor(experience_data, tmpdir)
+        output, selected_indexes = st_moe_forward(
+            input_tensor, experience_tensor,
+            output_prompt=None,
+            topk=2,
+            llm_method="raw_llm_api",
+        )
+        run_test("Output has st attrs", hasattr(output, "st_relative_to"))
+        grad_output = make_tensor(
+            ["The translation should use formal French: 'Bonjour le monde' -> 'Bonjour au monde'"],
+            tmpdir,
+        )
+        grad_output.data.fill_(1.0)
+        grad_input, grad_experience = st_moe_backward(
+            grad_output, input_tensor, output, experience_tensor,
+            selected_experience_qkv_indexes_list=selected_indexes,
+            topk=2,
+            llm_method="raw_llm_api",
+        )
+        run_test("grad_input shape matches", list(grad_input.shape) == list(input_tensor.shape))
+        run_test("grad_experience shape matches", list(grad_experience.shape) == list(experience_tensor.shape))
+        root = os.path.join(tmpdir, grad_input.st_tensor_uid, "storage")
+        path = os.path.join(root, "0", "data")
+        if os.path.isfile(path):
+            with open(path) as f:
+                content = f.read()
+            run_test("grad_input text not TODO", "TODO" not in content)
+            print(f"  grad_input text: {repr(content[:120])}")
+        root = os.path.join(tmpdir, grad_experience.st_tensor_uid, "storage")
+        for i in range(grad_experience.numel()):
+            digits = list(str(i))
+            path = os.path.join(root, os.path.join(*digits), "data")
+            if os.path.isfile(path):
+                with open(path) as f:
+                    content = f.read()
+                print(f"  grad_experience[{i}]: TODO={'TODO' == content.strip()} {repr(content[:80])}")
+        run_test("grad_input coeff == 1.0", grad_input.data[0].item() == 1.0)
+        run_test("grad_experience coeff accumulated", grad_experience.data[0, 0].item() == 1.0)
+    print("\nAll tests completed.")

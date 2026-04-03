@@ -1,0 +1,14 @@
+
+# Stateless version of st_patch.
+# st_patch mutates lvalue in-place.
+# st_patched returns a new tensor with patches applied, leaving lvalue unchanged.
+
+st_patched :=
+    $ret Symbolic[torch.Tensor] # new tensor, independent copy with patches applied
+    <- $lvalue Symbolic[torch.Tensor] # original, NOT modified
+    <- $rvalue Symbolic[torch.Tensor] # unified diffs
+    # inline
+    <- { assert ShapeEquals[$lvalue, $rvalue] }
+    <- ($copy <- Import[experience/symbolic_tensor/function/st_copy.viba] <- $lvalue)
+    <- (void <- $copy.st_patch <- $rvalue)
+    <- $copy
