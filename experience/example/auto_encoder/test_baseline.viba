@@ -13,7 +13,8 @@ test_baseline :=
     <- (($file_path_tensor, $file_content_tensor, $ground_truth_content_tensor)
         <- Import[./parepare_dataset])
     <- ($baseline_output SymblicTensor[($total_batch_size,)]
-        <- Import[./baseline_coding_agent_model])
+        <- Import[./baseline_agent_model.viba].BaselineAgentModel
+        <- $llm_method)
     <- ($baseline_loss
         <- Import[function/get_edit_distance]
         <- $baseline_output

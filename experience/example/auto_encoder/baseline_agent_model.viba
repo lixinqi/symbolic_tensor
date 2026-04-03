@@ -1,0 +1,13 @@
+
+BaselineAgentModel[torch.nn.Module] :=
+    # forward
+    $baseline_output SymblicTensor[($total_batch_size,)]
+    <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]]
+    <- $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
+    # __init__
+    <- $llm_method str # default  "raw_llm_api"
+    #inline
+    <- ({ match llm_method }
+        <- { case raw_llm_api } <- Import[./baseline_raw_llm_api_model]
+        <- { case coding_agent } <- Import[./baseline_coding_agent_model])

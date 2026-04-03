@@ -12,7 +12,7 @@ Viba DSL specification:
     <- $workspace_dir (str | None) # None means temp directory
     <- $dataset_dir <- { ./codebase/ }
     <- Import[./parepare_dataset]
-    <- Import[./baseline_coding_agent_model]
+    <- Import[./baseline_agent_model.viba].BaselineAgentModel <- $llm_method
     <- Import[function/get_edit_distance]
 """
 
@@ -21,14 +21,13 @@ import sys
 import tempfile
 from typing import Optional, List
 
-# Add parent path for imports when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio_impl
 
 from experience.example.auto_encoder.prepare_dataset import parepare_dataset
-from experience.example.auto_encoder.baseline_coding_agent_model import BaselineCodingAgentModel
+from experience.example.auto_encoder.baseline_agent_model import BaselineAgentModel
 
 
 # <- ($dataset_dir <- { ./codebase/ })
@@ -81,9 +80,9 @@ def test_baseline(
         gt_preview = _read_storage(gt_tensor, i)[:60].replace("\n", "\\n")
         print(f"  [{i}] {info} -> {gt_preview}...")
 
-    # <- Import[./baseline_coding_agent_model]
-    print(f"\nRunning BaselineCodingAgentModel (llm_method={llm_method})...")
-    model = BaselineCodingAgentModel(llm_method=llm_method)
+    # <- Import[./baseline_agent_model.viba].BaselineAgentModel <- $llm_method
+    print(f"\nRunning BaselineAgentModel (llm_method={llm_method})...")
+    model = BaselineAgentModel(llm_method=llm_method)
     output = model(masked_path_tensor, masked_content_tensor)
 
     # <- Import[function/get_edit_distance]

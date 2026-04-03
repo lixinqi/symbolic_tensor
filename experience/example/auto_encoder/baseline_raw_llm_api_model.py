@@ -1,13 +1,14 @@
-"""Baseline coding agent model for auto-encoder experiment.
+"""Baseline raw LLM API model for auto-encoder experiment.
 
-Generated from baseline_coding_agent_model.viba.
+Generated from baseline_raw_llm_api_model.viba.
 
 Viba DSL specification:
-  BaselineCodingAgentModel[torch.nn.Module] :=
+  BaselineRawLlmApiModel[torch.nn.Module] :=
     $baseline_output SymbolicTensor[($total_batch_size,)]
     <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
     <- $masked_file_content_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
-    <- $llm_method str # default "coding_agent"
+    <- ()
+    # Pipeline: stack → merge → merge(axis=-1) → coding_agent
 """
 
 import os
@@ -25,18 +26,18 @@ from experience.symbolic_tensor.function.coding_agent import coding_agent
 from experience.example.auto_encoder.prepare_dataset import kMaskedHint
 
 
-class BaselineCodingAgentModel(nn.Module):
-    """BaselineCodingAgentModel from baseline_coding_agent_model.viba.
+class BaselineRawLlmApiModel(nn.Module):
+    """BaselineRawLlmApiModel from baseline_raw_llm_api_model.viba.
 
     Pipeline:
       1. Stack (path, content) → (batch, num_files, 2)
-      2. merge(axis=-1) → (batch, num_files)
-      3. coding_agent → (batch,)
+      2. merge(axis=-1) → (batch, num_files) — path+content merged per file
+      3. merge(axis=-1) → (batch, 1) — all files merged into one
+      4. coding_agent → (batch,)
     """
 
-    def __init__(self, llm_method: str = "coding_agent"):
+    def __init__(self):
         super().__init__()
-        self.llm_method = llm_method
 
     def forward(
         self,
@@ -52,24 +53,29 @@ class BaselineCodingAgentModel(nn.Module):
         )
 
         # Step 2: merge(axis=-1) → (batch, num_files)
+        # $path_and_contents <- Import[function/merge] <- { concat on last axis }
         path_and_contents = merge_forward(stacked_tensor, axis=-1)
 
-        # Step 3: coding_agent
-        # $prompt str <- { Get back the original content that was masked in f"{kMaskedHint}" }
+        # Step 3: merge(axis=-1) → (batch, 1)
+        # $merged_path_and_contents <- Import[function/merge] <- $path_and_contents <- $axis -1
+        merged_path_and_contents = merge_forward(path_and_contents, axis=-1)
+
+        # Step 4: coding_agent
+        # $prompt <- { Get back the original content that was masked in f"{kMaskedHint}" }
         task_prompt = (
             f"Get back the original content that was masked in {kMaskedHint}\n"
             "Output ONLY the missing source code lines. No explanations."
         )
 
         # $baseline_output <- Import[function/coding_agent.viba]
-        #   <- $path_and_contents <- $prompt <- $llm_method "coding_agent"
+        #   <- $merged_path_and_contents <- $prompt <- $llm_method "raw_llm_api"
         output = coding_agent(
-            path_and_contents,
+            merged_path_and_contents,
             task_prompt=task_prompt,
-            llm_method="coding_agent",
+            llm_method="raw_llm_api",
         )
         return output
 
 
 if __name__ == "__main__":
-    print("BaselineCodingAgentModel module loaded successfully.")
+    print("BaselineRawLlmApiModel module loaded successfully.")
