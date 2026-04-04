@@ -1,0 +1,63 @@
+[
+  {
+    "name": "SliceAttention",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^class SliceAttention(torch.autograd.Function):$/;\"",
+    "type": "c",
+    "line": 14,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^    def backward(ctx, grad_output):$/;\"",
+    "type": "m",
+    "line": 41,
+    "kind": null,
+    "class": "SliceAttention"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^    def forward($/;\"",
+    "type": "m",
+    "line": 16,
+    "kind": null,
+    "class": "SliceAttention"
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "m",
+    "line": 73,
+    "kind": null,
+    "class": "SliceAttention"
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 137,
+    "kind": null,
+    "class": "SliceAttention"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "m",
+    "line": 65,
+    "kind": null,
+    "class": "SliceAttention"
+  },
+  {
+    "name": "slice_attention",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention.py",
+    "pattern": "/^slice_attention = SliceAttention.apply$/;\"",
+    "type": "v",
+    "line": 61,
+    "kind": null
+  }
+]

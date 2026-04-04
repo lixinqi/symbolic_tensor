@@ -1,0 +1,7 @@
+convert_ast_tag_jsonl_to_python[ProgrammingLanguage] :=
+    $ast_obj ast[ProgrammingLanguage]
+    <- JsonLines[AstTagRelation[ProgrammingLanguage]]
+    # inline
+    <- Import[./ast_tag_relation_group.viba]
+
+# at least 50 roundtrip tests

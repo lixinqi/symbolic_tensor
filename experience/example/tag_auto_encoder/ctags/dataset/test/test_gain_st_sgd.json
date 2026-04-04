@@ -1,0 +1,10 @@
+[
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_gain_st_sgd.py",
+    "pattern": "/^def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 9,
+    "kind": null
+  }
+]

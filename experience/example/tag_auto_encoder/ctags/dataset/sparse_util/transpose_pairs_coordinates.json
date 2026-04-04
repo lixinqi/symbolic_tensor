@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Pair",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/transpose_pairs_coordinates.py",
+    "pattern": "/^Pair = Tuple[List[torch.Tensor], List[torch.Tensor]]$/;\"",
+    "type": "v",
+    "line": 4,
+    "kind": null
+  },
+  {
+    "name": "transpose_pairs_coordinates",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/transpose_pairs_coordinates.py",
+    "pattern": "/^def transpose_pairs_coordinates($/;\"",
+    "type": "f",
+    "line": 5,
+    "kind": null
+  }
+]

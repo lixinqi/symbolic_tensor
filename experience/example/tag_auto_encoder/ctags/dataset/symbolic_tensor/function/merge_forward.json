@@ -1,0 +1,103 @@
+[
+  {
+    "name": "SimpleMerger",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^    class SimpleMerger:$/;\"",
+    "type": "c",
+    "line": 201,
+    "kind": null
+  },
+  {
+    "name": "_get_storage_path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^def _get_storage_path(tensor: torch.Tensor, flat_index: int) -> str:$/;\"",
+    "type": "f",
+    "line": 7,
+    "kind": null
+  },
+  {
+    "name": "_read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^def _read_storage(tensor: torch.Tensor, flat_index: int) -> Optional[str]:$/;\"",
+    "type": "f",
+    "line": 17,
+    "kind": null
+  },
+  {
+    "name": "_write_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^def _write_storage(tensor: torch.Tensor, flat_index: int, content: str) -> None:$/;\"",
+    "type": "f",
+    "line": 24,
+    "kind": null
+  },
+  {
+    "name": "content",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^        content = read_out(result, 0)$/;\"",
+    "type": "v",
+    "line": 216,
+    "kind": null,
+    "class": ".SimpleMerger"
+  },
+  {
+    "name": "inp",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^        inp = make_tensor([\"x\", \"y\"], tmpdir)$/;\"",
+    "type": "v",
+    "line": 214,
+    "kind": null,
+    "class": ".SimpleMerger"
+  },
+  {
+    "name": "merge_forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^def merge_forward($/;\"",
+    "type": "f",
+    "line": 30,
+    "kind": null
+  },
+  {
+    "name": "pack",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^        def pack(frames):$/;\"",
+    "type": "m",
+    "line": 203,
+    "kind": null,
+    "class": ".SimpleMerger"
+  },
+  {
+    "name": "read_out",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^    def read_out(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 102,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^        result = merge_forward(inp, axis=0, text_merger=SimpleMerger)$/;\"",
+    "type": "v",
+    "line": 215,
+    "kind": null,
+    "class": ".SimpleMerger"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 94,
+    "kind": null
+  },
+  {
+    "name": "unpack",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/merge_forward.py",
+    "pattern": "/^        def unpack(merged):$/;\"",
+    "type": "m",
+    "line": 206,
+    "kind": null,
+    "class": ".SimpleMerger"
+  }
+]

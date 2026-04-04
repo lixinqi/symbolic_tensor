@@ -1,0 +1,95 @@
+[
+  {
+    "name": "ForkTensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^class ForkTensor(torch.autograd.Function):$/;\"",
+    "type": "c",
+    "line": 127,
+    "kind": null
+  },
+  {
+    "name": "_scalar_slice_indices",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:$/;\"",
+    "type": "f",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^    def backward(ctx, *grad_outputs):$/;\"",
+    "type": "m",
+    "line": 159,
+    "kind": null,
+    "class": "ForkTensor"
+  },
+  {
+    "name": "default_prompt_for_fork_grad_input",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^def default_prompt_for_fork_grad_input($/;\"",
+    "type": "f",
+    "line": 34,
+    "kind": null
+  },
+  {
+    "name": "fork_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^fork_tensor = ForkTensor.apply$/;\"",
+    "type": "v",
+    "line": 191,
+    "kind": null
+  },
+  {
+    "name": "fork_tensor_backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^def fork_tensor_backward($/;\"",
+    "type": "f",
+    "line": 59,
+    "kind": null
+  },
+  {
+    "name": "fork_tensor_forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^def fork_tensor_forward($/;\"",
+    "type": "f",
+    "line": 19,
+    "kind": null
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^    def forward($/;\"",
+    "type": "m",
+    "line": 129,
+    "kind": null,
+    "class": "ForkTensor"
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "m",
+    "line": 213,
+    "kind": null,
+    "class": "ForkTensor"
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 195,
+    "kind": null,
+    "class": "ForkTensor"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/fork_tensor.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "m",
+    "line": 205,
+    "kind": null,
+    "class": "ForkTensor"
+  }
+]

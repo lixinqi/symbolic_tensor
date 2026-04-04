@@ -1,0 +1,10 @@
+[
+  {
+    "name": "pack_dir",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/fs_util/pack_dir.py",
+    "pattern": "/^def pack_dir(root_dir: str) -> str:$/;\"",
+    "type": "f",
+    "line": 3,
+    "kind": null
+  }
+]

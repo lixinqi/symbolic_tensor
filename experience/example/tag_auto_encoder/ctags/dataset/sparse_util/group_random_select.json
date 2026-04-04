@@ -1,0 +1,10 @@
+[
+  {
+    "name": "group_random_select",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/group_random_select.py",
+    "pattern": "/^def group_random_select(group_ids):$/;\"",
+    "type": "f",
+    "line": 2,
+    "kind": null
+  }
+]

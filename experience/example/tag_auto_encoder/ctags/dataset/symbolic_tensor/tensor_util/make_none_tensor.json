@@ -1,0 +1,18 @@
+[
+  {
+    "name": "make_none_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_none_tensor.py",
+    "pattern": "/^def make_none_tensor(shape: List[int], relative_to: str, dtype=torch.bfloat16) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 4,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_none_tensor.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 21,
+    "kind": null
+  }
+]

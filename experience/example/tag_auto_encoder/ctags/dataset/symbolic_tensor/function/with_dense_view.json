@@ -1,0 +1,60 @@
+[
+  {
+    "name": "WithDenseViewFunction",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^class WithDenseViewFunction(torch.autograd.Function):$/;\"",
+    "type": "c",
+    "line": 13,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^    def backward(ctx, grad_sparse):$/;\"",
+    "type": "m",
+    "line": 51,
+    "kind": null,
+    "class": "WithDenseViewFunction"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^    def forward(ctx, input):$/;\"",
+    "type": "m",
+    "line": 20,
+    "kind": null,
+    "class": "WithDenseViewFunction"
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 130,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 122,
+    "kind": null
+  },
+  {
+    "name": "with_dense_view",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^def with_dense_view($/;\"",
+    "type": "f",
+    "line": 101,
+    "kind": null
+  },
+  {
+    "name": "zero_middle",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/with_dense_view.py",
+    "pattern": "/^        def zero_middle(dense):$/;\"",
+    "type": "f",
+    "line": 154,
+    "kind": null
+  }
+]

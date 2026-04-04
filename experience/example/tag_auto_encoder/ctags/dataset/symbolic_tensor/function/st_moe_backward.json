@@ -1,0 +1,282 @@
+[
+  {
+    "name": "_MERGED",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^_MERGED = \"merged\"$/;\"",
+    "type": "v",
+    "line": 57,
+    "kind": null
+  },
+  {
+    "name": "_PLAIN",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^_PLAIN = \"plain\"$/;\"",
+    "type": "v",
+    "line": 56,
+    "kind": null
+  },
+  {
+    "name": "_build_nested_result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _build_nested_result(flat_results: List[Any], shape: List[int]) -> Any:$/;\"",
+    "type": "f",
+    "line": 177,
+    "kind": null
+  },
+  {
+    "name": "_detect_input_content_type",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _detect_input_content_type($/;\"",
+    "type": "f",
+    "line": 58,
+    "kind": null
+  },
+  {
+    "name": "_flatten_nested_indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _flatten_nested_indexes($/;\"",
+    "type": "f",
+    "line": 90,
+    "kind": null
+  },
+  {
+    "name": "_force_todo_nested",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _force_todo_nested(size: torch.Size) -> Any:$/;\"",
+    "type": "f",
+    "line": 24,
+    "kind": null
+  },
+  {
+    "name": "_get_storage_path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _get_storage_path(tensor: torch.Tensor, flat_index: int) -> str:$/;\"",
+    "type": "f",
+    "line": 33,
+    "kind": null
+  },
+  {
+    "name": "_merge_and_shuffle_and_select_prefix_topk",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _merge_and_shuffle_and_select_prefix_topk($/;\"",
+    "type": "f",
+    "line": 159,
+    "kind": null
+  },
+  {
+    "name": "_pad_indexes_to_topk_with_none_experience_indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _pad_indexes_to_topk_with_none_experience_indexes($/;\"",
+    "type": "f",
+    "line": 101,
+    "kind": null
+  },
+  {
+    "name": "_pad_random_indexes_to_topk_with_none_experience_indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _pad_random_indexes_to_topk_with_none_experience_indexes($/;\"",
+    "type": "f",
+    "line": 119,
+    "kind": null
+  },
+  {
+    "name": "_read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _read_storage(tensor: torch.Tensor, flat_index: int) -> Optional[str]:$/;\"",
+    "type": "f",
+    "line": 43,
+    "kind": null
+  },
+  {
+    "name": "_replace_last_tensor_with_full_slice",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _replace_last_tensor_with_full_slice($/;\"",
+    "type": "f",
+    "line": 74,
+    "kind": null
+  },
+  {
+    "name": "_replace_last_tensor_with_slice",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _replace_last_tensor_with_slice($/;\"",
+    "type": "f",
+    "line": 82,
+    "kind": null
+  },
+  {
+    "name": "_scalar_slice_indices",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:$/;\"",
+    "type": "f",
+    "line": 29,
+    "kind": null
+  },
+  {
+    "name": "_select_random_indexes_with_none_experience_indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _select_random_indexes_with_none_experience_indexes($/;\"",
+    "type": "f",
+    "line": 146,
+    "kind": null
+  },
+  {
+    "name": "_write_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def _write_storage(tensor: torch.Tensor, flat_index: int, content: str) -> None:$/;\"",
+    "type": "f",
+    "line": 50,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_grad_exp_key",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def default_prompt_for_grad_exp_key($/;\"",
+    "type": "f",
+    "line": 250,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_grad_exp_value",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def default_prompt_for_grad_exp_value($/;\"",
+    "type": "f",
+    "line": 287,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_grad_input",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def default_prompt_for_grad_input($/;\"",
+    "type": "f",
+    "line": 190,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_grad_input_frame",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def default_prompt_for_grad_input_frame($/;\"",
+    "type": "f",
+    "line": 222,
+    "kind": null
+  },
+  {
+    "name": "flat",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    flat = _flatten_nested_indexes(nested, [2])$/;\"",
+    "type": "v",
+    "line": 650,
+    "kind": null
+  },
+  {
+    "name": "idx",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    idx = [torch.tensor(0), torch.tensor(1), torch.tensor(2)]$/;\"",
+    "type": "v",
+    "line": 653,
+    "kind": null
+  },
+  {
+    "name": "indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    indexes = [torch.tensor([0, 1], dtype=torch.long)]$/;\"",
+    "type": "v",
+    "line": 631,
+    "kind": null
+  },
+  {
+    "name": "merged",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    merged = _merge_and_shuffle_and_select_prefix_topk(sel, none, 3)$/;\"",
+    "type": "v",
+    "line": 645,
+    "kind": null
+  },
+  {
+    "name": "nested",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    nested = [[torch.tensor([0]), torch.tensor([1])], [torch.tensor([2]), torch.tensor([3])]]$/;\"",
+    "type": "v",
+    "line": 649,
+    "kind": null
+  },
+  {
+    "name": "none",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    none = [torch.tensor([30, 40, 50], dtype=torch.long), torch.tensor([0, 0, 0], dtype=torch.long)]$/;\"",
+    "type": "v",
+    "line": 644,
+    "kind": null
+  },
+  {
+    "name": "padded",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    padded = _pad_indexes_to_topk_with_none_experience_indexes(indexes, 2, exp_tensor)$/;\"",
+    "type": "v",
+    "line": 632,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 613,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 595,
+    "kind": null
+  },
+  {
+    "name": "result_slice",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    result_slice = _replace_last_tensor_with_slice(idx, slice(1, 2, None))$/;\"",
+    "type": "v",
+    "line": 654,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 605,
+    "kind": null
+  },
+  {
+    "name": "sel",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^    sel = [torch.tensor([10, 20], dtype=torch.long), torch.tensor([0, 0], dtype=torch.long)]$/;\"",
+    "type": "v",
+    "line": 643,
+    "kind": null
+  },
+  {
+    "name": "st_moe_backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def st_moe_backward($/;\"",
+    "type": "f",
+    "line": 543,
+    "kind": null
+  },
+  {
+    "name": "st_moe_backward_grad_experience",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def st_moe_backward_grad_experience($/;\"",
+    "type": "f",
+    "line": 456,
+    "kind": null
+  },
+  {
+    "name": "st_moe_backward_grad_input",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_backward.py",
+    "pattern": "/^def st_moe_backward_grad_input($/;\"",
+    "type": "f",
+    "line": 324,
+    "kind": null
+  }
+]

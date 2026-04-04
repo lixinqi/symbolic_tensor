@@ -1,0 +1,74 @@
+[
+  {
+    "name": "_build_nested_result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^def _build_nested_result(flat_results: List, shape: List[int]):$/;\"",
+    "type": "f",
+    "line": 17,
+    "kind": null
+  },
+  {
+    "name": "_copy_back_to_storage_view",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^def _copy_back_to_storage_view(mutable_dir: str, view_tensor: torch.Tensor) -> None:$/;\"",
+    "type": "f",
+    "line": 30,
+    "kind": null
+  },
+  {
+    "name": "_scalar_slice_indices",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:$/;\"",
+    "type": "f",
+    "line": 13,
+    "kind": null
+  },
+  {
+    "name": "coding_agent",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^def coding_agent($/;\"",
+    "type": "f",
+    "line": 67,
+    "kind": null
+  },
+  {
+    "name": "custom_prompt",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^        def custom_prompt(task_prompt, workspace_dir, const_input_view, mutable_output_dir):$/;\"",
+    "type": "f",
+    "line": 202,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_output",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^def default_prompt_for_output($/;\"",
+    "type": "f",
+    "line": 54,
+    "kind": null
+  },
+  {
+    "name": "read_output",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^    def read_output(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 136,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 118,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/coding_agent.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 128,
+    "kind": null
+  }
+]

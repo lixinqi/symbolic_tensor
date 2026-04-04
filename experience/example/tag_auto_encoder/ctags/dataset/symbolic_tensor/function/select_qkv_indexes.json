@@ -1,0 +1,58 @@
+[
+  {
+    "name": "_extract_coordinates",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^def _extract_coordinates(file_path: str, view_dir: str) -> List[int]:$/;\"",
+    "type": "f",
+    "line": 39,
+    "kind": null
+  },
+  {
+    "name": "_filter_last_coordinate_eq_zero",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^def _filter_last_coordinate_eq_zero(view_dir: str) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 20,
+    "kind": null
+  },
+  {
+    "name": "_unzip_to_tensor_list",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^def _unzip_to_tensor_list(coordinates: List[List[int]]) -> List[torch.Tensor]:$/;\"",
+    "type": "f",
+    "line": 47,
+    "kind": null
+  },
+  {
+    "name": "default_retrieval_method",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^def default_retrieval_method(query_file_content: str, key_file_content: str) -> float:$/;\"",
+    "type": "f",
+    "line": 5,
+    "kind": null
+  },
+  {
+    "name": "exact_match",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^        def exact_match(query_content: str, key_content: str) -> float:$/;\"",
+    "type": "f",
+    "line": 203,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 131,
+    "kind": null
+  },
+  {
+    "name": "select_qkv_indexes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/select_qkv_indexes.py",
+    "pattern": "/^def select_qkv_indexes($/;\"",
+    "type": "f",
+    "line": 56,
+    "kind": null
+  }
+]

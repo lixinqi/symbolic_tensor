@@ -1,0 +1,26 @@
+[
+  {
+    "name": "async_run",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_query.py",
+    "pattern": "/^def async_run(handlers : list):$/;\"",
+    "type": "f",
+    "line": 37,
+    "kind": null
+  },
+  {
+    "name": "coding_agent_query",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_query.py",
+    "pattern": "/^async def coding_agent_query($/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "func",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_query.py",
+    "pattern": "/^    async def func():$/;\"",
+    "type": "f",
+    "line": 38,
+    "kind": null
+  }
+]

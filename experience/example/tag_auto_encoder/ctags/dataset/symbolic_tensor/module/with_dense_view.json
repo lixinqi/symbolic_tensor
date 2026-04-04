@@ -1,0 +1,60 @@
+[
+  {
+    "name": "WithDenseView",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^class WithDenseView(nn.Module):$/;\"",
+    "type": "c",
+    "line": 5,
+    "kind": null
+  },
+  {
+    "name": "__init__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^    def __init__($/;\"",
+    "type": "m",
+    "line": 13,
+    "kind": null,
+    "class": "WithDenseView"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^    def forward(self, input: torch.Tensor) -> torch.Tensor:$/;\"",
+    "type": "m",
+    "line": 19,
+    "kind": null,
+    "class": "WithDenseView"
+  },
+  {
+    "name": "module",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^    module = WithDenseView(dense_handler=lambda x: x)$/;\"",
+    "type": "v",
+    "line": 67,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 34,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 26,
+    "kind": null
+  },
+  {
+    "name": "zero_first",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/with_dense_view.py",
+    "pattern": "/^        def zero_first(dense):$/;\"",
+    "type": "f",
+    "line": 57,
+    "kind": null
+  }
+]

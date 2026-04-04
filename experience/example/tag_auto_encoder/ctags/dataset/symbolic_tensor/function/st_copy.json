@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Copy",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^class Copy(Function):$/;\"",
+    "type": "c",
+    "line": 21,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^    def backward(ctx, grad_output):$/;\"",
+    "type": "m",
+    "line": 27,
+    "kind": null,
+    "class": "Copy"
+  },
+  {
+    "name": "copy",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^copy = Copy.apply$/;\"",
+    "type": "v",
+    "line": 31,
+    "kind": null
+  },
+  {
+    "name": "copy_impl",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^def copy_impl(input_tensor: torch.Tensor, dst_relative_to: str) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 7,
+    "kind": null
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^    def forward(ctx, input_tensor, dst_relative_to):$/;\"",
+    "type": "m",
+    "line": 23,
+    "kind": null,
+    "class": "Copy"
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "m",
+    "line": 43,
+    "kind": null,
+    "class": "Copy"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_copy.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "m",
+    "line": 35,
+    "kind": null,
+    "class": "Copy"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "build_model",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def build_model(tmpdir, experience_data, topk=1, task_prompt=\"Translate English to French\"):$/;\"",
+    "type": "f",
+    "line": 66,
+    "kind": null
+  },
+  {
+    "name": "check_coeff_storage_consistency",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def check_coeff_storage_consistency(tensor, label):$/;\"",
+    "type": "f",
+    "line": 51,
+    "kind": null
+  },
+  {
+    "name": "data_file_sizes",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def data_file_sizes(tensor):$/;\"",
+    "type": "f",
+    "line": 39,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 28,
+    "kind": null
+  },
+  {
+    "name": "run_pipeline",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def run_pipeline(model, inp, mask):$/;\"",
+    "type": "f",
+    "line": 81,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_st_attention_followed_by_st_moe.py",
+    "pattern": "/^def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 20,
+    "kind": null
+  }
+]

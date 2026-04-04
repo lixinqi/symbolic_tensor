@@ -1,0 +1,100 @@
+[
+  {
+    "name": "_StSlicer",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^class _StSlicer:$/;\"",
+    "type": "c",
+    "line": 30,
+    "kind": null
+  },
+  {
+    "name": "__getitem__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^    def __getitem__(self, key):$/;\"",
+    "type": "m",
+    "line": 38,
+    "kind": null,
+    "class": "_StSlicer"
+  },
+  {
+    "name": "__init__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^    def __init__(self, tensor, slice_fn):$/;\"",
+    "type": "m",
+    "line": 35,
+    "kind": null,
+    "class": "_StSlicer"
+  },
+  {
+    "name": "_st_value_slicer",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def _st_value_slicer(self):$/;\"",
+    "type": "f",
+    "line": 58,
+    "kind": null
+  },
+  {
+    "name": "_st_view_slicer",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def _st_view_slicer(self):$/;\"",
+    "type": "f",
+    "line": 53,
+    "kind": null
+  },
+  {
+    "name": "st_assign",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_assign(lvalue, rvalue):$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "st_assign_view",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_assign_view(lvalue, rvalue):$/;\"",
+    "type": "f",
+    "line": 10,
+    "kind": null
+  },
+  {
+    "name": "st_file_paths",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_file_paths(tensor):$/;\"",
+    "type": "f",
+    "line": 22,
+    "kind": null
+  },
+  {
+    "name": "st_fork",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_fork(tensor, num_outputs=2):$/;\"",
+    "type": "f",
+    "line": 26,
+    "kind": null
+  },
+  {
+    "name": "st_get_diff",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_get_diff(lvalue, rvalue):$/;\"",
+    "type": "f",
+    "line": 14,
+    "kind": null
+  },
+  {
+    "name": "st_pack",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_pack(tensor):$/;\"",
+    "type": "f",
+    "line": 2,
+    "kind": null
+  },
+  {
+    "name": "st_patch",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/register_tensor_ops.py",
+    "pattern": "/^def st_patch(lvalue, rvalue):$/;\"",
+    "type": "f",
+    "line": 18,
+    "kind": null
+  }
+]

@@ -1,0 +1,278 @@
+{
+  "_type": "Module",
+  "body": [
+    {
+      "_type": "ImportFrom",
+      "_lineno": 1,
+      "_col_offset": 0,
+      "_end_lineno": 1,
+      "_end_col_offset": 33,
+      "module": "dataclasses",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 1,
+          "_col_offset": 24,
+          "_end_lineno": 1,
+          "_end_col_offset": 33,
+          "name": "dataclass",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 2,
+      "_col_offset": 0,
+      "_end_lineno": 2,
+      "_end_col_offset": 30,
+      "module": "typing",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 19,
+          "_end_lineno": 2,
+          "_end_col_offset": 24,
+          "name": "Union",
+          "asname": null
+        },
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 26,
+          "_end_lineno": 2,
+          "_end_col_offset": 30,
+          "name": "List",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ClassDef",
+      "_lineno": 4,
+      "_col_offset": 0,
+      "_end_lineno": 8,
+      "_end_col_offset": 40,
+      "name": "AgentTask",
+      "bases": [],
+      "keywords": [],
+      "body": [
+        {
+          "_type": "AnnAssign",
+          "_lineno": 5,
+          "_col_offset": 4,
+          "_end_lineno": 5,
+          "_end_col_offset": 22,
+          "target": {
+            "_type": "Name",
+            "_lineno": 5,
+            "_col_offset": 4,
+            "_end_lineno": 5,
+            "_end_col_offset": 17,
+            "id": "workspace_dir",
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "annotation": {
+            "_type": "Name",
+            "_lineno": 5,
+            "_col_offset": 19,
+            "_end_lineno": 5,
+            "_end_col_offset": 22,
+            "id": "str",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "value": null,
+          "simple": 1
+        },
+        {
+          "_type": "AnnAssign",
+          "_lineno": 6,
+          "_col_offset": 4,
+          "_end_lineno": 6,
+          "_end_col_offset": 46,
+          "target": {
+            "_type": "Name",
+            "_lineno": 6,
+            "_col_offset": 4,
+            "_end_lineno": 6,
+            "_end_col_offset": 23,
+            "id": "output_relative_dir",
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "annotation": {
+            "_type": "Subscript",
+            "_lineno": 6,
+            "_col_offset": 25,
+            "_end_lineno": 6,
+            "_end_col_offset": 46,
+            "value": {
+              "_type": "Name",
+              "_lineno": 6,
+              "_col_offset": 25,
+              "_end_lineno": 6,
+              "_end_col_offset": 30,
+              "id": "Union",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "slice": {
+              "_type": "Tuple",
+              "_lineno": 6,
+              "_col_offset": 31,
+              "_end_lineno": 6,
+              "_end_col_offset": 45,
+              "elts": [
+                {
+                  "_type": "Name",
+                  "_lineno": 6,
+                  "_col_offset": 31,
+                  "_end_lineno": 6,
+                  "_end_col_offset": 34,
+                  "id": "str",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                {
+                  "_type": "Subscript",
+                  "_lineno": 6,
+                  "_col_offset": 36,
+                  "_end_lineno": 6,
+                  "_end_col_offset": 45,
+                  "value": {
+                    "_type": "Name",
+                    "_lineno": 6,
+                    "_col_offset": 36,
+                    "_end_lineno": 6,
+                    "_end_col_offset": 40,
+                    "id": "List",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "slice": {
+                    "_type": "Name",
+                    "_lineno": 6,
+                    "_col_offset": 41,
+                    "_end_lineno": 6,
+                    "_end_col_offset": 44,
+                    "id": "str",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                }
+              ],
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "value": null,
+          "simple": 1
+        },
+        {
+          "_type": "AnnAssign",
+          "_lineno": 7,
+          "_col_offset": 4,
+          "_end_lineno": 7,
+          "_end_col_offset": 15,
+          "target": {
+            "_type": "Name",
+            "_lineno": 7,
+            "_col_offset": 4,
+            "_end_lineno": 7,
+            "_end_col_offset": 10,
+            "id": "prompt",
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "annotation": {
+            "_type": "Name",
+            "_lineno": 7,
+            "_col_offset": 12,
+            "_end_lineno": 7,
+            "_end_col_offset": 15,
+            "id": "str",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "value": null,
+          "simple": 1
+        },
+        {
+          "_type": "AnnAssign",
+          "_lineno": 8,
+          "_col_offset": 4,
+          "_end_lineno": 8,
+          "_end_col_offset": 40,
+          "target": {
+            "_type": "Name",
+            "_lineno": 8,
+            "_col_offset": 4,
+            "_end_lineno": 8,
+            "_end_col_offset": 26,
+            "id": "todo_file_content_hint",
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "annotation": {
+            "_type": "Name",
+            "_lineno": 8,
+            "_col_offset": 28,
+            "_end_lineno": 8,
+            "_end_col_offset": 31,
+            "id": "str",
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "value": {
+            "_type": "Constant",
+            "_lineno": 8,
+            "_col_offset": 34,
+            "_end_lineno": 8,
+            "_end_col_offset": 40,
+            "value": "TODO",
+            "kind": null
+          },
+          "simple": 1
+        }
+      ],
+      "decorator_list": [
+        {
+          "_type": "Name",
+          "_lineno": 3,
+          "_col_offset": 1,
+          "_end_lineno": 3,
+          "_end_col_offset": 10,
+          "id": "dataclass",
+          "ctx": {
+            "_type": "Load"
+          }
+        }
+      ],
+      "type_params": []
+    }
+  ],
+  "type_ignores": []
+}

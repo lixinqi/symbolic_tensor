@@ -1,0 +1,42 @@
+[
+  {
+    "name": "_dense_to_sparse_impl",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/dense_to_sparse.py",
+    "pattern": "/^def _dense_to_sparse_impl($/;\"",
+    "type": "f",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "_get_storage_path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/dense_to_sparse.py",
+    "pattern": "/^def _get_storage_path(tensor: torch.Tensor, flat_index: int) -> Path:$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "dense_to_sparse",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/dense_to_sparse.py",
+    "pattern": "/^def dense_to_sparse($/;\"",
+    "type": "f",
+    "line": 42,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/dense_to_sparse.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 74,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/dense_to_sparse.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 66,
+    "kind": null
+  }
+]

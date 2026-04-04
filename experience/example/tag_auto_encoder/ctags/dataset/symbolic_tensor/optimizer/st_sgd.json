@@ -1,0 +1,119 @@
+[
+  {
+    "name": "StSGD",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^class StSGD(torch.optim.Optimizer):$/;\"",
+    "type": "c",
+    "line": 53,
+    "kind": null
+  },
+  {
+    "name": "__init__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def __init__(self, params, lr: float = 0.01, llm_env: Optional[Dict[str, str]] = None):$/;\"",
+    "type": "m",
+    "line": 66,
+    "kind": null,
+    "class": "StSGD"
+  },
+  {
+    "name": "_flatten_nested_paths",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^def _flatten_nested_paths(nested, result=None):$/;\"",
+    "type": "f",
+    "line": 39,
+    "kind": null
+  },
+  {
+    "name": "_get_nonzero_points",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^def _get_nonzero_points(grad: torch.Tensor) -> List[torch.Tensor]:$/;\"",
+    "type": "f",
+    "line": 49,
+    "kind": null
+  },
+  {
+    "name": "_replace_last_tensor_with_slice",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^def _replace_last_tensor_with_slice($/;\"",
+    "type": "f",
+    "line": 31,
+    "kind": null
+  },
+  {
+    "name": "_reset_grad_text_to_todo",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^def _reset_grad_text_to_todo(param: torch.Tensor) -> None:$/;\"",
+    "type": "f",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "_scalar_slice_indices",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:$/;\"",
+    "type": "f",
+    "line": 12,
+    "kind": null
+  },
+  {
+    "name": "_update_queries",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def _update_queries(self, param: torch.Tensor, unique_row_points: List[torch.Tensor]) -> None:$/;\"",
+    "type": "m",
+    "line": 113,
+    "kind": null,
+    "class": "StSGD"
+  },
+  {
+    "name": "get_last_step_stats",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def get_last_step_stats(self) -> dict:$/;\"",
+    "type": "m",
+    "line": 151,
+    "kind": null,
+    "class": "StSGD"
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 185,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 167,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 177,
+    "kind": null
+  },
+  {
+    "name": "step",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def step(self, closure: Optional[Callable] = None):$/;\"",
+    "type": "m",
+    "line": 71,
+    "kind": null,
+    "class": "StSGD"
+  },
+  {
+    "name": "zero_grad",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/st_sgd.py",
+    "pattern": "/^    def zero_grad(self, set_to_none: bool = True) -> None:$/;\"",
+    "type": "m",
+    "line": 154,
+    "kind": null,
+    "class": "StSGD"
+  }
+]

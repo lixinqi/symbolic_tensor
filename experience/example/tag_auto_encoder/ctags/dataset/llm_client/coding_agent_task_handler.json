@@ -1,0 +1,43 @@
+[
+  {
+    "name": "CodingAgentTaskHandler",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_task_handler.py",
+    "pattern": "/^class CodingAgentTaskHandler:$/;\"",
+    "type": "c",
+    "line": 14,
+    "kind": null
+  },
+  {
+    "name": "__call__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_task_handler.py",
+    "pattern": "/^    def __call__(self, all_tasks, llm_env: Optional[Dict[str, str]] = None) -> None:$/;\"",
+    "type": "m",
+    "line": 15,
+    "kind": null,
+    "class": "CodingAgentTaskHandler"
+  },
+  {
+    "name": "_do_one",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_task_handler.py",
+    "pattern": "/^        async def _do_one(task: AgentTask):$/;\"",
+    "type": "f",
+    "line": 17,
+    "kind": null
+  },
+  {
+    "name": "_flatten_nested",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_task_handler.py",
+    "pattern": "/^def _flatten_nested(nested) -> list:$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "_run_all",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/coding_agent_task_handler.py",
+    "pattern": "/^        async def _run_all():$/;\"",
+    "type": "f",
+    "line": 27,
+    "kind": null
+  }
+]

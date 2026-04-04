@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Pair",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.py",
+    "pattern": "/^Pair = Tuple[List[torch.Tensor], Any]$/;\"",
+    "type": "v",
+    "line": 10,
+    "kind": null
+  },
+  {
+    "name": "_collect",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.py",
+    "pattern": "/^def _collect($/;\"",
+    "type": "f",
+    "line": 11,
+    "kind": null
+  },
+  {
+    "name": "_is_leaf",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.py",
+    "pattern": "/^def _is_leaf(obj: Any) -> bool:$/;\"",
+    "type": "f",
+    "line": 3,
+    "kind": null
+  },
+  {
+    "name": "convert_nested_list_coordinates_to_pairs_coordinates",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/sparse_util/convert_nested_list_coordinates_to_pairs_coordinates.py",
+    "pattern": "/^def convert_nested_list_coordinates_to_pairs_coordinates($/;\"",
+    "type": "f",
+    "line": 23,
+    "kind": null
+  }
+]

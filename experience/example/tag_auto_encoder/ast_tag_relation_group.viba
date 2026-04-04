@@ -1,0 +1,177 @@
+AstTagRelationGroup[ProgrammingLanguage] := WithConstraint[
+    Object
+        * $line int
+        * $relation_tag RelationTagEnum[ProgrammingLanguage]
+        * $owner_tag Symbol[ProgrammingLanguage] 
+        * $member_tags list[Symbol[ProgrammingLanguage]],
+    $constraint { a AstTagRelationGroup instance is a packed list[AstTagRelation] }
+]
+
+AstTagRelation[ProgrammingLanguage] :=
+    Object
+    * $line int
+    * $relation_in_group RelationInGroup
+    * $relation_tag RelationTagEnum[ProgrammingLanguage]
+    * $lhs_tag Symbol[ProgrammingLanguage] 
+    * $rhs_tag Symbol[ProgrammingLanguage]
+
+RelationInGroup :=
+    Oneof
+    | None
+    | "lhs_owner_vs_rhs_member"
+    | "lhs_member_vs_rhs_owner"
+    | "lhs_member_vs_rhs_member"
+
+Symbol[ProgrammingLanguage] := WithConstraint[
+    str | int | float | bool,
+    $constraint {
+        no space/tab/newline characters contained. 
+        each $value is a bridge cross lines and files.
+    }
+]
+
+RelationTagEnum[ProgrammingLanguage] := WithConstraint[
+    BaseRelationTagEnum | PlRelationTagEnum[ProgrammingLanguage],
+    $constraint {
+        str($value) should be a Symbol[ProgrammingLanguage]
+    }
+]
+
+BaseRelationTagEnum := WithConstraint[
+    Oneof
+    | "defines"
+    | "contains"
+    | "calls"
+    | "references"
+    | "assigns"
+    | "aug_assigns"
+    | "aug_op"
+    | "imports"
+    | "aliases"
+    | "inherits"
+    | "implements"
+    | "type_annotation"
+    | "returns"
+    | "param"
+    | "member_access"
+    | "condition"
+    | "iterates"
+    | "raises"
+    | "handles"
+    | "bin_op"
+    | "bin_op_left"
+    | "bin_op_right"
+    | "unary_op"
+    | "unary_op_operand"
+    | "compare"
+    | "compare_left"
+    | "compare_op"
+    | "compare_right"
+    | "bool_op"
+    | "bool_op_operand"
+    | "subscript"
+    | "subscript_value"
+    | "slice"
+    | "slice_lower"
+    | "slice_upper"
+    | "slice_step"
+    | "dict_literal"
+    | "dict_key"
+    | "dict_value"
+    | "set_literal"
+    | "list_literal"
+    | "tuple_literal"
+    | "docstring"
+    | "type_alias"
+    | "call_arg"
+    | "stmt_seq"
+    | "try_start"
+    | "try_body"
+    | "try_handler"
+    | "fstring_part"
+    | "string_part"
+    | "expr_stmt",
+    $constraint {
+        1. enumerated value.
+        2. cover the most programming language common ast tag relationship.
+        3. separate operators from operands for unambiguous reconstruction.
+    }
+]
+
+PlRelationTagEnum[Python] := WithConstraint[
+    Oneof
+    | "decorates"
+    | "bases"
+    | "metaclass"
+    | "keyword_arg"
+    | "default_value"
+    | "star_param"
+    | "double_star_param"
+    | "star_arg"
+    | "double_star_arg"
+    | "annotation"
+    | "yields"
+    | "yields_from"
+    | "raises_from"
+    | "with_context"
+    | "with_as"
+    | "except_as"
+    | "try_else"
+    | "try_finally"
+    | "comprehension_iter"
+    | "comprehension_if"
+    | "comprehension_target"
+    | "comprehension_body"
+    | "global_decl"
+    | "nonlocal_decl"
+    | "lambda"
+    | "lambda_body"
+    | "fstring_expr"
+    | "walrus"
+    | "unpack"
+    | "assert_test"
+    | "assert_msg"
+    | "if_expr"
+    | "if_expr_body"
+    | "if_expr_test"
+    | "if_expr_else"
+    | "for_target"
+    | "for_iter"
+    | "for_tuple_target"
+    | "while_test"
+    | "if_test"
+    | "elif_test"
+    | "if_body"
+    | "for_body"
+    | "while_body"
+    | "try_body"
+    | "except_body"
+    | "with_body"
+    | "else_body"
+    | "finally_body"
+    | "ellipsis_body"
+    | "chained_compare"
+    | "named_expr"
+    | "call_arg"
+    | "call_arg_value"
+    | "static_method"
+    | "class_method"
+    | "property_def"
+    | "async_def"
+    | "string_literal"
+    | "bytes_literal"
+    | "none_literal"
+    | "ellipsis_literal"
+    | "continue_stmt"
+    | "break_stmt"
+    | "pass_stmt"
+    | "del_target"
+    | "fstring_literal"
+    | "joined_str"
+    | "formatted_value"
+    | "const_value",
+    $constraint {
+        1. enumerated value.
+        2. strong enough to support source_code[Python]->ast->JsonLines[AstTagRelationGroup]->ast->source_code[Python] roundtrip tests.
+    }
+]

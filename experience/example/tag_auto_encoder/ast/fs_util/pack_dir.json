@@ -1,0 +1,1043 @@
+{
+  "_type": "Module",
+  "body": [
+    {
+      "_type": "Import",
+      "_lineno": 1,
+      "_col_offset": 0,
+      "_end_lineno": 1,
+      "_end_col_offset": 9,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 1,
+          "_col_offset": 7,
+          "_end_lineno": 1,
+          "_end_col_offset": 9,
+          "name": "os",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "Import",
+      "_lineno": 2,
+      "_col_offset": 0,
+      "_end_lineno": 2,
+      "_end_col_offset": 13,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 7,
+          "_end_lineno": 2,
+          "_end_col_offset": 13,
+          "name": "seedir",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "FunctionDef",
+      "_lineno": 3,
+      "_col_offset": 0,
+      "_end_lineno": 30,
+      "_end_col_offset": 14,
+      "name": "pack_dir",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 3,
+            "_col_offset": 13,
+            "_end_lineno": 3,
+            "_end_col_offset": 26,
+            "arg": "root_dir",
+            "annotation": {
+              "_type": "Name",
+              "_lineno": 3,
+              "_col_offset": 23,
+              "_end_lineno": 3,
+              "_end_col_offset": 26,
+              "id": "str",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": []
+      },
+      "body": [
+        {
+          "_type": "Assign",
+          "_lineno": 4,
+          "_col_offset": 4,
+          "_end_lineno": 4,
+          "_end_col_offset": 56,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 4,
+              "_col_offset": 4,
+              "_end_lineno": 4,
+              "_end_col_offset": 14,
+              "id": "dir_struct",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "Call",
+            "_lineno": 4,
+            "_col_offset": 17,
+            "_end_lineno": 4,
+            "_end_col_offset": 56,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 4,
+              "_col_offset": 17,
+              "_end_lineno": 4,
+              "_end_col_offset": 30,
+              "value": {
+                "_type": "Name",
+                "_lineno": 4,
+                "_col_offset": 17,
+                "_end_lineno": 4,
+                "_end_col_offset": 23,
+                "id": "seedir",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "seedir",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Name",
+                "_lineno": 4,
+                "_col_offset": 31,
+                "_end_lineno": 4,
+                "_end_col_offset": 39,
+                "id": "root_dir",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            ],
+            "keywords": [
+              {
+                "_type": "keyword",
+                "_lineno": 4,
+                "_col_offset": 41,
+                "_end_lineno": 4,
+                "_end_col_offset": 55,
+                "arg": "printout",
+                "value": {
+                  "_type": "Constant",
+                  "_lineno": 4,
+                  "_col_offset": 50,
+                  "_end_lineno": 4,
+                  "_end_col_offset": 55,
+                  "value": false,
+                  "kind": null
+                }
+              }
+            ]
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "Assign",
+          "_lineno": 5,
+          "_col_offset": 4,
+          "_end_lineno": 5,
+          "_end_col_offset": 22,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 5,
+              "_col_offset": 4,
+              "_end_lineno": 5,
+              "_end_col_offset": 17,
+              "id": "file_sections",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "List",
+            "_lineno": 5,
+            "_col_offset": 20,
+            "_end_lineno": 5,
+            "_end_col_offset": 22,
+            "elts": [],
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "For",
+          "_lineno": 6,
+          "_col_offset": 4,
+          "_end_lineno": 21,
+          "_end_col_offset": 13,
+          "target": {
+            "_type": "Tuple",
+            "_lineno": 6,
+            "_col_offset": 8,
+            "_end_lineno": 6,
+            "_end_col_offset": 36,
+            "elts": [
+              {
+                "_type": "Name",
+                "_lineno": 6,
+                "_col_offset": 8,
+                "_end_lineno": 6,
+                "_end_col_offset": 15,
+                "id": "dirpath",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              {
+                "_type": "Name",
+                "_lineno": 6,
+                "_col_offset": 17,
+                "_end_lineno": 6,
+                "_end_col_offset": 25,
+                "id": "dirnames",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              {
+                "_type": "Name",
+                "_lineno": 6,
+                "_col_offset": 27,
+                "_end_lineno": 6,
+                "_end_col_offset": 36,
+                "id": "filenames",
+                "ctx": {
+                  "_type": "Store"
+                }
+              }
+            ],
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "iter": {
+            "_type": "Call",
+            "_lineno": 6,
+            "_col_offset": 40,
+            "_end_lineno": 6,
+            "_end_col_offset": 57,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 6,
+              "_col_offset": 40,
+              "_end_lineno": 6,
+              "_end_col_offset": 47,
+              "value": {
+                "_type": "Name",
+                "_lineno": 6,
+                "_col_offset": 40,
+                "_end_lineno": 6,
+                "_end_col_offset": 42,
+                "id": "os",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "walk",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Name",
+                "_lineno": 6,
+                "_col_offset": 48,
+                "_end_lineno": 6,
+                "_end_col_offset": 56,
+                "id": "root_dir",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            ],
+            "keywords": []
+          },
+          "body": [
+            {
+              "_type": "For",
+              "_lineno": 7,
+              "_col_offset": 8,
+              "_end_lineno": 21,
+              "_end_col_offset": 13,
+              "target": {
+                "_type": "Name",
+                "_lineno": 7,
+                "_col_offset": 12,
+                "_end_lineno": 7,
+                "_end_col_offset": 20,
+                "id": "filename",
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              "iter": {
+                "_type": "Name",
+                "_lineno": 7,
+                "_col_offset": 24,
+                "_end_lineno": 7,
+                "_end_col_offset": 33,
+                "id": "filenames",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "body": [
+                {
+                  "_type": "Assign",
+                  "_lineno": 8,
+                  "_col_offset": 12,
+                  "_end_lineno": 8,
+                  "_end_col_offset": 55,
+                  "targets": [
+                    {
+                      "_type": "Name",
+                      "_lineno": 8,
+                      "_col_offset": 12,
+                      "_end_lineno": 8,
+                      "_end_col_offset": 21,
+                      "id": "file_path",
+                      "ctx": {
+                        "_type": "Store"
+                      }
+                    }
+                  ],
+                  "value": {
+                    "_type": "Call",
+                    "_lineno": 8,
+                    "_col_offset": 24,
+                    "_end_lineno": 8,
+                    "_end_col_offset": 55,
+                    "func": {
+                      "_type": "Attribute",
+                      "_lineno": 8,
+                      "_col_offset": 24,
+                      "_end_lineno": 8,
+                      "_end_col_offset": 36,
+                      "value": {
+                        "_type": "Attribute",
+                        "_lineno": 8,
+                        "_col_offset": 24,
+                        "_end_lineno": 8,
+                        "_end_col_offset": 31,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 8,
+                          "_col_offset": 24,
+                          "_end_lineno": 8,
+                          "_end_col_offset": 26,
+                          "id": "os",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "path",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "join",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "args": [
+                      {
+                        "_type": "Name",
+                        "_lineno": 8,
+                        "_col_offset": 37,
+                        "_end_lineno": 8,
+                        "_end_col_offset": 44,
+                        "id": "dirpath",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      {
+                        "_type": "Name",
+                        "_lineno": 8,
+                        "_col_offset": 46,
+                        "_end_lineno": 8,
+                        "_end_col_offset": 54,
+                        "id": "filename",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "type_comment": null
+                },
+                {
+                  "_type": "Assign",
+                  "_lineno": 9,
+                  "_col_offset": 12,
+                  "_end_lineno": 9,
+                  "_end_col_offset": 51,
+                  "targets": [
+                    {
+                      "_type": "Name",
+                      "_lineno": 9,
+                      "_col_offset": 12,
+                      "_end_lineno": 9,
+                      "_end_col_offset": 21,
+                      "id": "real_path",
+                      "ctx": {
+                        "_type": "Store"
+                      }
+                    }
+                  ],
+                  "value": {
+                    "_type": "Call",
+                    "_lineno": 9,
+                    "_col_offset": 24,
+                    "_end_lineno": 9,
+                    "_end_col_offset": 51,
+                    "func": {
+                      "_type": "Attribute",
+                      "_lineno": 9,
+                      "_col_offset": 24,
+                      "_end_lineno": 9,
+                      "_end_col_offset": 40,
+                      "value": {
+                        "_type": "Attribute",
+                        "_lineno": 9,
+                        "_col_offset": 24,
+                        "_end_lineno": 9,
+                        "_end_col_offset": 31,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 9,
+                          "_col_offset": 24,
+                          "_end_lineno": 9,
+                          "_end_col_offset": 26,
+                          "id": "os",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "path",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "realpath",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "args": [
+                      {
+                        "_type": "Name",
+                        "_lineno": 9,
+                        "_col_offset": 41,
+                        "_end_lineno": 9,
+                        "_end_col_offset": 50,
+                        "id": "file_path",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "type_comment": null
+                },
+                {
+                  "_type": "Assign",
+                  "_lineno": 10,
+                  "_col_offset": 12,
+                  "_end_lineno": 10,
+                  "_end_col_offset": 69,
+                  "targets": [
+                    {
+                      "_type": "Name",
+                      "_lineno": 10,
+                      "_col_offset": 12,
+                      "_end_lineno": 10,
+                      "_end_col_offset": 30,
+                      "id": "relative_file_path",
+                      "ctx": {
+                        "_type": "Store"
+                      }
+                    }
+                  ],
+                  "value": {
+                    "_type": "Call",
+                    "_lineno": 10,
+                    "_col_offset": 33,
+                    "_end_lineno": 10,
+                    "_end_col_offset": 69,
+                    "func": {
+                      "_type": "Attribute",
+                      "_lineno": 10,
+                      "_col_offset": 33,
+                      "_end_lineno": 10,
+                      "_end_col_offset": 48,
+                      "value": {
+                        "_type": "Attribute",
+                        "_lineno": 10,
+                        "_col_offset": 33,
+                        "_end_lineno": 10,
+                        "_end_col_offset": 40,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 10,
+                          "_col_offset": 33,
+                          "_end_lineno": 10,
+                          "_end_col_offset": 35,
+                          "id": "os",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "path",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "relpath",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "args": [
+                      {
+                        "_type": "Name",
+                        "_lineno": 10,
+                        "_col_offset": 49,
+                        "_end_lineno": 10,
+                        "_end_col_offset": 58,
+                        "id": "file_path",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      {
+                        "_type": "Name",
+                        "_lineno": 10,
+                        "_col_offset": 60,
+                        "_end_lineno": 10,
+                        "_end_col_offset": 68,
+                        "id": "root_dir",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "type_comment": null
+                },
+                {
+                  "_type": "Try",
+                  "_lineno": 11,
+                  "_col_offset": 12,
+                  "_end_lineno": 15,
+                  "_end_col_offset": 24,
+                  "body": [
+                    {
+                      "_type": "With",
+                      "_lineno": 12,
+                      "_col_offset": 16,
+                      "_end_lineno": 13,
+                      "_end_col_offset": 43,
+                      "items": [
+                        {
+                          "_type": "withitem",
+                          "context_expr": {
+                            "_type": "Call",
+                            "_lineno": 12,
+                            "_col_offset": 21,
+                            "_end_lineno": 12,
+                            "_end_col_offset": 59,
+                            "func": {
+                              "_type": "Name",
+                              "_lineno": 12,
+                              "_col_offset": 21,
+                              "_end_lineno": 12,
+                              "_end_col_offset": 25,
+                              "id": "open",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "args": [
+                              {
+                                "_type": "Name",
+                                "_lineno": 12,
+                                "_col_offset": 26,
+                                "_end_lineno": 12,
+                                "_end_col_offset": 35,
+                                "id": "real_path",
+                                "ctx": {
+                                  "_type": "Load"
+                                }
+                              },
+                              {
+                                "_type": "Constant",
+                                "_lineno": 12,
+                                "_col_offset": 37,
+                                "_end_lineno": 12,
+                                "_end_col_offset": 40,
+                                "value": "r",
+                                "kind": null
+                              }
+                            ],
+                            "keywords": [
+                              {
+                                "_type": "keyword",
+                                "_lineno": 12,
+                                "_col_offset": 42,
+                                "_end_lineno": 12,
+                                "_end_col_offset": 58,
+                                "arg": "encoding",
+                                "value": {
+                                  "_type": "Constant",
+                                  "_lineno": 12,
+                                  "_col_offset": 51,
+                                  "_end_lineno": 12,
+                                  "_end_col_offset": 58,
+                                  "value": "utf-8",
+                                  "kind": null
+                                }
+                              }
+                            ]
+                          },
+                          "optional_vars": {
+                            "_type": "Name",
+                            "_lineno": 12,
+                            "_col_offset": 63,
+                            "_end_lineno": 12,
+                            "_end_col_offset": 64,
+                            "id": "f",
+                            "ctx": {
+                              "_type": "Store"
+                            }
+                          }
+                        }
+                      ],
+                      "body": [
+                        {
+                          "_type": "Assign",
+                          "_lineno": 13,
+                          "_col_offset": 20,
+                          "_end_lineno": 13,
+                          "_end_col_offset": 43,
+                          "targets": [
+                            {
+                              "_type": "Name",
+                              "_lineno": 13,
+                              "_col_offset": 20,
+                              "_end_lineno": 13,
+                              "_end_col_offset": 32,
+                              "id": "file_content",
+                              "ctx": {
+                                "_type": "Store"
+                              }
+                            }
+                          ],
+                          "value": {
+                            "_type": "Call",
+                            "_lineno": 13,
+                            "_col_offset": 35,
+                            "_end_lineno": 13,
+                            "_end_col_offset": 43,
+                            "func": {
+                              "_type": "Attribute",
+                              "_lineno": 13,
+                              "_col_offset": 35,
+                              "_end_lineno": 13,
+                              "_end_col_offset": 41,
+                              "value": {
+                                "_type": "Name",
+                                "_lineno": 13,
+                                "_col_offset": 35,
+                                "_end_lineno": 13,
+                                "_end_col_offset": 36,
+                                "id": "f",
+                                "ctx": {
+                                  "_type": "Load"
+                                }
+                              },
+                              "attr": "read",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "args": [],
+                            "keywords": []
+                          },
+                          "type_comment": null
+                        }
+                      ],
+                      "type_comment": null
+                    }
+                  ],
+                  "handlers": [
+                    {
+                      "_type": "ExceptHandler",
+                      "_lineno": 14,
+                      "_col_offset": 12,
+                      "_end_lineno": 15,
+                      "_end_col_offset": 24,
+                      "type": {
+                        "_type": "Tuple",
+                        "_lineno": 14,
+                        "_col_offset": 19,
+                        "_end_lineno": 14,
+                        "_end_col_offset": 48,
+                        "elts": [
+                          {
+                            "_type": "Name",
+                            "_lineno": 14,
+                            "_col_offset": 20,
+                            "_end_lineno": 14,
+                            "_end_col_offset": 38,
+                            "id": "UnicodeDecodeError",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          },
+                          {
+                            "_type": "Name",
+                            "_lineno": 14,
+                            "_col_offset": 40,
+                            "_end_lineno": 14,
+                            "_end_col_offset": 47,
+                            "id": "OSError",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          }
+                        ],
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "name": null,
+                      "body": [
+                        {
+                          "_type": "Continue",
+                          "_lineno": 15,
+                          "_col_offset": 16,
+                          "_end_lineno": 15,
+                          "_end_col_offset": 24
+                        }
+                      ]
+                    }
+                  ],
+                  "orelse": [],
+                  "finalbody": []
+                },
+                {
+                  "_type": "Expr",
+                  "_lineno": 16,
+                  "_col_offset": 12,
+                  "_end_lineno": 21,
+                  "_end_col_offset": 13,
+                  "value": {
+                    "_type": "Call",
+                    "_lineno": 16,
+                    "_col_offset": 12,
+                    "_end_lineno": 21,
+                    "_end_col_offset": 13,
+                    "func": {
+                      "_type": "Attribute",
+                      "_lineno": 16,
+                      "_col_offset": 12,
+                      "_end_lineno": 16,
+                      "_end_col_offset": 32,
+                      "value": {
+                        "_type": "Name",
+                        "_lineno": 16,
+                        "_col_offset": 12,
+                        "_end_lineno": 16,
+                        "_end_col_offset": 25,
+                        "id": "file_sections",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "append",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "args": [
+                      {
+                        "_type": "JoinedStr",
+                        "_lineno": 17,
+                        "_col_offset": 16,
+                        "_end_lineno": 20,
+                        "_end_col_offset": 22,
+                        "values": [
+                          {
+                            "_type": "Constant",
+                            "_lineno": 17,
+                            "_col_offset": 18,
+                            "_end_lineno": 17,
+                            "_end_col_offset": 27,
+                            "value": "## File: ",
+                            "kind": null
+                          },
+                          {
+                            "_type": "FormattedValue",
+                            "_lineno": 17,
+                            "_col_offset": 27,
+                            "_end_lineno": 17,
+                            "_end_col_offset": 47,
+                            "value": {
+                              "_type": "Name",
+                              "_lineno": 17,
+                              "_col_offset": 28,
+                              "_end_lineno": 17,
+                              "_end_col_offset": 46,
+                              "id": "relative_file_path",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "conversion": -1,
+                            "format_spec": null
+                          },
+                          {
+                            "_type": "Constant",
+                            "_lineno": 17,
+                            "_col_offset": 47,
+                            "_end_lineno": 18,
+                            "_end_col_offset": 23,
+                            "value": "\n```\n",
+                            "kind": null
+                          },
+                          {
+                            "_type": "FormattedValue",
+                            "_lineno": 19,
+                            "_col_offset": 18,
+                            "_end_lineno": 19,
+                            "_end_col_offset": 32,
+                            "value": {
+                              "_type": "Name",
+                              "_lineno": 19,
+                              "_col_offset": 19,
+                              "_end_lineno": 19,
+                              "_end_col_offset": 31,
+                              "id": "file_content",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "conversion": -1,
+                            "format_spec": null
+                          },
+                          {
+                            "_type": "Constant",
+                            "_lineno": 19,
+                            "_col_offset": 32,
+                            "_end_lineno": 20,
+                            "_end_col_offset": 21,
+                            "value": "\n```",
+                            "kind": null
+                          }
+                        ]
+                      }
+                    ],
+                    "keywords": []
+                  }
+                }
+              ],
+              "orelse": [],
+              "type_comment": null
+            }
+          ],
+          "orelse": [],
+          "type_comment": null
+        },
+        {
+          "_type": "Assign",
+          "_lineno": 22,
+          "_col_offset": 4,
+          "_end_lineno": 29,
+          "_end_col_offset": 5,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 22,
+              "_col_offset": 4,
+              "_end_lineno": 22,
+              "_end_col_offset": 7,
+              "id": "ret",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "BinOp",
+            "_lineno": 23,
+            "_col_offset": 8,
+            "_end_lineno": 28,
+            "_end_col_offset": 36,
+            "left": {
+              "_type": "JoinedStr",
+              "_lineno": 23,
+              "_col_offset": 8,
+              "_end_lineno": 27,
+              "_end_col_offset": 22,
+              "values": [
+                {
+                  "_type": "Constant",
+                  "_lineno": 23,
+                  "_col_offset": 10,
+                  "_end_lineno": 24,
+                  "_end_col_offset": 15,
+                  "value": "# Directories structure\n```\n",
+                  "kind": null
+                },
+                {
+                  "_type": "FormattedValue",
+                  "_lineno": 25,
+                  "_col_offset": 10,
+                  "_end_lineno": 25,
+                  "_end_col_offset": 22,
+                  "value": {
+                    "_type": "Name",
+                    "_lineno": 25,
+                    "_col_offset": 11,
+                    "_end_lineno": 25,
+                    "_end_col_offset": 21,
+                    "id": "dir_struct",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "conversion": -1,
+                  "format_spec": null
+                },
+                {
+                  "_type": "Constant",
+                  "_lineno": 25,
+                  "_col_offset": 22,
+                  "_end_lineno": 27,
+                  "_end_col_offset": 21,
+                  "value": "\n```\n\n# Files\n\n",
+                  "kind": null
+                }
+              ]
+            },
+            "op": {
+              "_type": "Add"
+            },
+            "right": {
+              "_type": "Call",
+              "_lineno": 28,
+              "_col_offset": 10,
+              "_end_lineno": 28,
+              "_end_col_offset": 36,
+              "func": {
+                "_type": "Attribute",
+                "_lineno": 28,
+                "_col_offset": 10,
+                "_end_lineno": 28,
+                "_end_col_offset": 21,
+                "value": {
+                  "_type": "Constant",
+                  "_lineno": 28,
+                  "_col_offset": 10,
+                  "_end_lineno": 28,
+                  "_end_col_offset": 16,
+                  "value": "\n\n",
+                  "kind": null
+                },
+                "attr": "join",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "args": [
+                {
+                  "_type": "Name",
+                  "_lineno": 28,
+                  "_col_offset": 22,
+                  "_end_lineno": 28,
+                  "_end_col_offset": 35,
+                  "id": "file_sections",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                }
+              ],
+              "keywords": []
+            }
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "Return",
+          "_lineno": 30,
+          "_col_offset": 4,
+          "_end_lineno": 30,
+          "_end_col_offset": 14,
+          "value": {
+            "_type": "Name",
+            "_lineno": 30,
+            "_col_offset": 11,
+            "_end_lineno": 30,
+            "_end_col_offset": 14,
+            "id": "ret",
+            "ctx": {
+              "_type": "Load"
+            }
+          }
+        }
+      ],
+      "decorator_list": [],
+      "returns": {
+        "_type": "Name",
+        "_lineno": 3,
+        "_col_offset": 31,
+        "_end_lineno": 3,
+        "_end_col_offset": 34,
+        "id": "str",
+        "ctx": {
+          "_type": "Load"
+        }
+      },
+      "type_comment": null,
+      "type_params": []
+    }
+  ],
+  "type_ignores": []
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "_call_claude",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/__init__.py",
+    "pattern": "/^def _call_claude(prompt: str) -> str:$/;\"",
+    "type": "f",
+    "line": 4,
+    "kind": null
+  }
+]

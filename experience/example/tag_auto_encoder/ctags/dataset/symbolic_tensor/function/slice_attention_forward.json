@@ -1,0 +1,34 @@
+[
+  {
+    "name": "_get_raw_storage_path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention_forward.py",
+    "pattern": "/^def _get_raw_storage_path(tensor: torch.Tensor, coordinates):$/;\"",
+    "type": "f",
+    "line": 7,
+    "kind": null
+  },
+  {
+    "name": "read_out",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention_forward.py",
+    "pattern": "/^    def read_out(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 88,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention_forward.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 80,
+    "kind": null
+  },
+  {
+    "name": "slice_attention_forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_attention_forward.py",
+    "pattern": "/^def slice_attention_forward($/;\"",
+    "type": "f",
+    "line": 19,
+    "kind": null
+  }
+]

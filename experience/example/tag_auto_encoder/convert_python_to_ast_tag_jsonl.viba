@@ -1,0 +1,5 @@
+convert_python_to_ast_tag_jsonl[ProgrammingLanguage] :=
+    JsonLines[AstTagRelation[ProgrammingLanguage]]
+    <- $ast_obj ast[ProgrammingLanguage]
+    # inline
+    <- Import[./ast_tag_relation_group.viba]

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "SliceTensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^class SliceTensor(torch.autograd.Function):$/;\"",
+    "type": "c",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^    def backward(ctx, grad_output):$/;\"",
+    "type": "m",
+    "line": 26,
+    "kind": null,
+    "class": "SliceTensor"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^    def forward(ctx, input, slice_list):$/;\"",
+    "type": "m",
+    "line": 18,
+    "kind": null,
+    "class": "SliceTensor"
+  },
+  {
+    "name": "read_out",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^    def read_out(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 52,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^    def run_test(name, cond, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 45,
+    "kind": null
+  },
+  {
+    "name": "slice_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_tensor.py",
+    "pattern": "/^def slice_tensor(input: torch.Tensor, slice_list: list) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 34,
+    "kind": null
+  }
+]

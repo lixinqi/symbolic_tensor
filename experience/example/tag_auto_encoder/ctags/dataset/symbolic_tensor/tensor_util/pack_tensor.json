@@ -1,0 +1,18 @@
+[
+  {
+    "name": "pack_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/pack_tensor.py",
+    "pattern": "/^def pack_tensor(tensor: torch.Tensor) -> str:$/;\"",
+    "type": "f",
+    "line": 4,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/pack_tensor.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 19,
+    "kind": null
+  }
+]

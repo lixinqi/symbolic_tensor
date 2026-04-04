@@ -1,0 +1,42 @@
+[
+  {
+    "name": "_read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_and_concat_attention_forward.py",
+    "pattern": "/^def _read_storage(tensor: torch.Tensor, flat_index: int) -> str:$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "_write_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_and_concat_attention_forward.py",
+    "pattern": "/^def _write_storage(tensor: torch.Tensor, coordinates: List[int], content: str) -> None:$/;\"",
+    "type": "f",
+    "line": 18,
+    "kind": null
+  },
+  {
+    "name": "read_out",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_and_concat_attention_forward.py",
+    "pattern": "/^    def read_out(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 79,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_and_concat_attention_forward.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 71,
+    "kind": null
+  },
+  {
+    "name": "slice_and_concat_attention_forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/slice_and_concat_attention_forward.py",
+    "pattern": "/^def slice_and_concat_attention_forward($/;\"",
+    "type": "f",
+    "line": 33,
+    "kind": null
+  }
+]

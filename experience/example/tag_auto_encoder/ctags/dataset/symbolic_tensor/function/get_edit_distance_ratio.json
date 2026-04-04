@@ -1,0 +1,94 @@
+[
+  {
+    "name": "GetEditDistanceRatio",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^class GetEditDistanceRatio(Function):$/;\"",
+    "type": "c",
+    "line": 89,
+    "kind": null
+  },
+  {
+    "name": "_get_diff",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^def _get_diff(actual_content: str, expected_content: str) -> str:$/;\"",
+    "type": "f",
+    "line": 20,
+    "kind": null
+  },
+  {
+    "name": "_read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^def _read_storage(tensor: torch.Tensor, flat_index: int) -> str:$/;\"",
+    "type": "f",
+    "line": 8,
+    "kind": null
+  },
+  {
+    "name": "_unflatten",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^    def _unflatten(flat, shape):$/;\"",
+    "type": "f",
+    "line": 75,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^    def backward(ctx, grad_output):$/;\"",
+    "type": "m",
+    "line": 102,
+    "kind": null,
+    "class": "GetEditDistanceRatio"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^    def forward(ctx, actual, expected):$/;\"",
+    "type": "m",
+    "line": 91,
+    "kind": null,
+    "class": "GetEditDistanceRatio"
+  },
+  {
+    "name": "get_edit_distance_ratio",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^get_edit_distance_ratio = GetEditDistanceRatio.apply$/;\"",
+    "type": "v",
+    "line": 111,
+    "kind": null
+  },
+  {
+    "name": "get_edit_distance_ratio_backward_impl",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^def get_edit_distance_ratio_backward_impl($/;\"",
+    "type": "f",
+    "line": 58,
+    "kind": null
+  },
+  {
+    "name": "get_edit_distance_ratio_impl",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^def get_edit_distance_ratio_impl($/;\"",
+    "type": "f",
+    "line": 38,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "m",
+    "line": 123,
+    "kind": null,
+    "class": "GetEditDistanceRatio"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_edit_distance_ratio.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "m",
+    "line": 115,
+    "kind": null,
+    "class": "GetEditDistanceRatio"
+  }
+]

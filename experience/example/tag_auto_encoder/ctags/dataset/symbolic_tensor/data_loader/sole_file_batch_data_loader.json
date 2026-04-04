@@ -1,0 +1,69 @@
+[
+  {
+    "name": "SoleFileBatchDataLoader",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^class SoleFileBatchDataLoader:$/;\"",
+    "type": "c",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "__init__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def __init__(self, root_dir: str, extension: Optional[str] = None, batch_size: int = 1):$/;\"",
+    "type": "m",
+    "line": 25,
+    "kind": null,
+    "class": "SoleFileBatchDataLoader"
+  },
+  {
+    "name": "__iter__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def __iter__(self):$/;\"",
+    "type": "m",
+    "line": 30,
+    "kind": null,
+    "class": "SoleFileBatchDataLoader"
+  },
+  {
+    "name": "__len__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def __len__(self):$/;\"",
+    "type": "m",
+    "line": 43,
+    "kind": null,
+    "class": "SoleFileBatchDataLoader"
+  },
+  {
+    "name": "_get_all_file_paths",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^def _get_all_file_paths(root_dir: str, extension: Optional[str] = None) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 56,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 48,
+    "kind": null
+  },
+  {
+    "name": "storage_path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "pattern": "/^    def storage_path(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 67,
+    "kind": null
+  }
+]

@@ -1,0 +1,82 @@
+[
+  {
+    "name": "NestedDataType",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^NestedDataType = Union[None, str, Path]$/;\"",
+    "type": "v",
+    "line": 8,
+    "kind": null
+  },
+  {
+    "name": "NestedList",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^NestedList = Union[NestedDataType, List[\"NestedList\"]]$/;\"",
+    "type": "v",
+    "line": 9,
+    "kind": null
+  },
+  {
+    "name": "_assert_consistent_shape",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _assert_consistent_shape(nested_data: NestedList, shape: List[int]) -> None:$/;\"",
+    "type": "f",
+    "line": 22,
+    "kind": null
+  },
+  {
+    "name": "_flat_index_to_coords",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _flat_index_to_coords(flat_index: int, shape: List[int]) -> List[int]:$/;\"",
+    "type": "f",
+    "line": 48,
+    "kind": null
+  },
+  {
+    "name": "_flatten",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _flatten(nested_data: NestedList) -> List[NestedDataType]:$/;\"",
+    "type": "f",
+    "line": 37,
+    "kind": null
+  },
+  {
+    "name": "_get_shape",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _get_shape(nested_data: NestedList) -> List[int]:$/;\"",
+    "type": "f",
+    "line": 13,
+    "kind": null
+  },
+  {
+    "name": "_is_leaf",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _is_leaf(item) -> bool:$/;\"",
+    "type": "f",
+    "line": 10,
+    "kind": null
+  },
+  {
+    "name": "_str_to_digit_list",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def _str_to_digit_list(s: str) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 45,
+    "kind": null
+  },
+  {
+    "name": "make_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^def make_tensor(nested_data: NestedList, relative_to: str, symlink: bool = False) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 56,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/make_tensor.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 115,
+    "kind": null
+  }
+]

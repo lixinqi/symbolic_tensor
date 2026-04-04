@@ -1,0 +1,54 @@
+[
+  {
+    "name": "StMoe",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^class StMoe(torch.autograd.Function):$/;\"",
+    "type": "c",
+    "line": 20,
+    "kind": null
+  },
+  {
+    "name": "backward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^    def backward(ctx, grad_output, grad_selected_indexes=None):$/;\"",
+    "type": "m",
+    "line": 59,
+    "kind": null,
+    "class": "StMoe"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^    def forward($/;\"",
+    "type": "m",
+    "line": 22,
+    "kind": null,
+    "class": "StMoe"
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 93,
+    "kind": null,
+    "class": "StMoe"
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "m",
+    "line": 103,
+    "kind": null,
+    "class": "StMoe"
+  },
+  {
+    "name": "st_moe",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe.py",
+    "pattern": "/^st_moe = StMoe.apply$/;\"",
+    "type": "v",
+    "line": 90,
+    "kind": null
+  }
+]

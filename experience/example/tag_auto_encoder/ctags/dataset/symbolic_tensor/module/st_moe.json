@@ -1,0 +1,93 @@
+[
+  {
+    "name": "StMoeModule",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^class StMoeModule(nn.Module):$/;\"",
+    "type": "c",
+    "line": 9,
+    "kind": null
+  },
+  {
+    "name": "__init__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    def __init__($/;\"",
+    "type": "m",
+    "line": 29,
+    "kind": null,
+    "class": "StMoeModule"
+  },
+  {
+    "name": "forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    def forward(self, input: torch.Tensor) -> Tuple[torch.Tensor, Any]:$/;\"",
+    "type": "m",
+    "line": 57,
+    "kind": null,
+    "class": "StMoeModule"
+  },
+  {
+    "name": "model",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    model = StMoeModule($/;\"",
+    "type": "v",
+    "line": 152,
+    "kind": null
+  },
+  {
+    "name": "model",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    model = StMoeModule($/;\"",
+    "type": "v",
+    "line": 98,
+    "kind": null
+  },
+  {
+    "name": "optimizer",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    optimizer = StSGD(model.parameters(), lr=1.0)$/;\"",
+    "type": "v",
+    "line": 156,
+    "kind": null
+  },
+  {
+    "name": "parameters",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    def parameters(self, recurse: bool = True):$/;\"",
+    "type": "m",
+    "line": 55,
+    "kind": null,
+    "class": "StMoeModule"
+  },
+  {
+    "name": "params",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    params = list(model.parameters())$/;\"",
+    "type": "v",
+    "line": 108,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 86,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 68,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/module/st_moe.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 78,
+    "kind": null
+  }
+]

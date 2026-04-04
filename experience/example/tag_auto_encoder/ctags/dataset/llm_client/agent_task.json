@@ -1,0 +1,10 @@
+[
+  {
+    "name": "AgentTask",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/agent_task.py",
+    "pattern": "/^class AgentTask:$/;\"",
+    "type": "c",
+    "line": 4,
+    "kind": null
+  }
+]

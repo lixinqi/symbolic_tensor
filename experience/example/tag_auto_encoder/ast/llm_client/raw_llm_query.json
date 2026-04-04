@@ -1,0 +1,1281 @@
+{
+  "_type": "Module",
+  "body": [
+    {
+      "_type": "Import",
+      "_lineno": 1,
+      "_col_offset": 0,
+      "_end_lineno": 1,
+      "_end_col_offset": 14,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 1,
+          "_col_offset": 7,
+          "_end_lineno": 1,
+          "_end_col_offset": 14,
+          "name": "asyncio",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "Import",
+      "_lineno": 2,
+      "_col_offset": 0,
+      "_end_lineno": 2,
+      "_end_col_offset": 9,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 7,
+          "_end_lineno": 2,
+          "_end_col_offset": 9,
+          "name": "os",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 3,
+      "_col_offset": 0,
+      "_end_lineno": 3,
+      "_end_col_offset": 33,
+      "module": "typing",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 3,
+          "_col_offset": 19,
+          "_end_lineno": 3,
+          "_end_col_offset": 23,
+          "name": "Dict",
+          "asname": null
+        },
+        {
+          "_type": "alias",
+          "_lineno": 3,
+          "_col_offset": 25,
+          "_end_lineno": 3,
+          "_end_col_offset": 33,
+          "name": "Optional",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 4,
+      "_col_offset": 0,
+      "_end_lineno": 4,
+      "_end_col_offset": 30,
+      "module": "openai",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 4,
+          "_col_offset": 19,
+          "_end_lineno": 4,
+          "_end_col_offset": 30,
+          "name": "AsyncOpenAI",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "Assign",
+      "_lineno": 5,
+      "_col_offset": 0,
+      "_end_lineno": 9,
+      "_end_col_offset": 1,
+      "targets": [
+        {
+          "_type": "Name",
+          "_lineno": 5,
+          "_col_offset": 0,
+          "_end_lineno": 5,
+          "_end_col_offset": 15,
+          "id": "DEFAULT_LLM_ENV",
+          "ctx": {
+            "_type": "Store"
+          }
+        }
+      ],
+      "value": {
+        "_type": "Dict",
+        "_lineno": 5,
+        "_col_offset": 18,
+        "_end_lineno": 9,
+        "_end_col_offset": 1,
+        "keys": [
+          {
+            "_type": "Constant",
+            "_lineno": 6,
+            "_col_offset": 4,
+            "_end_lineno": 6,
+            "_end_col_offset": 17,
+            "value": "LLM_API_KEY",
+            "kind": null
+          },
+          {
+            "_type": "Constant",
+            "_lineno": 7,
+            "_col_offset": 4,
+            "_end_lineno": 7,
+            "_end_col_offset": 18,
+            "value": "LLM_BASE_URL",
+            "kind": null
+          },
+          {
+            "_type": "Constant",
+            "_lineno": 8,
+            "_col_offset": 4,
+            "_end_lineno": 8,
+            "_end_col_offset": 15,
+            "value": "LLM_MODEL",
+            "kind": null
+          }
+        ],
+        "values": [
+          {
+            "_type": "Call",
+            "_lineno": 6,
+            "_col_offset": 19,
+            "_end_lineno": 6,
+            "_end_col_offset": 52,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 6,
+              "_col_offset": 19,
+              "_end_lineno": 6,
+              "_end_col_offset": 33,
+              "value": {
+                "_type": "Attribute",
+                "_lineno": 6,
+                "_col_offset": 19,
+                "_end_lineno": 6,
+                "_end_col_offset": 29,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 6,
+                  "_col_offset": 19,
+                  "_end_lineno": 6,
+                  "_end_col_offset": 21,
+                  "id": "os",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "environ",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "get",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Constant",
+                "_lineno": 6,
+                "_col_offset": 34,
+                "_end_lineno": 6,
+                "_end_col_offset": 47,
+                "value": "LLM_API_KEY",
+                "kind": null
+              },
+              {
+                "_type": "Constant",
+                "_lineno": 6,
+                "_col_offset": 49,
+                "_end_lineno": 6,
+                "_end_col_offset": 51,
+                "value": "",
+                "kind": null
+              }
+            ],
+            "keywords": []
+          },
+          {
+            "_type": "Call",
+            "_lineno": 7,
+            "_col_offset": 20,
+            "_end_lineno": 7,
+            "_end_col_offset": 54,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 7,
+              "_col_offset": 20,
+              "_end_lineno": 7,
+              "_end_col_offset": 34,
+              "value": {
+                "_type": "Attribute",
+                "_lineno": 7,
+                "_col_offset": 20,
+                "_end_lineno": 7,
+                "_end_col_offset": 30,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 7,
+                  "_col_offset": 20,
+                  "_end_lineno": 7,
+                  "_end_col_offset": 22,
+                  "id": "os",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "environ",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "get",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Constant",
+                "_lineno": 7,
+                "_col_offset": 35,
+                "_end_lineno": 7,
+                "_end_col_offset": 49,
+                "value": "LLM_BASE_URL",
+                "kind": null
+              },
+              {
+                "_type": "Constant",
+                "_lineno": 7,
+                "_col_offset": 51,
+                "_end_lineno": 7,
+                "_end_col_offset": 53,
+                "value": "",
+                "kind": null
+              }
+            ],
+            "keywords": []
+          },
+          {
+            "_type": "Call",
+            "_lineno": 8,
+            "_col_offset": 17,
+            "_end_lineno": 8,
+            "_end_col_offset": 48,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 8,
+              "_col_offset": 17,
+              "_end_lineno": 8,
+              "_end_col_offset": 31,
+              "value": {
+                "_type": "Attribute",
+                "_lineno": 8,
+                "_col_offset": 17,
+                "_end_lineno": 8,
+                "_end_col_offset": 27,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 8,
+                  "_col_offset": 17,
+                  "_end_lineno": 8,
+                  "_end_col_offset": 19,
+                  "id": "os",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "environ",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "get",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Constant",
+                "_lineno": 8,
+                "_col_offset": 32,
+                "_end_lineno": 8,
+                "_end_col_offset": 43,
+                "value": "LLM_MODEL",
+                "kind": null
+              },
+              {
+                "_type": "Constant",
+                "_lineno": 8,
+                "_col_offset": 45,
+                "_end_lineno": 8,
+                "_end_col_offset": 47,
+                "value": "",
+                "kind": null
+              }
+            ],
+            "keywords": []
+          }
+        ]
+      },
+      "type_comment": null
+    },
+    {
+      "_type": "AsyncFunctionDef",
+      "_lineno": 10,
+      "_col_offset": 0,
+      "_end_lineno": 27,
+      "_end_col_offset": 28,
+      "name": "raw_llm_query",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 10,
+            "_col_offset": 24,
+            "_end_lineno": 10,
+            "_end_col_offset": 35,
+            "arg": "prompt",
+            "annotation": {
+              "_type": "Name",
+              "_lineno": 10,
+              "_col_offset": 32,
+              "_end_lineno": 10,
+              "_end_col_offset": 35,
+              "id": "str",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          },
+          {
+            "_type": "arg",
+            "_lineno": 10,
+            "_col_offset": 37,
+            "_end_lineno": 10,
+            "_end_col_offset": 70,
+            "arg": "llm_env",
+            "annotation": {
+              "_type": "Subscript",
+              "_lineno": 10,
+              "_col_offset": 46,
+              "_end_lineno": 10,
+              "_end_col_offset": 70,
+              "value": {
+                "_type": "Name",
+                "_lineno": 10,
+                "_col_offset": 46,
+                "_end_lineno": 10,
+                "_end_col_offset": 54,
+                "id": "Optional",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "slice": {
+                "_type": "Subscript",
+                "_lineno": 10,
+                "_col_offset": 55,
+                "_end_lineno": 10,
+                "_end_col_offset": 69,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 10,
+                  "_col_offset": 55,
+                  "_end_lineno": 10,
+                  "_end_col_offset": 59,
+                  "id": "Dict",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "slice": {
+                  "_type": "Tuple",
+                  "_lineno": 10,
+                  "_col_offset": 60,
+                  "_end_lineno": 10,
+                  "_end_col_offset": 68,
+                  "elts": [
+                    {
+                      "_type": "Name",
+                      "_lineno": 10,
+                      "_col_offset": 60,
+                      "_end_lineno": 10,
+                      "_end_col_offset": 63,
+                      "id": "str",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    {
+                      "_type": "Name",
+                      "_lineno": 10,
+                      "_col_offset": 65,
+                      "_end_lineno": 10,
+                      "_end_col_offset": 68,
+                      "id": "str",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    }
+                  ],
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": [
+          {
+            "_type": "Constant",
+            "_lineno": 10,
+            "_col_offset": 73,
+            "_end_lineno": 10,
+            "_end_col_offset": 77,
+            "value": null,
+            "kind": null
+          }
+        ]
+      },
+      "body": [
+        {
+          "_type": "Assign",
+          "_lineno": 11,
+          "_col_offset": 4,
+          "_end_lineno": 11,
+          "_end_col_offset": 61,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 11,
+              "_col_offset": 4,
+              "_end_lineno": 11,
+              "_end_col_offset": 7,
+              "id": "env",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "IfExp",
+            "_lineno": 11,
+            "_col_offset": 10,
+            "_end_lineno": 11,
+            "_end_col_offset": 61,
+            "test": {
+              "_type": "Compare",
+              "_lineno": 11,
+              "_col_offset": 21,
+              "_end_lineno": 11,
+              "_end_col_offset": 40,
+              "left": {
+                "_type": "Name",
+                "_lineno": 11,
+                "_col_offset": 21,
+                "_end_lineno": 11,
+                "_end_col_offset": 28,
+                "id": "llm_env",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "ops": [
+                {
+                  "_type": "IsNot"
+                }
+              ],
+              "comparators": [
+                {
+                  "_type": "Constant",
+                  "_lineno": 11,
+                  "_col_offset": 36,
+                  "_end_lineno": 11,
+                  "_end_col_offset": 40,
+                  "value": null,
+                  "kind": null
+                }
+              ]
+            },
+            "body": {
+              "_type": "Name",
+              "_lineno": 11,
+              "_col_offset": 10,
+              "_end_lineno": 11,
+              "_end_col_offset": 17,
+              "id": "llm_env",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "orelse": {
+              "_type": "Name",
+              "_lineno": 11,
+              "_col_offset": 46,
+              "_end_lineno": 11,
+              "_end_col_offset": 61,
+              "id": "DEFAULT_LLM_ENV",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "Assign",
+          "_lineno": 12,
+          "_col_offset": 4,
+          "_end_lineno": 15,
+          "_end_col_offset": 5,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 12,
+              "_col_offset": 4,
+              "_end_lineno": 12,
+              "_end_col_offset": 10,
+              "id": "client",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "Call",
+            "_lineno": 12,
+            "_col_offset": 13,
+            "_end_lineno": 15,
+            "_end_col_offset": 5,
+            "func": {
+              "_type": "Name",
+              "_lineno": 12,
+              "_col_offset": 13,
+              "_end_lineno": 12,
+              "_end_col_offset": 24,
+              "id": "AsyncOpenAI",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [],
+            "keywords": [
+              {
+                "_type": "keyword",
+                "_lineno": 13,
+                "_col_offset": 8,
+                "_end_lineno": 13,
+                "_end_col_offset": 71,
+                "arg": "api_key",
+                "value": {
+                  "_type": "BoolOp",
+                  "_lineno": 13,
+                  "_col_offset": 16,
+                  "_end_lineno": 13,
+                  "_end_col_offset": 71,
+                  "op": {
+                    "_type": "Or"
+                  },
+                  "values": [
+                    {
+                      "_type": "Call",
+                      "_lineno": 13,
+                      "_col_offset": 16,
+                      "_end_lineno": 13,
+                      "_end_col_offset": 38,
+                      "func": {
+                        "_type": "Attribute",
+                        "_lineno": 13,
+                        "_col_offset": 16,
+                        "_end_lineno": 13,
+                        "_end_col_offset": 23,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 13,
+                          "_col_offset": 16,
+                          "_end_lineno": 13,
+                          "_end_col_offset": 19,
+                          "id": "env",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "get",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "args": [
+                        {
+                          "_type": "Constant",
+                          "_lineno": 13,
+                          "_col_offset": 24,
+                          "_end_lineno": 13,
+                          "_end_col_offset": 37,
+                          "value": "LLM_API_KEY",
+                          "kind": null
+                        }
+                      ],
+                      "keywords": []
+                    },
+                    {
+                      "_type": "Call",
+                      "_lineno": 13,
+                      "_col_offset": 42,
+                      "_end_lineno": 13,
+                      "_end_col_offset": 71,
+                      "func": {
+                        "_type": "Attribute",
+                        "_lineno": 13,
+                        "_col_offset": 42,
+                        "_end_lineno": 13,
+                        "_end_col_offset": 56,
+                        "value": {
+                          "_type": "Attribute",
+                          "_lineno": 13,
+                          "_col_offset": 42,
+                          "_end_lineno": 13,
+                          "_end_col_offset": 52,
+                          "value": {
+                            "_type": "Name",
+                            "_lineno": 13,
+                            "_col_offset": 42,
+                            "_end_lineno": 13,
+                            "_end_col_offset": 44,
+                            "id": "os",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          },
+                          "attr": "environ",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "get",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "args": [
+                        {
+                          "_type": "Constant",
+                          "_lineno": 13,
+                          "_col_offset": 57,
+                          "_end_lineno": 13,
+                          "_end_col_offset": 70,
+                          "value": "LLM_API_KEY",
+                          "kind": null
+                        }
+                      ],
+                      "keywords": []
+                    }
+                  ]
+                }
+              },
+              {
+                "_type": "keyword",
+                "_lineno": 14,
+                "_col_offset": 8,
+                "_end_lineno": 14,
+                "_end_col_offset": 74,
+                "arg": "base_url",
+                "value": {
+                  "_type": "BoolOp",
+                  "_lineno": 14,
+                  "_col_offset": 17,
+                  "_end_lineno": 14,
+                  "_end_col_offset": 74,
+                  "op": {
+                    "_type": "Or"
+                  },
+                  "values": [
+                    {
+                      "_type": "Call",
+                      "_lineno": 14,
+                      "_col_offset": 17,
+                      "_end_lineno": 14,
+                      "_end_col_offset": 40,
+                      "func": {
+                        "_type": "Attribute",
+                        "_lineno": 14,
+                        "_col_offset": 17,
+                        "_end_lineno": 14,
+                        "_end_col_offset": 24,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 14,
+                          "_col_offset": 17,
+                          "_end_lineno": 14,
+                          "_end_col_offset": 20,
+                          "id": "env",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "get",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "args": [
+                        {
+                          "_type": "Constant",
+                          "_lineno": 14,
+                          "_col_offset": 25,
+                          "_end_lineno": 14,
+                          "_end_col_offset": 39,
+                          "value": "LLM_BASE_URL",
+                          "kind": null
+                        }
+                      ],
+                      "keywords": []
+                    },
+                    {
+                      "_type": "Call",
+                      "_lineno": 14,
+                      "_col_offset": 44,
+                      "_end_lineno": 14,
+                      "_end_col_offset": 74,
+                      "func": {
+                        "_type": "Attribute",
+                        "_lineno": 14,
+                        "_col_offset": 44,
+                        "_end_lineno": 14,
+                        "_end_col_offset": 58,
+                        "value": {
+                          "_type": "Attribute",
+                          "_lineno": 14,
+                          "_col_offset": 44,
+                          "_end_lineno": 14,
+                          "_end_col_offset": 54,
+                          "value": {
+                            "_type": "Name",
+                            "_lineno": 14,
+                            "_col_offset": 44,
+                            "_end_lineno": 14,
+                            "_end_col_offset": 46,
+                            "id": "os",
+                            "ctx": {
+                              "_type": "Load"
+                            }
+                          },
+                          "attr": "environ",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "get",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "args": [
+                        {
+                          "_type": "Constant",
+                          "_lineno": 14,
+                          "_col_offset": 59,
+                          "_end_lineno": 14,
+                          "_end_col_offset": 73,
+                          "value": "LLM_BASE_URL",
+                          "kind": null
+                        }
+                      ],
+                      "keywords": []
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "Try",
+          "_lineno": 16,
+          "_col_offset": 4,
+          "_end_lineno": 27,
+          "_end_col_offset": 28,
+          "body": [
+            {
+              "_type": "Assign",
+              "_lineno": 17,
+              "_col_offset": 8,
+              "_end_lineno": 24,
+              "_end_col_offset": 9,
+              "targets": [
+                {
+                  "_type": "Name",
+                  "_lineno": 17,
+                  "_col_offset": 8,
+                  "_end_lineno": 17,
+                  "_end_col_offset": 16,
+                  "id": "response",
+                  "ctx": {
+                    "_type": "Store"
+                  }
+                }
+              ],
+              "value": {
+                "_type": "Await",
+                "_lineno": 17,
+                "_col_offset": 19,
+                "_end_lineno": 24,
+                "_end_col_offset": 9,
+                "value": {
+                  "_type": "Call",
+                  "_lineno": 17,
+                  "_col_offset": 25,
+                  "_end_lineno": 24,
+                  "_end_col_offset": 9,
+                  "func": {
+                    "_type": "Attribute",
+                    "_lineno": 17,
+                    "_col_offset": 25,
+                    "_end_lineno": 17,
+                    "_end_col_offset": 55,
+                    "value": {
+                      "_type": "Attribute",
+                      "_lineno": 17,
+                      "_col_offset": 25,
+                      "_end_lineno": 17,
+                      "_end_col_offset": 48,
+                      "value": {
+                        "_type": "Attribute",
+                        "_lineno": 17,
+                        "_col_offset": 25,
+                        "_end_lineno": 17,
+                        "_end_col_offset": 36,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 17,
+                          "_col_offset": 25,
+                          "_end_lineno": 17,
+                          "_end_col_offset": 31,
+                          "id": "client",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "chat",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "completions",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "attr": "create",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "args": [],
+                  "keywords": [
+                    {
+                      "_type": "keyword",
+                      "_lineno": 18,
+                      "_col_offset": 12,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 69,
+                      "arg": "model",
+                      "value": {
+                        "_type": "BoolOp",
+                        "_lineno": 18,
+                        "_col_offset": 18,
+                        "_end_lineno": 18,
+                        "_end_col_offset": 69,
+                        "op": {
+                          "_type": "Or"
+                        },
+                        "values": [
+                          {
+                            "_type": "Call",
+                            "_lineno": 18,
+                            "_col_offset": 18,
+                            "_end_lineno": 18,
+                            "_end_col_offset": 38,
+                            "func": {
+                              "_type": "Attribute",
+                              "_lineno": 18,
+                              "_col_offset": 18,
+                              "_end_lineno": 18,
+                              "_end_col_offset": 25,
+                              "value": {
+                                "_type": "Name",
+                                "_lineno": 18,
+                                "_col_offset": 18,
+                                "_end_lineno": 18,
+                                "_end_col_offset": 21,
+                                "id": "env",
+                                "ctx": {
+                                  "_type": "Load"
+                                }
+                              },
+                              "attr": "get",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "args": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 18,
+                                "_col_offset": 26,
+                                "_end_lineno": 18,
+                                "_end_col_offset": 37,
+                                "value": "LLM_MODEL",
+                                "kind": null
+                              }
+                            ],
+                            "keywords": []
+                          },
+                          {
+                            "_type": "Call",
+                            "_lineno": 18,
+                            "_col_offset": 42,
+                            "_end_lineno": 18,
+                            "_end_col_offset": 69,
+                            "func": {
+                              "_type": "Attribute",
+                              "_lineno": 18,
+                              "_col_offset": 42,
+                              "_end_lineno": 18,
+                              "_end_col_offset": 56,
+                              "value": {
+                                "_type": "Attribute",
+                                "_lineno": 18,
+                                "_col_offset": 42,
+                                "_end_lineno": 18,
+                                "_end_col_offset": 52,
+                                "value": {
+                                  "_type": "Name",
+                                  "_lineno": 18,
+                                  "_col_offset": 42,
+                                  "_end_lineno": 18,
+                                  "_end_col_offset": 44,
+                                  "id": "os",
+                                  "ctx": {
+                                    "_type": "Load"
+                                  }
+                                },
+                                "attr": "environ",
+                                "ctx": {
+                                  "_type": "Load"
+                                }
+                              },
+                              "attr": "get",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            },
+                            "args": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 18,
+                                "_col_offset": 57,
+                                "_end_lineno": 18,
+                                "_end_col_offset": 68,
+                                "value": "LLM_MODEL",
+                                "kind": null
+                              }
+                            ],
+                            "keywords": []
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "_type": "keyword",
+                      "_lineno": 19,
+                      "_col_offset": 12,
+                      "_end_lineno": 22,
+                      "_end_col_offset": 13,
+                      "arg": "messages",
+                      "value": {
+                        "_type": "List",
+                        "_lineno": 19,
+                        "_col_offset": 21,
+                        "_end_lineno": 22,
+                        "_end_col_offset": 13,
+                        "elts": [
+                          {
+                            "_type": "Dict",
+                            "_lineno": 20,
+                            "_col_offset": 16,
+                            "_end_lineno": 20,
+                            "_end_col_offset": 76,
+                            "keys": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 20,
+                                "_col_offset": 17,
+                                "_end_lineno": 20,
+                                "_end_col_offset": 23,
+                                "value": "role",
+                                "kind": null
+                              },
+                              {
+                                "_type": "Constant",
+                                "_lineno": 20,
+                                "_col_offset": 35,
+                                "_end_lineno": 20,
+                                "_end_col_offset": 44,
+                                "value": "content",
+                                "kind": null
+                              }
+                            ],
+                            "values": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 20,
+                                "_col_offset": 25,
+                                "_end_lineno": 20,
+                                "_end_col_offset": 33,
+                                "value": "system",
+                                "kind": null
+                              },
+                              {
+                                "_type": "Constant",
+                                "_lineno": 20,
+                                "_col_offset": 46,
+                                "_end_lineno": 20,
+                                "_end_col_offset": 75,
+                                "value": "You are a helpful assistant",
+                                "kind": null
+                              }
+                            ]
+                          },
+                          {
+                            "_type": "Dict",
+                            "_lineno": 21,
+                            "_col_offset": 16,
+                            "_end_lineno": 21,
+                            "_end_col_offset": 51,
+                            "keys": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 21,
+                                "_col_offset": 17,
+                                "_end_lineno": 21,
+                                "_end_col_offset": 23,
+                                "value": "role",
+                                "kind": null
+                              },
+                              {
+                                "_type": "Constant",
+                                "_lineno": 21,
+                                "_col_offset": 33,
+                                "_end_lineno": 21,
+                                "_end_col_offset": 42,
+                                "value": "content",
+                                "kind": null
+                              }
+                            ],
+                            "values": [
+                              {
+                                "_type": "Constant",
+                                "_lineno": 21,
+                                "_col_offset": 25,
+                                "_end_lineno": 21,
+                                "_end_col_offset": 31,
+                                "value": "user",
+                                "kind": null
+                              },
+                              {
+                                "_type": "Name",
+                                "_lineno": 21,
+                                "_col_offset": 44,
+                                "_end_lineno": 21,
+                                "_end_col_offset": 50,
+                                "id": "prompt",
+                                "ctx": {
+                                  "_type": "Load"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "keyword",
+                      "_lineno": 23,
+                      "_col_offset": 12,
+                      "_end_lineno": 23,
+                      "_end_col_offset": 24,
+                      "arg": "stream",
+                      "value": {
+                        "_type": "Constant",
+                        "_lineno": 23,
+                        "_col_offset": 19,
+                        "_end_lineno": 23,
+                        "_end_col_offset": 24,
+                        "value": false,
+                        "kind": null
+                      }
+                    }
+                  ]
+                }
+              },
+              "type_comment": null
+            },
+            {
+              "_type": "Return",
+              "_lineno": 25,
+              "_col_offset": 8,
+              "_end_lineno": 25,
+              "_end_col_offset": 50,
+              "value": {
+                "_type": "Attribute",
+                "_lineno": 25,
+                "_col_offset": 15,
+                "_end_lineno": 25,
+                "_end_col_offset": 50,
+                "value": {
+                  "_type": "Attribute",
+                  "_lineno": 25,
+                  "_col_offset": 15,
+                  "_end_lineno": 25,
+                  "_end_col_offset": 42,
+                  "value": {
+                    "_type": "Subscript",
+                    "_lineno": 25,
+                    "_col_offset": 15,
+                    "_end_lineno": 25,
+                    "_end_col_offset": 34,
+                    "value": {
+                      "_type": "Attribute",
+                      "_lineno": 25,
+                      "_col_offset": 15,
+                      "_end_lineno": 25,
+                      "_end_col_offset": 31,
+                      "value": {
+                        "_type": "Name",
+                        "_lineno": 25,
+                        "_col_offset": 15,
+                        "_end_lineno": 25,
+                        "_end_col_offset": 23,
+                        "id": "response",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      "attr": "choices",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "slice": {
+                      "_type": "Constant",
+                      "_lineno": 25,
+                      "_col_offset": 32,
+                      "_end_lineno": 25,
+                      "_end_col_offset": 33,
+                      "value": 0,
+                      "kind": null
+                    },
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "attr": "message",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "content",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            }
+          ],
+          "handlers": [],
+          "orelse": [],
+          "finalbody": [
+            {
+              "_type": "Expr",
+              "_lineno": 27,
+              "_col_offset": 8,
+              "_end_lineno": 27,
+              "_end_col_offset": 28,
+              "value": {
+                "_type": "Await",
+                "_lineno": 27,
+                "_col_offset": 8,
+                "_end_lineno": 27,
+                "_end_col_offset": 28,
+                "value": {
+                  "_type": "Call",
+                  "_lineno": 27,
+                  "_col_offset": 14,
+                  "_end_lineno": 27,
+                  "_end_col_offset": 28,
+                  "func": {
+                    "_type": "Attribute",
+                    "_lineno": 27,
+                    "_col_offset": 14,
+                    "_end_lineno": 27,
+                    "_end_col_offset": 26,
+                    "value": {
+                      "_type": "Name",
+                      "_lineno": 27,
+                      "_col_offset": 14,
+                      "_end_lineno": 27,
+                      "_end_col_offset": 20,
+                      "id": "client",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "attr": "close",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "args": [],
+                  "keywords": []
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "decorator_list": [],
+      "returns": null,
+      "type_comment": null,
+      "type_params": []
+    }
+  ],
+  "type_ignores": []
+}

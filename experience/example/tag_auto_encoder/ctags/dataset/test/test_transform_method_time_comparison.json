@@ -1,0 +1,10 @@
+[
+  {
+    "name": "run_benchmark",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_transform_method_time_comparison.py",
+    "pattern": "/^def run_benchmark(input_data, experience_data, topk, llm_method):$/;\"",
+    "type": "f",
+    "line": 8,
+    "kind": null
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "name": "NestedList",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^NestedList = Union[str, List[\"NestedList\"]]$/;\"",
+    "type": "v",
+    "line": 7,
+    "kind": null
+  },
+  {
+    "name": "_assert_is_dumped_tensor_dir",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^def _assert_is_dumped_tensor_dir(load_dir: str) -> None:$/;\"",
+    "type": "f",
+    "line": 11,
+    "kind": null
+  },
+  {
+    "name": "_read_flat_data",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^def _read_flat_data(load_dir: str, element_count: int) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 22,
+    "kind": null
+  },
+  {
+    "name": "_str_to_digit_list",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^def _str_to_digit_list(s: str) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 8,
+    "kind": null
+  },
+  {
+    "name": "_unflatten",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^def _unflatten(flat_data: List[str], shape: List[int]) -> NestedList:$/;\"",
+    "type": "f",
+    "line": 31,
+    "kind": null
+  },
+  {
+    "name": "load_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^def load_tensor(load_dir: str, relative_to: str) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 44,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/load_tensor.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 75,
+    "kind": null
+  }
+]

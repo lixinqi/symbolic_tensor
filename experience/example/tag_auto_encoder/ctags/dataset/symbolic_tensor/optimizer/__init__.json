@@ -1,0 +1,10 @@
+[
+  {
+    "name": "__all__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/optimizer/__init__.py",
+    "pattern": "/^__all__ = [\"StSGD\"]/;\"",
+    "type": "v",
+    "line": 2,
+    "kind": null
+  }
+]

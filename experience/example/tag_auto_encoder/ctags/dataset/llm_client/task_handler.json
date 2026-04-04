@@ -1,0 +1,19 @@
+[
+  {
+    "name": "TaskHandler",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/task_handler.py",
+    "pattern": "/^class TaskHandler:$/;\"",
+    "type": "c",
+    "line": 7,
+    "kind": null
+  },
+  {
+    "name": "__call__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/task_handler.py",
+    "pattern": "/^    def __call__(self, all_tasks, llm_method: str, llm_env: Optional[Dict[str, str]] = None) -> None:$/;\"",
+    "type": "m",
+    "line": 8,
+    "kind": null,
+    "class": "TaskHandler"
+  }
+]

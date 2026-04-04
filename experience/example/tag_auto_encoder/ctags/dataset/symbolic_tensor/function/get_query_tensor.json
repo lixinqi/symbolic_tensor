@@ -1,0 +1,98 @@
+[
+  {
+    "name": "_copy_back_to_storage_view",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^def _copy_back_to_storage_view(mutable_dir: str, output: torch.Tensor) -> None:$/;\"",
+    "type": "f",
+    "line": 11,
+    "kind": null
+  },
+  {
+    "name": "content",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^                        content = f.read()$/;\"",
+    "type": "v",
+    "line": 118,
+    "kind": null
+  },
+  {
+    "name": "data",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^    data = [\"def hello():\\\\n    print('hello world')\", \"class Foo:\\\\n    pass\"]$/;\"",
+    "type": "v",
+    "line": 103,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_query",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^def default_prompt_for_query($/;\"",
+    "type": "f",
+    "line": 34,
+    "kind": null
+  },
+  {
+    "name": "digits",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^                digits = list(str(i))$/;\"",
+    "type": "v",
+    "line": 114,
+    "kind": null
+  },
+  {
+    "name": "get_query_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^def get_query_tensor($/;\"",
+    "type": "f",
+    "line": 50,
+    "kind": null
+  },
+  {
+    "name": "my_prompt",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^    def my_prompt(task_prompt, input_view_dir, mutable_output_dir):$/;\"",
+    "type": "f",
+    "line": 125,
+    "kind": null
+  },
+  {
+    "name": "path",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^                path = os.path.join(root, os.path.join(*digits), \"data\")$/;\"",
+    "type": "v",
+    "line": 115,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 93,
+    "kind": null
+  },
+  {
+    "name": "result_tensor",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^            result_tensor = get_query_tensor(t, llm_method=method)$/;\"",
+    "type": "v",
+    "line": 109,
+    "kind": null
+  },
+  {
+    "name": "root",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^            root = os.path.join(tmpdir, result_tensor.st_tensor_uid, \"storage\")$/;\"",
+    "type": "v",
+    "line": 112,
+    "kind": null
+  },
+  {
+    "name": "t",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/get_query_tensor.py",
+    "pattern": "/^            t = make_tensor(data, tmpdir)$/;\"",
+    "type": "v",
+    "line": 107,
+    "kind": null
+  }
+]

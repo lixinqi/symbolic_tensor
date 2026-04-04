@@ -1,0 +1,74 @@
+[
+  {
+    "name": "_build_nested_result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def _build_nested_result(flat_results: List[Any], shape: List[int]) -> Any:$/;\"",
+    "type": "f",
+    "line": 41,
+    "kind": null
+  },
+  {
+    "name": "_copy_back_to_storage_view",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def _copy_back_to_storage_view(mutable_dir: str, view_tensor: torch.Tensor) -> None:$/;\"",
+    "type": "f",
+    "line": 54,
+    "kind": null
+  },
+  {
+    "name": "_read_file_content",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def _read_file_content(tensor: torch.Tensor, flat_index: int) -> str:$/;\"",
+    "type": "f",
+    "line": 27,
+    "kind": null
+  },
+  {
+    "name": "_replace_last_tensor_with_full_slice",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def _replace_last_tensor_with_full_slice($/;\"",
+    "type": "f",
+    "line": 19,
+    "kind": null
+  },
+  {
+    "name": "_scalar_slice_indices",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def _scalar_slice_indices(shape: torch.Size) -> List[List[int]]:$/;\"",
+    "type": "f",
+    "line": 15,
+    "kind": null
+  },
+  {
+    "name": "default_prompt_for_output",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def default_prompt_for_output($/;\"",
+    "type": "f",
+    "line": 82,
+    "kind": null
+  },
+  {
+    "name": "result",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^    result = subprocess.run($/;\"",
+    "type": "v",
+    "line": 204,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 214,
+    "kind": null
+  },
+  {
+    "name": "st_moe_forward",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/st_moe_forward.py",
+    "pattern": "/^def st_moe_forward($/;\"",
+    "type": "f",
+    "line": 115,
+    "kind": null
+  }
+]

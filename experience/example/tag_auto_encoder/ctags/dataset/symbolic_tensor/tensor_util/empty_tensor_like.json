@@ -1,0 +1,34 @@
+[
+  {
+    "name": "NestedList",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "pattern": "/^NestedList = Union[str, List[\"NestedList\"]]$/;\"",
+    "type": "v",
+    "line": 4,
+    "kind": null
+  },
+  {
+    "name": "_expand",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "pattern": "/^def _expand(size: torch.Size, fill: str) -> NestedList:$/;\"",
+    "type": "f",
+    "line": 5,
+    "kind": null
+  },
+  {
+    "name": "empty_tensor_like",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "pattern": "/^def empty_tensor_like(input: torch.Tensor) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 10,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 25,
+    "kind": null
+  }
+]

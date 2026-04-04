@@ -1,0 +1,563 @@
+{
+  "_type": "Module",
+  "body": [
+    {
+      "_type": "Import",
+      "_lineno": 1,
+      "_col_offset": 0,
+      "_end_lineno": 1,
+      "_end_col_offset": 9,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 1,
+          "_col_offset": 7,
+          "_end_lineno": 1,
+          "_end_col_offset": 9,
+          "name": "os",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "Import",
+      "_lineno": 2,
+      "_col_offset": 0,
+      "_end_lineno": 2,
+      "_end_col_offset": 17,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 7,
+          "_end_lineno": 2,
+          "_end_col_offset": 17,
+          "name": "subprocess",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "Import",
+      "_lineno": 3,
+      "_col_offset": 0,
+      "_end_lineno": 3,
+      "_end_col_offset": 15,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 3,
+          "_col_offset": 7,
+          "_end_lineno": 3,
+          "_end_col_offset": 15,
+          "name": "tempfile",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "Import",
+      "_lineno": 4,
+      "_col_offset": 0,
+      "_end_lineno": 4,
+      "_end_col_offset": 12,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 4,
+          "_col_offset": 7,
+          "_end_lineno": 4,
+          "_end_col_offset": 12,
+          "name": "torch",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 5,
+      "_col_offset": 0,
+      "_end_lineno": 5,
+      "_end_col_offset": 74,
+      "module": "experience.symbolic_tensor.tensor_util.make_tensor",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 5,
+          "_col_offset": 63,
+          "_end_lineno": 5,
+          "_end_col_offset": 74,
+          "name": "make_tensor",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 6,
+      "_col_offset": 0,
+      "_end_lineno": 6,
+      "_end_col_offset": 61,
+      "module": "experience.symbolic_tensor.optimizer.st_sgd",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 6,
+          "_col_offset": 56,
+          "_end_lineno": 6,
+          "_end_col_offset": 61,
+          "name": "StSGD",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 7,
+      "_col_offset": 0,
+      "_end_lineno": 7,
+      "_end_col_offset": 77,
+      "module": "experience.symbolic_tensor.function.st_moe_forward",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 7,
+          "_col_offset": 63,
+          "_end_lineno": 7,
+          "_end_col_offset": 77,
+          "name": "st_moe_forward",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 8,
+      "_col_offset": 0,
+      "_end_lineno": 8,
+      "_end_col_offset": 79,
+      "module": "experience.symbolic_tensor.function.st_moe_backward",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 8,
+          "_col_offset": 64,
+          "_end_lineno": 8,
+          "_end_col_offset": 79,
+          "name": "st_moe_backward",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "FunctionDef",
+      "_lineno": 9,
+      "_col_offset": 0,
+      "_end_lineno": 19,
+      "_end_col_offset": 23,
+      "name": "read_storage",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 9,
+            "_col_offset": 17,
+            "_end_lineno": 9,
+            "_end_col_offset": 23,
+            "arg": "tensor",
+            "annotation": null,
+            "type_comment": null
+          },
+          {
+            "_type": "arg",
+            "_lineno": 9,
+            "_col_offset": 25,
+            "_end_lineno": 9,
+            "_end_col_offset": 35,
+            "arg": "flat_index",
+            "annotation": null,
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": []
+      },
+      "body": [
+        {
+          "_type": "Assign",
+          "_lineno": 10,
+          "_col_offset": 4,
+          "_end_lineno": 10,
+          "_end_col_offset": 34,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 10,
+              "_col_offset": 4,
+              "_end_lineno": 10,
+              "_end_col_offset": 10,
+              "id": "digits",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "Call",
+            "_lineno": 10,
+            "_col_offset": 13,
+            "_end_lineno": 10,
+            "_end_col_offset": 34,
+            "func": {
+              "_type": "Name",
+              "_lineno": 10,
+              "_col_offset": 13,
+              "_end_lineno": 10,
+              "_end_col_offset": 17,
+              "id": "list",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Call",
+                "_lineno": 10,
+                "_col_offset": 18,
+                "_end_lineno": 10,
+                "_end_col_offset": 33,
+                "func": {
+                  "_type": "Name",
+                  "_lineno": 10,
+                  "_col_offset": 18,
+                  "_end_lineno": 10,
+                  "_end_col_offset": 21,
+                  "id": "str",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [
+                  {
+                    "_type": "Name",
+                    "_lineno": 10,
+                    "_col_offset": 22,
+                    "_end_lineno": 10,
+                    "_end_col_offset": 32,
+                    "id": "flat_index",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  }
+                ],
+                "keywords": []
+              }
+            ],
+            "keywords": []
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "Assign",
+          "_lineno": 11,
+          "_col_offset": 4,
+          "_end_lineno": 17,
+          "_end_col_offset": 5,
+          "targets": [
+            {
+              "_type": "Name",
+              "_lineno": 11,
+              "_col_offset": 4,
+              "_end_lineno": 11,
+              "_end_col_offset": 8,
+              "id": "path",
+              "ctx": {
+                "_type": "Store"
+              }
+            }
+          ],
+          "value": {
+            "_type": "Call",
+            "_lineno": 11,
+            "_col_offset": 11,
+            "_end_lineno": 17,
+            "_end_col_offset": 5,
+            "func": {
+              "_type": "Attribute",
+              "_lineno": 11,
+              "_col_offset": 11,
+              "_end_lineno": 11,
+              "_end_col_offset": 23,
+              "value": {
+                "_type": "Attribute",
+                "_lineno": 11,
+                "_col_offset": 11,
+                "_end_lineno": 11,
+                "_end_col_offset": 18,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 11,
+                  "_col_offset": 11,
+                  "_end_lineno": 11,
+                  "_end_col_offset": 13,
+                  "id": "os",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "path",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "attr": "join",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Attribute",
+                "_lineno": 12,
+                "_col_offset": 8,
+                "_end_lineno": 12,
+                "_end_col_offset": 29,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 12,
+                  "_col_offset": 8,
+                  "_end_lineno": 12,
+                  "_end_col_offset": 14,
+                  "id": "tensor",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "st_relative_to",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              {
+                "_type": "Attribute",
+                "_lineno": 13,
+                "_col_offset": 8,
+                "_end_lineno": 13,
+                "_end_col_offset": 28,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 13,
+                  "_col_offset": 8,
+                  "_end_lineno": 13,
+                  "_end_col_offset": 14,
+                  "id": "tensor",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "st_tensor_uid",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              {
+                "_type": "Constant",
+                "_lineno": 14,
+                "_col_offset": 8,
+                "_end_lineno": 14,
+                "_end_col_offset": 17,
+                "value": "storage",
+                "kind": null
+              },
+              {
+                "_type": "Call",
+                "_lineno": 15,
+                "_col_offset": 8,
+                "_end_lineno": 15,
+                "_end_col_offset": 29,
+                "func": {
+                  "_type": "Attribute",
+                  "_lineno": 15,
+                  "_col_offset": 8,
+                  "_end_lineno": 15,
+                  "_end_col_offset": 20,
+                  "value": {
+                    "_type": "Attribute",
+                    "_lineno": 15,
+                    "_col_offset": 8,
+                    "_end_lineno": 15,
+                    "_end_col_offset": 15,
+                    "value": {
+                      "_type": "Name",
+                      "_lineno": 15,
+                      "_col_offset": 8,
+                      "_end_lineno": 15,
+                      "_end_col_offset": 10,
+                      "id": "os",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "attr": "path",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "attr": "join",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [
+                  {
+                    "_type": "Starred",
+                    "_lineno": 15,
+                    "_col_offset": 21,
+                    "_end_lineno": 15,
+                    "_end_col_offset": 28,
+                    "value": {
+                      "_type": "Name",
+                      "_lineno": 15,
+                      "_col_offset": 22,
+                      "_end_lineno": 15,
+                      "_end_col_offset": 28,
+                      "id": "digits",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  }
+                ],
+                "keywords": []
+              },
+              {
+                "_type": "Constant",
+                "_lineno": 16,
+                "_col_offset": 8,
+                "_end_lineno": 16,
+                "_end_col_offset": 14,
+                "value": "data",
+                "kind": null
+              }
+            ],
+            "keywords": []
+          },
+          "type_comment": null
+        },
+        {
+          "_type": "With",
+          "_lineno": 18,
+          "_col_offset": 4,
+          "_end_lineno": 19,
+          "_end_col_offset": 23,
+          "items": [
+            {
+              "_type": "withitem",
+              "context_expr": {
+                "_type": "Call",
+                "_lineno": 18,
+                "_col_offset": 9,
+                "_end_lineno": 18,
+                "_end_col_offset": 19,
+                "func": {
+                  "_type": "Name",
+                  "_lineno": 18,
+                  "_col_offset": 9,
+                  "_end_lineno": 18,
+                  "_end_col_offset": 13,
+                  "id": "open",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [
+                  {
+                    "_type": "Name",
+                    "_lineno": 18,
+                    "_col_offset": 14,
+                    "_end_lineno": 18,
+                    "_end_col_offset": 18,
+                    "id": "path",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  }
+                ],
+                "keywords": []
+              },
+              "optional_vars": {
+                "_type": "Name",
+                "_lineno": 18,
+                "_col_offset": 23,
+                "_end_lineno": 18,
+                "_end_col_offset": 24,
+                "id": "f",
+                "ctx": {
+                  "_type": "Store"
+                }
+              }
+            }
+          ],
+          "body": [
+            {
+              "_type": "Return",
+              "_lineno": 19,
+              "_col_offset": 8,
+              "_end_lineno": 19,
+              "_end_col_offset": 23,
+              "value": {
+                "_type": "Call",
+                "_lineno": 19,
+                "_col_offset": 15,
+                "_end_lineno": 19,
+                "_end_col_offset": 23,
+                "func": {
+                  "_type": "Attribute",
+                  "_lineno": 19,
+                  "_col_offset": 15,
+                  "_end_lineno": 19,
+                  "_end_col_offset": 21,
+                  "value": {
+                    "_type": "Name",
+                    "_lineno": 19,
+                    "_col_offset": 15,
+                    "_end_lineno": 19,
+                    "_end_col_offset": 16,
+                    "id": "f",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "attr": "read",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [],
+                "keywords": []
+              }
+            }
+          ],
+          "type_comment": null
+        }
+      ],
+      "decorator_list": [],
+      "returns": null,
+      "type_comment": null,
+      "type_params": []
+    }
+  ],
+  "type_ignores": []
+}

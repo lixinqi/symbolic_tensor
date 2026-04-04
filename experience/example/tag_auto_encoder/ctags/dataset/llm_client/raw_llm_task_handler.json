@@ -1,0 +1,51 @@
+[
+  {
+    "name": "RawLlmTaskHandler",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^class RawLlmTaskHandler:$/;\"",
+    "type": "c",
+    "line": 28,
+    "kind": null
+  },
+  {
+    "name": "__call__",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^    def __call__(self, all_tasks, llm_env: Optional[Dict[str, str]] = None) -> None:$/;\"",
+    "type": "m",
+    "line": 29,
+    "kind": null,
+    "class": "RawLlmTaskHandler"
+  },
+  {
+    "name": "_do_one",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^        async def _do_one(todo_file_path: str, raw_llm_prompt: str):$/;\"",
+    "type": "f",
+    "line": 56,
+    "kind": null
+  },
+  {
+    "name": "_flatten_nested",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^def _flatten_nested(nested) -> list:$/;\"",
+    "type": "f",
+    "line": 6,
+    "kind": null
+  },
+  {
+    "name": "_grep_by_file_content_hint",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^def _grep_by_file_content_hint(root_dir: str, todo_file_content_hint: str) -> List[str]:$/;\"",
+    "type": "f",
+    "line": 14,
+    "kind": null
+  },
+  {
+    "name": "_run_all",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/llm_client/raw_llm_task_handler.py",
+    "pattern": "/^        async def _run_all():$/;\"",
+    "type": "f",
+    "line": 61,
+    "kind": null
+  }
+]

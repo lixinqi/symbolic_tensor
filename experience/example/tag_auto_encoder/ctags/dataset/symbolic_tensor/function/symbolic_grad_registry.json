@@ -1,0 +1,42 @@
+[
+  {
+    "name": "_get_store",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/symbolic_grad_registry.py",
+    "pattern": "/^def _get_store():$/;\"",
+    "type": "f",
+    "line": 17,
+    "kind": null
+  },
+  {
+    "name": "_local",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/symbolic_grad_registry.py",
+    "pattern": "/^_local = threading.local()$/;\"",
+    "type": "v",
+    "line": 16,
+    "kind": null
+  },
+  {
+    "name": "peek",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/symbolic_grad_registry.py",
+    "pattern": "/^def peek(key):$/;\"",
+    "type": "f",
+    "line": 28,
+    "kind": null
+  },
+  {
+    "name": "pop",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/symbolic_grad_registry.py",
+    "pattern": "/^def pop(key):$/;\"",
+    "type": "f",
+    "line": 24,
+    "kind": null
+  },
+  {
+    "name": "register",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/function/symbolic_grad_registry.py",
+    "pattern": "/^def register(key, symbolic_tensor):$/;\"",
+    "type": "f",
+    "line": 21,
+    "kind": null
+  }
+]

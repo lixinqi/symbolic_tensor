@@ -1,0 +1,26 @@
+[
+  {
+    "name": "frame_texts",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_attention_vs_traditional.py",
+    "pattern": "/^def frame_texts(frames):$/;\"",
+    "type": "f",
+    "line": 35,
+    "kind": null
+  },
+  {
+    "name": "get_frames",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_attention_vs_traditional.py",
+    "pattern": "/^def get_frames(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 29,
+    "kind": null
+  },
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/test/test_attention_vs_traditional.py",
+    "pattern": "/^def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 15,
+    "kind": null
+  }
+]

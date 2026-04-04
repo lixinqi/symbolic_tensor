@@ -1,0 +1,1283 @@
+{
+  "_type": "Module",
+  "body": [
+    {
+      "_type": "Import",
+      "_lineno": 1,
+      "_col_offset": 0,
+      "_end_lineno": 1,
+      "_end_col_offset": 12,
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 1,
+          "_col_offset": 7,
+          "_end_lineno": 1,
+          "_end_col_offset": 12,
+          "name": "torch",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "_type": "ImportFrom",
+      "_lineno": 2,
+      "_col_offset": 0,
+      "_end_lineno": 2,
+      "_end_col_offset": 35,
+      "module": "typing",
+      "names": [
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 19,
+          "_end_lineno": 2,
+          "_end_col_offset": 22,
+          "name": "Any",
+          "asname": null
+        },
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 24,
+          "_end_lineno": 2,
+          "_end_col_offset": 28,
+          "name": "List",
+          "asname": null
+        },
+        {
+          "_type": "alias",
+          "_lineno": 2,
+          "_col_offset": 30,
+          "_end_lineno": 2,
+          "_end_col_offset": 35,
+          "name": "Tuple",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "_type": "FunctionDef",
+      "_lineno": 3,
+      "_col_offset": 0,
+      "_end_lineno": 9,
+      "_end_col_offset": 43,
+      "name": "_is_leaf",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 3,
+            "_col_offset": 13,
+            "_end_lineno": 3,
+            "_end_col_offset": 21,
+            "arg": "obj",
+            "annotation": {
+              "_type": "Name",
+              "_lineno": 3,
+              "_col_offset": 18,
+              "_end_lineno": 3,
+              "_end_col_offset": 21,
+              "id": "Any",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": []
+      },
+      "body": [
+        {
+          "_type": "Expr",
+          "_lineno": 4,
+          "_col_offset": 4,
+          "_end_lineno": 4,
+          "_end_col_offset": 89,
+          "value": {
+            "_type": "Constant",
+            "_lineno": 4,
+            "_col_offset": 4,
+            "_end_lineno": 4,
+            "_end_col_offset": 89,
+            "value": "Check if obj is a leaf (list[torch.Tensor]) rather than a nested list of lists.",
+            "kind": null
+          }
+        },
+        {
+          "_type": "If",
+          "_lineno": 5,
+          "_col_offset": 4,
+          "_end_lineno": 6,
+          "_end_col_offset": 19,
+          "test": {
+            "_type": "UnaryOp",
+            "_lineno": 5,
+            "_col_offset": 7,
+            "_end_lineno": 5,
+            "_end_col_offset": 32,
+            "op": {
+              "_type": "Not"
+            },
+            "operand": {
+              "_type": "Call",
+              "_lineno": 5,
+              "_col_offset": 11,
+              "_end_lineno": 5,
+              "_end_col_offset": 32,
+              "func": {
+                "_type": "Name",
+                "_lineno": 5,
+                "_col_offset": 11,
+                "_end_lineno": 5,
+                "_end_col_offset": 21,
+                "id": "isinstance",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "args": [
+                {
+                  "_type": "Name",
+                  "_lineno": 5,
+                  "_col_offset": 22,
+                  "_end_lineno": 5,
+                  "_end_col_offset": 25,
+                  "id": "obj",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                {
+                  "_type": "Name",
+                  "_lineno": 5,
+                  "_col_offset": 27,
+                  "_end_lineno": 5,
+                  "_end_col_offset": 31,
+                  "id": "list",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                }
+              ],
+              "keywords": []
+            }
+          },
+          "body": [
+            {
+              "_type": "Return",
+              "_lineno": 6,
+              "_col_offset": 8,
+              "_end_lineno": 6,
+              "_end_col_offset": 19,
+              "value": {
+                "_type": "Constant",
+                "_lineno": 6,
+                "_col_offset": 15,
+                "_end_lineno": 6,
+                "_end_col_offset": 19,
+                "value": true,
+                "kind": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "_type": "If",
+          "_lineno": 7,
+          "_col_offset": 4,
+          "_end_lineno": 8,
+          "_end_col_offset": 19,
+          "test": {
+            "_type": "Compare",
+            "_lineno": 7,
+            "_col_offset": 7,
+            "_end_lineno": 7,
+            "_end_col_offset": 20,
+            "left": {
+              "_type": "Call",
+              "_lineno": 7,
+              "_col_offset": 7,
+              "_end_lineno": 7,
+              "_end_col_offset": 15,
+              "func": {
+                "_type": "Name",
+                "_lineno": 7,
+                "_col_offset": 7,
+                "_end_lineno": 7,
+                "_end_col_offset": 10,
+                "id": "len",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "args": [
+                {
+                  "_type": "Name",
+                  "_lineno": 7,
+                  "_col_offset": 11,
+                  "_end_lineno": 7,
+                  "_end_col_offset": 14,
+                  "id": "obj",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              {
+                "_type": "Eq"
+              }
+            ],
+            "comparators": [
+              {
+                "_type": "Constant",
+                "_lineno": 7,
+                "_col_offset": 19,
+                "_end_lineno": 7,
+                "_end_col_offset": 20,
+                "value": 0,
+                "kind": null
+              }
+            ]
+          },
+          "body": [
+            {
+              "_type": "Return",
+              "_lineno": 8,
+              "_col_offset": 8,
+              "_end_lineno": 8,
+              "_end_col_offset": 19,
+              "value": {
+                "_type": "Constant",
+                "_lineno": 8,
+                "_col_offset": 15,
+                "_end_lineno": 8,
+                "_end_col_offset": 19,
+                "value": true,
+                "kind": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "_type": "Return",
+          "_lineno": 9,
+          "_col_offset": 4,
+          "_end_lineno": 9,
+          "_end_col_offset": 43,
+          "value": {
+            "_type": "Call",
+            "_lineno": 9,
+            "_col_offset": 11,
+            "_end_lineno": 9,
+            "_end_col_offset": 43,
+            "func": {
+              "_type": "Name",
+              "_lineno": 9,
+              "_col_offset": 11,
+              "_end_lineno": 9,
+              "_end_col_offset": 21,
+              "id": "isinstance",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Subscript",
+                "_lineno": 9,
+                "_col_offset": 22,
+                "_end_lineno": 9,
+                "_end_col_offset": 28,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 9,
+                  "_col_offset": 22,
+                  "_end_lineno": 9,
+                  "_end_col_offset": 25,
+                  "id": "obj",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "slice": {
+                  "_type": "Constant",
+                  "_lineno": 9,
+                  "_col_offset": 26,
+                  "_end_lineno": 9,
+                  "_end_col_offset": 27,
+                  "value": 0,
+                  "kind": null
+                },
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              {
+                "_type": "Attribute",
+                "_lineno": 9,
+                "_col_offset": 30,
+                "_end_lineno": 9,
+                "_end_col_offset": 42,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 9,
+                  "_col_offset": 30,
+                  "_end_lineno": 9,
+                  "_end_col_offset": 35,
+                  "id": "torch",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "Tensor",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "decorator_list": [],
+      "returns": {
+        "_type": "Name",
+        "_lineno": 3,
+        "_col_offset": 26,
+        "_end_lineno": 3,
+        "_end_col_offset": 30,
+        "id": "bool",
+        "ctx": {
+          "_type": "Load"
+        }
+      },
+      "type_comment": null,
+      "type_params": []
+    },
+    {
+      "_type": "Assign",
+      "_lineno": 10,
+      "_col_offset": 0,
+      "_end_lineno": 10,
+      "_end_col_offset": 37,
+      "targets": [
+        {
+          "_type": "Name",
+          "_lineno": 10,
+          "_col_offset": 0,
+          "_end_lineno": 10,
+          "_end_col_offset": 4,
+          "id": "Pair",
+          "ctx": {
+            "_type": "Store"
+          }
+        }
+      ],
+      "value": {
+        "_type": "Subscript",
+        "_lineno": 10,
+        "_col_offset": 7,
+        "_end_lineno": 10,
+        "_end_col_offset": 37,
+        "value": {
+          "_type": "Name",
+          "_lineno": 10,
+          "_col_offset": 7,
+          "_end_lineno": 10,
+          "_end_col_offset": 12,
+          "id": "Tuple",
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "slice": {
+          "_type": "Tuple",
+          "_lineno": 10,
+          "_col_offset": 13,
+          "_end_lineno": 10,
+          "_end_col_offset": 36,
+          "elts": [
+            {
+              "_type": "Subscript",
+              "_lineno": 10,
+              "_col_offset": 13,
+              "_end_lineno": 10,
+              "_end_col_offset": 31,
+              "value": {
+                "_type": "Name",
+                "_lineno": 10,
+                "_col_offset": 13,
+                "_end_lineno": 10,
+                "_end_col_offset": 17,
+                "id": "List",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "slice": {
+                "_type": "Attribute",
+                "_lineno": 10,
+                "_col_offset": 18,
+                "_end_lineno": 10,
+                "_end_col_offset": 30,
+                "value": {
+                  "_type": "Name",
+                  "_lineno": 10,
+                  "_col_offset": 18,
+                  "_end_lineno": 10,
+                  "_end_col_offset": 23,
+                  "id": "torch",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "attr": "Tensor",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            {
+              "_type": "Name",
+              "_lineno": 10,
+              "_col_offset": 33,
+              "_end_lineno": 10,
+              "_end_col_offset": 36,
+              "id": "Any",
+              "ctx": {
+                "_type": "Load"
+              }
+            }
+          ],
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "ctx": {
+          "_type": "Load"
+        }
+      },
+      "type_comment": null
+    },
+    {
+      "_type": "FunctionDef",
+      "_lineno": 11,
+      "_col_offset": 0,
+      "_end_lineno": 22,
+      "_end_col_offset": 47,
+      "name": "_collect",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 12,
+            "_col_offset": 4,
+            "_end_lineno": 12,
+            "_end_col_offset": 12,
+            "arg": "obj",
+            "annotation": {
+              "_type": "Name",
+              "_lineno": 12,
+              "_col_offset": 9,
+              "_end_lineno": 12,
+              "_end_col_offset": 12,
+              "id": "Any",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          },
+          {
+            "_type": "arg",
+            "_lineno": 13,
+            "_col_offset": 4,
+            "_end_lineno": 13,
+            "_end_col_offset": 21,
+            "arg": "coords",
+            "annotation": {
+              "_type": "Subscript",
+              "_lineno": 13,
+              "_col_offset": 12,
+              "_end_lineno": 13,
+              "_end_col_offset": 21,
+              "value": {
+                "_type": "Name",
+                "_lineno": 13,
+                "_col_offset": 12,
+                "_end_lineno": 13,
+                "_end_col_offset": 16,
+                "id": "List",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "slice": {
+                "_type": "Name",
+                "_lineno": 13,
+                "_col_offset": 17,
+                "_end_lineno": 13,
+                "_end_col_offset": 20,
+                "id": "int",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          },
+          {
+            "_type": "arg",
+            "_lineno": 14,
+            "_col_offset": 4,
+            "_end_lineno": 14,
+            "_end_col_offset": 21,
+            "arg": "pairs",
+            "annotation": {
+              "_type": "Subscript",
+              "_lineno": 14,
+              "_col_offset": 11,
+              "_end_lineno": 14,
+              "_end_col_offset": 21,
+              "value": {
+                "_type": "Name",
+                "_lineno": 14,
+                "_col_offset": 11,
+                "_end_lineno": 14,
+                "_end_col_offset": 15,
+                "id": "List",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "slice": {
+                "_type": "Name",
+                "_lineno": 14,
+                "_col_offset": 16,
+                "_end_lineno": 14,
+                "_end_col_offset": 20,
+                "id": "Pair",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": []
+      },
+      "body": [
+        {
+          "_type": "Expr",
+          "_lineno": 16,
+          "_col_offset": 4,
+          "_end_lineno": 16,
+          "_end_col_offset": 65,
+          "value": {
+            "_type": "Constant",
+            "_lineno": 16,
+            "_col_offset": 4,
+            "_end_lineno": 16,
+            "_end_col_offset": 65,
+            "value": "Recursively collect (coordinate_key, leaf_value) pairs.",
+            "kind": null
+          }
+        },
+        {
+          "_type": "If",
+          "_lineno": 17,
+          "_col_offset": 4,
+          "_end_lineno": 22,
+          "_end_col_offset": 47,
+          "test": {
+            "_type": "Call",
+            "_lineno": 17,
+            "_col_offset": 7,
+            "_end_lineno": 17,
+            "_end_col_offset": 20,
+            "func": {
+              "_type": "Name",
+              "_lineno": 17,
+              "_col_offset": 7,
+              "_end_lineno": 17,
+              "_end_col_offset": 15,
+              "id": "_is_leaf",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Name",
+                "_lineno": 17,
+                "_col_offset": 16,
+                "_end_lineno": 17,
+                "_end_col_offset": 19,
+                "id": "obj",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            ],
+            "keywords": []
+          },
+          "body": [
+            {
+              "_type": "Assign",
+              "_lineno": 18,
+              "_col_offset": 8,
+              "_end_lineno": 18,
+              "_end_col_offset": 65,
+              "targets": [
+                {
+                  "_type": "Name",
+                  "_lineno": 18,
+                  "_col_offset": 8,
+                  "_end_lineno": 18,
+                  "_end_col_offset": 11,
+                  "id": "key",
+                  "ctx": {
+                    "_type": "Store"
+                  }
+                }
+              ],
+              "value": {
+                "_type": "ListComp",
+                "_lineno": 18,
+                "_col_offset": 14,
+                "_end_lineno": 18,
+                "_end_col_offset": 65,
+                "elt": {
+                  "_type": "Call",
+                  "_lineno": 18,
+                  "_col_offset": 15,
+                  "_end_lineno": 18,
+                  "_end_col_offset": 48,
+                  "func": {
+                    "_type": "Attribute",
+                    "_lineno": 18,
+                    "_col_offset": 15,
+                    "_end_lineno": 18,
+                    "_end_col_offset": 27,
+                    "value": {
+                      "_type": "Name",
+                      "_lineno": 18,
+                      "_col_offset": 15,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 20,
+                      "id": "torch",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "attr": "tensor",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "args": [
+                    {
+                      "_type": "Name",
+                      "_lineno": 18,
+                      "_col_offset": 28,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 29,
+                      "id": "c",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    }
+                  ],
+                  "keywords": [
+                    {
+                      "_type": "keyword",
+                      "_lineno": 18,
+                      "_col_offset": 31,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 47,
+                      "arg": "dtype",
+                      "value": {
+                        "_type": "Attribute",
+                        "_lineno": 18,
+                        "_col_offset": 37,
+                        "_end_lineno": 18,
+                        "_end_col_offset": 47,
+                        "value": {
+                          "_type": "Name",
+                          "_lineno": 18,
+                          "_col_offset": 37,
+                          "_end_lineno": 18,
+                          "_end_col_offset": 42,
+                          "id": "torch",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "attr": "long",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "generators": [
+                  {
+                    "_type": "comprehension",
+                    "target": {
+                      "_type": "Name",
+                      "_lineno": 18,
+                      "_col_offset": 53,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 54,
+                      "id": "c",
+                      "ctx": {
+                        "_type": "Store"
+                      }
+                    },
+                    "iter": {
+                      "_type": "Name",
+                      "_lineno": 18,
+                      "_col_offset": 58,
+                      "_end_lineno": 18,
+                      "_end_col_offset": 64,
+                      "id": "coords",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "ifs": [],
+                    "is_async": 0
+                  }
+                ]
+              },
+              "type_comment": null
+            },
+            {
+              "_type": "Expr",
+              "_lineno": 19,
+              "_col_offset": 8,
+              "_end_lineno": 19,
+              "_end_col_offset": 32,
+              "value": {
+                "_type": "Call",
+                "_lineno": 19,
+                "_col_offset": 8,
+                "_end_lineno": 19,
+                "_end_col_offset": 32,
+                "func": {
+                  "_type": "Attribute",
+                  "_lineno": 19,
+                  "_col_offset": 8,
+                  "_end_lineno": 19,
+                  "_end_col_offset": 20,
+                  "value": {
+                    "_type": "Name",
+                    "_lineno": 19,
+                    "_col_offset": 8,
+                    "_end_lineno": 19,
+                    "_end_col_offset": 13,
+                    "id": "pairs",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  },
+                  "attr": "append",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [
+                  {
+                    "_type": "Tuple",
+                    "_lineno": 19,
+                    "_col_offset": 21,
+                    "_end_lineno": 19,
+                    "_end_col_offset": 31,
+                    "elts": [
+                      {
+                        "_type": "Name",
+                        "_lineno": 19,
+                        "_col_offset": 22,
+                        "_end_lineno": 19,
+                        "_end_col_offset": 25,
+                        "id": "key",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      {
+                        "_type": "Name",
+                        "_lineno": 19,
+                        "_col_offset": 27,
+                        "_end_lineno": 19,
+                        "_end_col_offset": 30,
+                        "id": "obj",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    ],
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  }
+                ],
+                "keywords": []
+              }
+            }
+          ],
+          "orelse": [
+            {
+              "_type": "For",
+              "_lineno": 21,
+              "_col_offset": 8,
+              "_end_lineno": 22,
+              "_end_col_offset": 47,
+              "target": {
+                "_type": "Tuple",
+                "_lineno": 21,
+                "_col_offset": 12,
+                "_end_lineno": 21,
+                "_end_col_offset": 19,
+                "elts": [
+                  {
+                    "_type": "Name",
+                    "_lineno": 21,
+                    "_col_offset": 12,
+                    "_end_lineno": 21,
+                    "_end_col_offset": 13,
+                    "id": "i",
+                    "ctx": {
+                      "_type": "Store"
+                    }
+                  },
+                  {
+                    "_type": "Name",
+                    "_lineno": 21,
+                    "_col_offset": 15,
+                    "_end_lineno": 21,
+                    "_end_col_offset": 19,
+                    "id": "item",
+                    "ctx": {
+                      "_type": "Store"
+                    }
+                  }
+                ],
+                "ctx": {
+                  "_type": "Store"
+                }
+              },
+              "iter": {
+                "_type": "Call",
+                "_lineno": 21,
+                "_col_offset": 23,
+                "_end_lineno": 21,
+                "_end_col_offset": 37,
+                "func": {
+                  "_type": "Name",
+                  "_lineno": 21,
+                  "_col_offset": 23,
+                  "_end_lineno": 21,
+                  "_end_col_offset": 32,
+                  "id": "enumerate",
+                  "ctx": {
+                    "_type": "Load"
+                  }
+                },
+                "args": [
+                  {
+                    "_type": "Name",
+                    "_lineno": 21,
+                    "_col_offset": 33,
+                    "_end_lineno": 21,
+                    "_end_col_offset": 36,
+                    "id": "obj",
+                    "ctx": {
+                      "_type": "Load"
+                    }
+                  }
+                ],
+                "keywords": []
+              },
+              "body": [
+                {
+                  "_type": "Expr",
+                  "_lineno": 22,
+                  "_col_offset": 12,
+                  "_end_lineno": 22,
+                  "_end_col_offset": 47,
+                  "value": {
+                    "_type": "Call",
+                    "_lineno": 22,
+                    "_col_offset": 12,
+                    "_end_lineno": 22,
+                    "_end_col_offset": 47,
+                    "func": {
+                      "_type": "Name",
+                      "_lineno": 22,
+                      "_col_offset": 12,
+                      "_end_lineno": 22,
+                      "_end_col_offset": 20,
+                      "id": "_collect",
+                      "ctx": {
+                        "_type": "Load"
+                      }
+                    },
+                    "args": [
+                      {
+                        "_type": "Name",
+                        "_lineno": 22,
+                        "_col_offset": 21,
+                        "_end_lineno": 22,
+                        "_end_col_offset": 25,
+                        "id": "item",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      },
+                      {
+                        "_type": "BinOp",
+                        "_lineno": 22,
+                        "_col_offset": 27,
+                        "_end_lineno": 22,
+                        "_end_col_offset": 39,
+                        "left": {
+                          "_type": "Name",
+                          "_lineno": 22,
+                          "_col_offset": 27,
+                          "_end_lineno": 22,
+                          "_end_col_offset": 33,
+                          "id": "coords",
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        },
+                        "op": {
+                          "_type": "Add"
+                        },
+                        "right": {
+                          "_type": "List",
+                          "_lineno": 22,
+                          "_col_offset": 36,
+                          "_end_lineno": 22,
+                          "_end_col_offset": 39,
+                          "elts": [
+                            {
+                              "_type": "Name",
+                              "_lineno": 22,
+                              "_col_offset": 37,
+                              "_end_lineno": 22,
+                              "_end_col_offset": 38,
+                              "id": "i",
+                              "ctx": {
+                                "_type": "Load"
+                              }
+                            }
+                          ],
+                          "ctx": {
+                            "_type": "Load"
+                          }
+                        }
+                      },
+                      {
+                        "_type": "Name",
+                        "_lineno": 22,
+                        "_col_offset": 41,
+                        "_end_lineno": 22,
+                        "_end_col_offset": 46,
+                        "id": "pairs",
+                        "ctx": {
+                          "_type": "Load"
+                        }
+                      }
+                    ],
+                    "keywords": []
+                  }
+                }
+              ],
+              "orelse": [],
+              "type_comment": null
+            }
+          ]
+        }
+      ],
+      "decorator_list": [],
+      "returns": {
+        "_type": "Constant",
+        "_lineno": 15,
+        "_col_offset": 5,
+        "_end_lineno": 15,
+        "_end_col_offset": 9,
+        "value": null,
+        "kind": null
+      },
+      "type_comment": null,
+      "type_params": []
+    },
+    {
+      "_type": "FunctionDef",
+      "_lineno": 23,
+      "_col_offset": 0,
+      "_end_lineno": 39,
+      "_end_col_offset": 16,
+      "name": "convert_nested_list_coordinates_to_pairs_coordinates",
+      "args": {
+        "_type": "arguments",
+        "posonlyargs": [],
+        "args": [
+          {
+            "_type": "arg",
+            "_lineno": 24,
+            "_col_offset": 4,
+            "_end_lineno": 24,
+            "_end_col_offset": 15,
+            "arg": "nested",
+            "annotation": {
+              "_type": "Name",
+              "_lineno": 24,
+              "_col_offset": 12,
+              "_end_lineno": 24,
+              "_end_col_offset": 15,
+              "id": "Any",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "type_comment": null
+          }
+        ],
+        "vararg": null,
+        "kwonlyargs": [],
+        "kw_defaults": [],
+        "kwarg": null,
+        "defaults": []
+      },
+      "body": [
+        {
+          "_type": "Expr",
+          "_lineno": 26,
+          "_col_offset": 4,
+          "_end_lineno": 36,
+          "_end_col_offset": 7,
+          "value": {
+            "_type": "Constant",
+            "_lineno": 26,
+            "_col_offset": 4,
+            "_end_lineno": 36,
+            "_end_col_offset": 7,
+            "value": "\n    Flatten a nested list into a list of (key, value) pairs.\n    Keys are the multi-dimensional coordinates (as scalar index tensors)\n    to reach each leaf value in the nested structure.\n    Args:\n        nested: A nested list where leaves are list[torch.Tensor] (index tensor lists).\n    Returns:\n        List of (key, value) pairs where:\n        - key: list of scalar torch.Tensor coordinates\n        - value: the leaf value (list[torch.Tensor])\n    ",
+            "kind": null
+          }
+        },
+        {
+          "_type": "AnnAssign",
+          "_lineno": 37,
+          "_col_offset": 4,
+          "_end_lineno": 37,
+          "_end_col_offset": 26,
+          "target": {
+            "_type": "Name",
+            "_lineno": 37,
+            "_col_offset": 4,
+            "_end_lineno": 37,
+            "_end_col_offset": 9,
+            "id": "pairs",
+            "ctx": {
+              "_type": "Store"
+            }
+          },
+          "annotation": {
+            "_type": "Subscript",
+            "_lineno": 37,
+            "_col_offset": 11,
+            "_end_lineno": 37,
+            "_end_col_offset": 21,
+            "value": {
+              "_type": "Name",
+              "_lineno": 37,
+              "_col_offset": 11,
+              "_end_lineno": 37,
+              "_end_col_offset": 15,
+              "id": "List",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "slice": {
+              "_type": "Name",
+              "_lineno": 37,
+              "_col_offset": 16,
+              "_end_lineno": 37,
+              "_end_col_offset": 20,
+              "id": "Pair",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "value": {
+            "_type": "List",
+            "_lineno": 37,
+            "_col_offset": 24,
+            "_end_lineno": 37,
+            "_end_col_offset": 26,
+            "elts": [],
+            "ctx": {
+              "_type": "Load"
+            }
+          },
+          "simple": 1
+        },
+        {
+          "_type": "Expr",
+          "_lineno": 38,
+          "_col_offset": 4,
+          "_end_lineno": 38,
+          "_end_col_offset": 31,
+          "value": {
+            "_type": "Call",
+            "_lineno": 38,
+            "_col_offset": 4,
+            "_end_lineno": 38,
+            "_end_col_offset": 31,
+            "func": {
+              "_type": "Name",
+              "_lineno": 38,
+              "_col_offset": 4,
+              "_end_lineno": 38,
+              "_end_col_offset": 12,
+              "id": "_collect",
+              "ctx": {
+                "_type": "Load"
+              }
+            },
+            "args": [
+              {
+                "_type": "Name",
+                "_lineno": 38,
+                "_col_offset": 13,
+                "_end_lineno": 38,
+                "_end_col_offset": 19,
+                "id": "nested",
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              {
+                "_type": "List",
+                "_lineno": 38,
+                "_col_offset": 21,
+                "_end_lineno": 38,
+                "_end_col_offset": 23,
+                "elts": [],
+                "ctx": {
+                  "_type": "Load"
+                }
+              },
+              {
+                "_type": "Name",
+                "_lineno": 38,
+                "_col_offset": 25,
+                "_end_lineno": 38,
+                "_end_col_offset": 30,
+                "id": "pairs",
+                "ctx": {
+                  "_type": "Load"
+                }
+              }
+            ],
+            "keywords": []
+          }
+        },
+        {
+          "_type": "Return",
+          "_lineno": 39,
+          "_col_offset": 4,
+          "_end_lineno": 39,
+          "_end_col_offset": 16,
+          "value": {
+            "_type": "Name",
+            "_lineno": 39,
+            "_col_offset": 11,
+            "_end_lineno": 39,
+            "_end_col_offset": 16,
+            "id": "pairs",
+            "ctx": {
+              "_type": "Load"
+            }
+          }
+        }
+      ],
+      "decorator_list": [],
+      "returns": {
+        "_type": "Subscript",
+        "_lineno": 25,
+        "_col_offset": 5,
+        "_end_lineno": 25,
+        "_end_col_offset": 15,
+        "value": {
+          "_type": "Name",
+          "_lineno": 25,
+          "_col_offset": 5,
+          "_end_lineno": 25,
+          "_end_col_offset": 9,
+          "id": "List",
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "slice": {
+          "_type": "Name",
+          "_lineno": 25,
+          "_col_offset": 10,
+          "_end_lineno": 25,
+          "_end_col_offset": 14,
+          "id": "Pair",
+          "ctx": {
+            "_type": "Load"
+          }
+        },
+        "ctx": {
+          "_type": "Load"
+        }
+      },
+      "type_comment": null,
+      "type_params": []
+    }
+  ],
+  "type_ignores": []
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "read_storage",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/st_patched.py",
+    "pattern": "/^    def read_storage(tensor, flat_index):$/;\"",
+    "type": "f",
+    "line": 34,
+    "kind": null
+  },
+  {
+    "name": "run_test",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/st_patched.py",
+    "pattern": "/^    def run_test(name: str, condition: bool, expected=None, actual=None):$/;\"",
+    "type": "f",
+    "line": 26,
+    "kind": null
+  },
+  {
+    "name": "st_patched",
+    "file": "/workspace/Experience/experience/example/code_auto_encoder/codebase/symbolic_tensor/tensor_util/st_patched.py",
+    "pattern": "/^def st_patched(lvalue: torch.Tensor, rvalue: torch.Tensor) -> torch.Tensor:$/;\"",
+    "type": "f",
+    "line": 4,
+    "kind": null
+  }
+]
