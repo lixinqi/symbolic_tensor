@@ -1,13 +1,14 @@
-"""Convert Python AST JSON to AstTagRelation JSONL.
+"""Convert Python AST JSON to AstTagRelationGroup JSONL.
 
 Generated from convert_python_to_ast_tag_jsonl.viba.
 
 Viba DSL specification:
   convert_python_to_ast_tag_jsonl[ProgrammingLanguage] :=
-    JsonLines[AstTagRelation[ProgrammingLanguage]]
+    JsonLines[$ast_tag_rel_group AstTagRelationGroup[ProgrammingLanguage]]
     <- $ast_obj ast[ProgrammingLanguage]
     # inline
     <- Import[./ast_tag_relation_group.viba]
+    <- { Assert that the $ast_tag_rel_group meets the AstTagRelationGroup schema }
 """
 
 import ast
@@ -98,719 +99,1155 @@ def _node_to_symbol(node: Any, expr_id: Optional[str] = None) -> str:
         return f"binop:{uid}"
     if t == "UnaryOp":
         # Return a reference to the unary operation
-        return f"unary:{uid}"
-    if t == "BoolOp":
-        # Return a reference to the boolean operation
-        return f"boolop:{uid}"
+        return f"unaryop:{uid}"
     if t == "Compare":
-        # Return a reference to the comparison
         return f"compare:{uid}"
+    if t == "BoolOp":
+        return f"boolop:{uid}"
     if t == "Await":
-        # Await expression - return the awaited value
         return f"await:{uid}"
-    if t == "Slice":
-        lo = _node_to_symbol(node["lower"]) if node.get("lower") else ""
-        hi = _node_to_symbol(node["upper"]) if node.get("upper") else ""
-        st = _node_to_symbol(node["step"]) if node.get("step") else ""
-        return f"{lo}:{hi}:{st}" if st else f"{lo}:{hi}"
-    if t == "JoinedStr":
-        return "f-string"
-    if t == "FormattedValue":
-        return _node_to_symbol(node.get("value"))
-    if t == "arg":
-        return node["arg"]
-    if t == "alias":
-        return node["name"]
-    if t == "IfExp":
-        return f"ifexp:{uid}"
     if t == "Lambda":
         return f"lambda:{uid}"
+    if t == "IfExp":
+        return f"ifexp:{uid}"
+    if t == "Yield":
+        return f"yield:{uid}"
+    if t == "YieldFrom":
+        return f"yieldfrom:{uid}"
     if t == "Dict":
         return f"dict:{uid}"
     if t == "Set":
         return f"set:{uid}"
-    if t == "NamedExpr":
-        return f"namedexpr:{uid}"
-    if t in ("ListComp", "SetComp", "GeneratorExp", "DictComp"):
-        return f"comp:{uid}"
-    return f"<{t}>"
+    if t == "Slice":
+        return f"slice:{uid}"
+    # For other complex nodes, use the uid reference
+    if expr_id:
+        return expr_id
+    return f"{t.lower()}:{uid}"
 
 
-# ---------------------------------------------------------------------------
-# Relation emitting
-# ---------------------------------------------------------------------------
-
-def _ln(node: Any) -> int:
+def _get_op_symbol(node: Any) -> str:
+    """Convert an operator node to its symbol string."""
+    if isinstance(node, ast.AST):
+        node = ast_to_dict(node)
     if isinstance(node, dict):
-        return node.get("_lineno", 0)
-    return 0
-
-
-def _emit(rels: List[Dict], line: int, tag: str, lhs: str, rhs: str,
-          rig: Optional[Dict] = None):
-    rels.append({
-        "line": line,
-        "relation_in_group": rig,
-        "relation_tag": tag,
-        "lhs_tag": lhs,
-        "rhs_tag": rhs,
-    })
-
-
-def _get_docstring(body: List[Dict]) -> Optional[Tuple[int, str]]:
-    """Extract docstring from body if present, returns (line, docstring) or None."""
-    if not body:
-        return None
-    first = body[0]
-    if first.get("_type") != "Expr":
-        return None
-    val = first.get("value", {})
-    if val.get("_type") != "Constant":
-        return None
-    doc = val.get("value")
-    if not isinstance(doc, str):
-        return None
-    return _ln(first), doc
+        t = node.get("_type", "")
+        if t == "Add":
+            return "+"
+        if t == "Sub":
+            return "-"
+        if t == "Mult":
+            return "*"
+        if t == "Div":
+            return "/"
+        if t == "FloorDiv":
+            return "//"
+        if t == "Mod":
+            return "%"
+        if t == "Pow":
+            return "**"
+        if t == "LShift":
+            return "<<"
+        if t == "RShift":
+            return ">>"
+        if t == "BitOr":
+            return "|"
+        if t == "BitXor":
+            return "^"
+        if t == "BitAnd":
+            return "&"
+        if t == "MatMult":
+            return "@"
+        if t == "UAdd":
+            return "+"
+        if t == "USub":
+            return "-"
+        if t == "Not":
+            return "not"
+        if t == "Invert":
+            return "~"
+        if t == "Eq":
+            return "=="
+        if t == "NotEq":
+            return "!="
+        if t == "Lt":
+            return "<"
+        if t == "LtE":
+            return "<="
+        if t == "Gt":
+            return ">"
+        if t == "GtE":
+            return ">="
+        if t == "Is":
+            return "is"
+        if t == "IsNot":
+            return "isnot"
+        if t == "In":
+            return "in"
+        if t == "NotIn":
+            return "notin"
+        if t == "And":
+            return "and"
+        if t == "Or":
+            return "or"
+    return str(node)
 
 
 # ---------------------------------------------------------------------------
-# Expression scanner — find calls, comprehensions, fstrings, walrus, etc.
-# inside an expression subtree without emitting statement-level relations.
+# Relation extraction
 # ---------------------------------------------------------------------------
 
-def _scan_expr(node: Any, scope: str, rels: List[Dict]):
-    """Scan an expression tree for nested relational patterns."""
-    if not isinstance(node, dict) or "_type" not in node:
-        return
-    t = node["_type"]
-    ln = _ln(node)
+def _extract_relations(node: Any, parent: Any = None, relations: Optional[List[Dict]] = None) -> List[Dict]:
+    """Extract AstTagRelation records from a JSON AST node."""
+    if relations is None:
+        relations = []
+    if not isinstance(node, dict):
+        return relations
+
+    t = node.get("_type", "")
+    ln = node.get("_lineno", 0)
     col = node.get("_col_offset", 0)
     end_col = node.get("_end_col_offset", col + 1)
     uid = f"{ln}:{col}:{end_col}" if ln else "0:0:1"
 
-    if t == "Call":
-        callee = _node_to_symbol(node["func"])
-        _emit(rels, ln, "calls", scope, callee)
-        # Emit positional arguments for reconstruction
-        for i, arg in enumerate(node.get("args", [])):
-            if isinstance(arg, dict) and arg.get("_type") == "Starred":
-                _emit(rels, ln, "star_arg", callee,
-                      _node_to_symbol(arg["value"]))
-            else:
-                _emit(rels, ln, "call_arg", callee, _node_to_symbol(arg))
+    # Module → contains statements
+    if t == "Module":
+        for stmt in node.get("body", []):
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "contains",
+                "lhs_tag": "module",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # FunctionDef / AsyncFunctionDef
+    elif t in ("FunctionDef", "AsyncFunctionDef"):
+        name = node.get("name", "")
+        relations.append({
+            "line": ln,
+            "relation_tag": "defines",
+            "lhs_tag": "module",
+            "rhs_tag": name
+        })
+        # args → param relations
+        args = node.get("args", {})
+        for i, arg in enumerate(args.get("args", [])):
+            arg_name = arg.get("arg", "")
+            relations.append({
+                "line": ln,
+                "relation_tag": "param",
+                "lhs_tag": name,
+                "rhs_tag": arg_name
+            })
+            if arg.get("annotation"):
+                ann_sym = _node_to_symbol(arg["annotation"])
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "annotation",
+                    "lhs_tag": arg_name,
+                    "rhs_tag": ann_sym
+                })
+        # returns
+        if node.get("returns"):
+            ret_sym = _node_to_symbol(node["returns"])
+            relations.append({
+                "line": ln,
+                "relation_tag": "returns",
+                "lhs_tag": name,
+                "rhs_tag": ret_sym
+            })
+        # decorators
+        for dec in node.get("decorator_list", []):
+            dec_sym = _node_to_symbol(dec)
+            relations.append({
+                "line": ln,
+                "relation_tag": "decorates",
+                "lhs_tag": dec_sym,
+                "rhs_tag": name
+            })
+        # body
+        for stmt in node.get("body", []):
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "contains",
+                "lhs_tag": name,
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+        # async flag
+        if t == "AsyncFunctionDef":
+            relations.append({
+                "line": ln,
+                "relation_tag": "async_def",
+                "lhs_tag": name,
+                "rhs_tag": "async"
+            })
+
+    # ClassDef
+    elif t == "ClassDef":
+        name = node.get("name", "")
+        relations.append({
+            "line": ln,
+            "relation_tag": "defines",
+            "lhs_tag": "module",
+            "rhs_tag": name
+        })
+        # bases
+        for base in node.get("bases", []):
+            base_sym = _node_to_symbol(base)
+            relations.append({
+                "line": ln,
+                "relation_tag": "bases",
+                "lhs_tag": name,
+                "rhs_tag": base_sym
+            })
+        # keywords (metaclass, etc.)
         for kw in node.get("keywords", []):
             if kw.get("arg"):
-                _emit(rels, ln, "keyword_arg", callee,
-                      f"{kw['arg']}={_node_to_symbol(kw['value'])}")
-            else:
-                _emit(rels, ln, "double_star_arg", callee,
-                      _node_to_symbol(kw["value"]))
-        # recurse into func, args, keywords
-        _scan_expr(node.get("func"), scope, rels)
-        for a in node.get("args", []):
-            _scan_expr(a, scope, rels)
-        for kw in node.get("keywords", []):
-            _scan_expr(kw.get("value"), scope, rels)
-        return
+                kw_sym = _node_to_symbol(kw.get("value"))
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "keyword_arg",
+                    "lhs_tag": name,
+                    "rhs_tag": kw_sym
+                })
+        # decorators
+        for dec in node.get("decorator_list", []):
+            dec_sym = _node_to_symbol(dec)
+            relations.append({
+                "line": ln,
+                "relation_tag": "decorates",
+                "lhs_tag": dec_sym,
+                "rhs_tag": name
+            })
+        # body
+        for stmt in node.get("body", []):
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "contains",
+                "lhs_tag": name,
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
 
-    if t == "Attribute" and node.get("ctx", {}).get("_type") == "Load":
-        _emit(rels, ln, "member_access", _node_to_symbol(node["value"]),
-              node["attr"])
-
-    if t == "BinOp":
-        left = _node_to_symbol(node["left"])
-        right = _node_to_symbol(node["right"])
-        op = node["op"]["_type"]
-        binop_id = f"binop:{uid}"
-        # bin_op: op -> binop_id, then bin_op_left/right -> operands
-        _emit(rels, ln, "bin_op", op, binop_id)
-        _emit(rels, ln, "bin_op_left", binop_id, left)
-        _emit(rels, ln, "bin_op_right", binop_id, right)
-        _scan_expr(node.get("left"), scope, rels)
-        _scan_expr(node.get("right"), scope, rels)
-        return
-
-    if t == "UnaryOp":
-        operand = _node_to_symbol(node["operand"])
-        op = node["op"]["_type"]
-        unary_id = f"unary:{uid}"
-        _emit(rels, ln, "unary_op", op, unary_id)
-        _emit(rels, ln, "unary_op_operand", unary_id, operand)
-        _scan_expr(node.get("operand"), scope, rels)
-        return
-
-    if t == "Compare":
-        left = _node_to_symbol(node["left"])
-        compare_id = f"compare:{uid}"
-        _emit(rels, ln, "compare", left, "...")
-        _emit(rels, ln, "compare_left", compare_id, left)
-        _scan_expr(node.get("left"), scope, rels)  # Scan left for nested expressions
-        for i, (op, comp) in enumerate(zip(node.get("ops", []), node.get("comparators", []))):
-            _emit(rels, ln, "compare_op", compare_id, op["_type"])
-            rhs = _node_to_symbol(comp)
-            _emit(rels, ln, "compare_right", compare_id, rhs)
-            _scan_expr(comp, scope, rels)
-        return
-
-    if t == "BoolOp":
-        op = node["op"]["_type"]  # And / Or
-        vals = [_node_to_symbol(v) for v in node.get("values", [])]
-        boolop_id = f"boolop:{uid}"
-        _emit(rels, ln, "bool_op", op, boolop_id)
-        for i, v in enumerate(node.get("values", [])):
-            _emit(rels, ln, "bool_op_operand", boolop_id, _node_to_symbol(v))
-            _scan_expr(v, scope, rels)
-        return
-
-    if t == "Subscript":
-        value = _node_to_symbol(node["value"])
-        slice_node = node.get("slice")
-        slice_sym = _node_to_symbol(slice_node)
-        sub_id = f"subscript:{uid}"
-        # Emit subscript with ID as lhs for easy reconstruction
-        _emit(rels, ln, "subscript", sub_id, slice_sym)
-        _emit(rels, ln, "subscript_value", sub_id, value)
-        if isinstance(slice_node, dict) and slice_node.get("_type") == "Slice":
-            _emit(rels, ln, "slice", sub_id, slice_sym)
-            if slice_node.get("lower"):
-                _emit(rels, ln, "slice_lower", sub_id, _node_to_symbol(slice_node["lower"]))
-                _scan_expr(slice_node["lower"], scope, rels)
-            if slice_node.get("upper"):
-                _emit(rels, ln, "slice_upper", sub_id, _node_to_symbol(slice_node["upper"]))
-                _scan_expr(slice_node["upper"], scope, rels)
-            if slice_node.get("step"):
-                _emit(rels, ln, "slice_step", sub_id, _node_to_symbol(slice_node["step"]))
-                _scan_expr(slice_node["step"], scope, rels)
-        else:
-            # Non-slice subscript, just scan the index expression
-            _scan_expr(slice_node, scope, rels)
-        _scan_expr(node.get("value"), scope, rels)
-        return
-
-    if t == "Dict":
-        keys = node.get("keys", [])
-        vals = node.get("values", [])
-        dict_id = f"dict:{uid}"
-        _emit(rels, ln, "dict_literal", scope, dict_id)
-        for i, (k, v) in enumerate(zip(keys, vals)):
-            if k is None:
-                _emit(rels, ln, "dict_value", dict_id, f"**{_node_to_symbol(v)}")
-            else:
-                _emit(rels, ln, "dict_key", dict_id, _node_to_symbol(k))
-                _emit(rels, ln, "dict_value", dict_id, _node_to_symbol(v))
-            _scan_expr(v, scope, rels)
-        return
-
-    if t == "Set":
-        set_id = f"set:{uid}"
-        _emit(rels, ln, "set_literal", scope, set_id)
-        for e in node.get("elts", []):
-            _scan_expr(e, scope, rels)
-        return
-
-    if t == "List":
-        if node.get("ctx", {}).get("_type") == "Load":
-            list_id = f"list:{uid}"
-            _emit(rels, ln, "list_literal", scope, list_id)
-        for e in node.get("elts", []):
-            _scan_expr(e, scope, rels)
-        return
-
-    if t == "Tuple":
-        if node.get("ctx", {}).get("_type") == "Load":
-            tuple_id = f"tuple:{uid}"
-            _emit(rels, ln, "tuple_literal", scope, tuple_id)
-        for e in node.get("elts", []):
-            _scan_expr(e, scope, rels)
-        return
-
-    if t == "NamedExpr":
-        _emit(rels, ln, "named_expr", _node_to_symbol(node["target"]),
-              _node_to_symbol(node["value"]))
-        _emit(rels, ln, "walrus", _node_to_symbol(node["target"]),
-              _node_to_symbol(node["value"]))
-        _scan_expr(node.get("value"), scope, rels)
-        return
-
-    if t == "Await":
-        await_id = f"await:{uid}"
-        _emit(rels, ln, "await_expr", scope, await_id)
-        _emit(rels, ln, "await_value", await_id, _node_to_symbol(node.get("value")))
-        _scan_expr(node.get("value"), scope, rels)
-        return
-
-    if t == "IfExp":
-        body = _node_to_symbol(node["body"])
-        test = _node_to_symbol(node["test"])
-        else_ = _node_to_symbol(node["orelse"])
-        ifexp_id = f"ifexp:{uid}"
-        _emit(rels, ln, "if_expr", body, test)
-        _emit(rels, ln, "if_expr_body", ifexp_id, body)
-        _emit(rels, ln, "if_expr_test", ifexp_id, test)
-        _emit(rels, ln, "if_expr_else", ifexp_id, else_)
-        _scan_expr(node.get("body"), scope, rels)
-        _scan_expr(node.get("test"), scope, rels)
-        _scan_expr(node.get("orelse"), scope, rels)
-        return
-
-    if t == "Lambda":
-        lambda_id = f"lambda:{uid}"
-        _emit(rels, ln, "lambda", scope, lambda_id)
-        if node.get("body"):
-            _emit(rels, ln, "lambda_body", lambda_id, _node_to_symbol(node["body"]))
-            _scan_expr(node["body"], scope, rels)  # Scan body for nested expressions
-        return
-
-    if t == "JoinedStr":
-        for val in node.get("values", []):
-            if isinstance(val, dict) and val.get("_type") == "FormattedValue":
-                _emit(rels, ln, "fstring_expr", scope,
-                      _node_to_symbol(val["value"]))
-        return
-
-    if t in ("ListComp", "SetComp", "GeneratorExp", "DictComp"):
-        comp_id = f"comp:{uid}"
-        # Emit comprehension body (the output expression)
-        if t == "ListComp":
-            _emit(rels, ln, "comprehension_body", comp_id,
-                  _node_to_symbol(node.get("elt")))
-            _scan_expr(node.get("elt"), comp_id, rels)
-        elif t == "SetComp":
-            _emit(rels, ln, "comprehension_body", comp_id,
-                  _node_to_symbol(node.get("elt")))
-            _scan_expr(node.get("elt"), comp_id, rels)
-        elif t == "GeneratorExp":
-            _emit(rels, ln, "comprehension_body", comp_id,
-                  _node_to_symbol(node.get("elt")))
-            _scan_expr(node.get("elt"), comp_id, rels)
-        elif t == "DictComp":
-            _emit(rels, ln, "comprehension_body", comp_id,
-                  f"{_node_to_symbol(node.get('key'))}:{_node_to_symbol(node.get('value'))}")
-            _scan_expr(node.get("key"), comp_id, rels)
-            _scan_expr(node.get("value"), comp_id, rels)
-        for gen in node.get("generators", []):
-            _emit(rels, ln, "comprehension_iter", comp_id,
-                  _node_to_symbol(gen["iter"]))
-            _emit(rels, ln, "comprehension_target", comp_id,
-                  _node_to_symbol(gen["target"]))
-            _emit(rels, ln, "for_target", comp_id,
-                  _node_to_symbol(gen["target"]))
-            _scan_expr(gen.get("iter"), comp_id, rels)
-            for if_ in gen.get("ifs", []):
-                _emit(rels, ln, "comprehension_if", comp_id,
-                      _node_to_symbol(if_))
-                _scan_expr(if_, comp_id, rels)
-        return
-
-    # Generic recurse into expression children
-    for key in ("value", "func", "left", "right", "operand", "test",
-                "body", "orelse", "slice"):
-        child = node.get(key)
-        if isinstance(child, dict) and "_type" in child:
-            _scan_expr(child, scope, rels)
-        elif isinstance(child, list):
-            for item in child:
-                if isinstance(item, dict) and "_type" in item:
-                    _scan_expr(item, scope, rels)
-    for key in ("elts", "args", "values", "comparators", "keys"):
-        for item in node.get(key, []):
-            if isinstance(item, dict) and "_type" in item:
-                _scan_expr(item, scope, rels)
-    for kw in node.get("keywords", []):
-        _scan_expr(kw.get("value"), scope, rels)
-
-
-# ---------------------------------------------------------------------------
-# Statement-level visitors — walk JSON AST body lists
-# ---------------------------------------------------------------------------
-
-def _visit_stmt(node: Dict, scope: str, rels: List[Dict], stmt_seq: int = 0):
-    """Visit a single statement node and emit its relations."""
-    t = node.get("_type", "")
-    ln = _ln(node)
-
-    # Emit statement sequence for ordering
-    _emit(rels, ln, "stmt_seq", scope, f"{stmt_seq}:{ln}")
-    _emit(rels, ln, "contains", scope, f"stmt:{ln}")
-
-    if t in ("FunctionDef", "AsyncFunctionDef"):
-        _visit_function(node, scope, rels, is_async=(t == "AsyncFunctionDef"))
-
-    elif t == "ClassDef":
-        _visit_class(node, scope, rels)
-
+    # Assign
     elif t == "Assign":
-        rhs_sym = _node_to_symbol(node["value"])
-        for target in node.get("targets", []):
-            _emit(rels, ln, "assigns", _node_to_symbol(target), rhs_sym)
-            # Scan target for subscript expressions
-            _scan_expr(target, scope, rels)
-        _scan_expr(node.get("value"), scope, rels)
+        targets = node.get("targets", [])
+        value = node.get("value")
+        value_sym = _node_to_symbol(value)
+        for target in targets:
+            target_sym = _node_to_symbol(target)
+            relations.append({
+                "line": ln,
+                "relation_tag": "assigns",
+                "lhs_tag": target_sym,
+                "rhs_tag": value_sym
+            })
+        _extract_relations(value, node, relations)
 
+    # AugAssign
     elif t == "AugAssign":
-        target = _node_to_symbol(node["target"])
-        value = _node_to_symbol(node["value"])
-        op = node["op"]["_type"]
-        _emit(rels, ln, "aug_assigns", target, value)
-        _emit(rels, ln, "aug_op", target, op)
-        _scan_expr(node.get("target"), scope, rels)  # Scan target for subscript expressions
-        _scan_expr(node.get("value"), scope, rels)
+        target = node.get("target")
+        op = node.get("op")
+        value = node.get("value")
+        target_sym = _node_to_symbol(target)
+        op_sym = _get_op_symbol(op)
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "aug_op",
+            "lhs_tag": target_sym,
+            "rhs_tag": op_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "aug_assigns",
+            "lhs_tag": target_sym,
+            "rhs_tag": value_sym
+        })
+        _extract_relations(value, node, relations)
 
+    # AnnAssign
     elif t == "AnnAssign":
-        if node.get("target"):
-            _emit(rels, ln, "annotation", _node_to_symbol(node["target"]),
-                  _node_to_symbol(node["annotation"]))
-            _scan_expr(node.get("annotation"), scope, rels)
-            if node.get("value"):
-                _emit(rels, ln, "assigns", _node_to_symbol(node["target"]),
-                      _node_to_symbol(node["value"]))
-                _scan_expr(node["value"], scope, rels)
+        target = node.get("target")
+        annotation = node.get("annotation")
+        value = node.get("value")
+        target_sym = _node_to_symbol(target)
+        ann_sym = _node_to_symbol(annotation)
+        relations.append({
+            "line": ln,
+            "relation_tag": "type_annotation",
+            "lhs_tag": target_sym,
+            "rhs_tag": ann_sym
+        })
+        if value:
+            value_sym = _node_to_symbol(value)
+            relations.append({
+                "line": ln,
+                "relation_tag": "assigns",
+                "lhs_tag": target_sym,
+                "rhs_tag": value_sym
+            })
+            _extract_relations(value, node, relations)
 
+    # Expr (expression statement)
+    elif t == "Expr":
+        value = node.get("value")
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "expr_stmt",
+            "lhs_tag": "expr",
+            "rhs_tag": value_sym
+        })
+        _extract_relations(value, node, relations)
+
+    # Return
+    elif t == "Return":
+        value = node.get("value")
+        if value:
+            value_sym = _node_to_symbol(value)
+            relations.append({
+                "line": ln,
+                "relation_tag": "returns",
+                "lhs_tag": "return",
+                "rhs_tag": value_sym
+            })
+            _extract_relations(value, node, relations)
+
+    # Call
+    elif t == "Call":
+        func = node.get("func")
+        func_sym = _node_to_symbol(func)
+        for i, arg in enumerate(node.get("args", [])):
+            arg_sym = _node_to_symbol(arg)
+            relations.append({
+                "line": ln,
+                "relation_tag": "call_arg",
+                "lhs_tag": func_sym,
+                "rhs_tag": arg_sym
+            })
+            _extract_relations(arg, node, relations)
+        for kw in node.get("keywords", []):
+            kw_val = kw.get("value")
+            kw_sym = _node_to_symbol(kw_val)
+            relations.append({
+                "line": ln,
+                "relation_tag": "call_arg_value",
+                "lhs_tag": func_sym,
+                "rhs_tag": kw_sym
+            })
+            _extract_relations(kw_val, node, relations)
+        _extract_relations(func, node, relations)
+
+    # BinOp
+    elif t == "BinOp":
+        left = node.get("left")
+        op = node.get("op")
+        right = node.get("right")
+        left_sym = _node_to_symbol(left)
+        op_sym = _get_op_symbol(op)
+        right_sym = _node_to_symbol(right)
+        binop_id = f"binop:{uid}"
+        relations.append({
+            "line": ln,
+            "relation_tag": "bin_op",
+            "lhs_tag": op_sym,
+            "rhs_tag": binop_id
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "bin_op_left",
+            "lhs_tag": binop_id,
+            "rhs_tag": left_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "bin_op_right",
+            "lhs_tag": binop_id,
+            "rhs_tag": right_sym
+        })
+        _extract_relations(left, node, relations)
+        _extract_relations(right, node, relations)
+
+    # UnaryOp
+    elif t == "UnaryOp":
+        op = node.get("op")
+        operand = node.get("operand")
+        op_sym = _get_op_symbol(op)
+        operand_sym = _node_to_symbol(operand)
+        unaryop_id = f"unaryop:{uid}"
+        relations.append({
+            "line": ln,
+            "relation_tag": "unary_op",
+            "lhs_tag": op_sym,
+            "rhs_tag": unaryop_id
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "unary_op_operand",
+            "lhs_tag": unaryop_id,
+            "rhs_tag": operand_sym
+        })
+        _extract_relations(operand, node, relations)
+
+    # Compare
+    elif t == "Compare":
+        left = node.get("left")
+        ops = node.get("ops", [])
+        comparators = node.get("comparators", [])
+        left_sym = _node_to_symbol(left)
+        compare_id = f"compare:{uid}"
+        relations.append({
+            "line": ln,
+            "relation_tag": "compare_left",
+            "lhs_tag": compare_id,
+            "rhs_tag": left_sym
+        })
+        for i, (op, comp) in enumerate(zip(ops, comparators)):
+            op_sym = _get_op_symbol(op)
+            comp_sym = _node_to_symbol(comp)
+            relations.append({
+                "line": ln,
+                "relation_tag": "compare_op",
+                "lhs_tag": compare_id,
+                "rhs_tag": op_sym
+            })
+            relations.append({
+                "line": ln,
+                "relation_tag": "compare_right",
+                "lhs_tag": compare_id,
+                "rhs_tag": comp_sym
+            })
+            _extract_relations(comp, node, relations)
+        _extract_relations(left, node, relations)
+
+    # BoolOp
+    elif t == "BoolOp":
+        op = node.get("op")
+        values = node.get("values", [])
+        op_sym = _get_op_symbol(op)
+        boolop_id = f"boolop:{uid}"
+        relations.append({
+            "line": ln,
+            "relation_tag": "bool_op",
+            "lhs_tag": op_sym,
+            "rhs_tag": boolop_id
+        })
+        for val in values:
+            val_sym = _node_to_symbol(val)
+            relations.append({
+                "line": ln,
+                "relation_tag": "bool_op_operand",
+                "lhs_tag": boolop_id,
+                "rhs_tag": val_sym
+            })
+            _extract_relations(val, node, relations)
+
+    # Subscript
+    elif t == "Subscript":
+        value = node.get("value")
+        slice_val = node.get("slice")
+        value_sym = _node_to_symbol(value)
+        slice_sym = _node_to_symbol(slice_val)
+        subscript_id = f"subscript:{uid}"
+        relations.append({
+            "line": ln,
+            "relation_tag": "subscript_value",
+            "lhs_tag": subscript_id,
+            "rhs_tag": value_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "subscript",
+            "lhs_tag": subscript_id,
+            "rhs_tag": slice_sym
+        })
+        _extract_relations(value, node, relations)
+        _extract_relations(slice_val, node, relations)
+
+    # Slice
+    elif t == "Slice":
+        lower = node.get("lower")
+        upper = node.get("upper")
+        step = node.get("step")
+        slice_id = f"slice:{uid}"
+        if lower:
+            lower_sym = _node_to_symbol(lower)
+            relations.append({
+                "line": ln,
+                "relation_tag": "slice_lower",
+                "lhs_tag": slice_id,
+                "rhs_tag": lower_sym
+            })
+            _extract_relations(lower, node, relations)
+        if upper:
+            upper_sym = _node_to_symbol(upper)
+            relations.append({
+                "line": ln,
+                "relation_tag": "slice_upper",
+                "lhs_tag": slice_id,
+                "rhs_tag": upper_sym
+            })
+            _extract_relations(upper, node, relations)
+        if step:
+            step_sym = _node_to_symbol(step)
+            relations.append({
+                "line": ln,
+                "relation_tag": "slice_step",
+                "lhs_tag": slice_id,
+                "rhs_tag": step_sym
+            })
+            _extract_relations(step, node, relations)
+
+    # If
+    elif t == "If":
+        test = node.get("test")
+        body = node.get("body", [])
+        orelse = node.get("orelse", [])
+        test_sym = _node_to_symbol(test)
+        relations.append({
+            "line": ln,
+            "relation_tag": "if_test",
+            "lhs_tag": "if",
+            "rhs_tag": test_sym
+        })
+        _extract_relations(test, node, relations)
+        for stmt in body:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "if_body",
+                "lhs_tag": "if",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+        for stmt in orelse:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "else_body",
+                "lhs_tag": "if",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # For / AsyncFor
+    elif t in ("For", "AsyncFor"):
+        target = node.get("target")
+        iter_val = node.get("iter")
+        body = node.get("body", [])
+        orelse = node.get("orelse", [])
+        target_sym = _node_to_symbol(target)
+        iter_sym = _node_to_symbol(iter_val)
+        relations.append({
+            "line": ln,
+            "relation_tag": "for_target",
+            "lhs_tag": "for",
+            "rhs_tag": target_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "for_iter",
+            "lhs_tag": "for",
+            "rhs_tag": iter_sym
+        })
+        _extract_relations(iter_val, node, relations)
+        for stmt in body:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "for_body",
+                "lhs_tag": "for",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # While
+    elif t == "While":
+        test = node.get("test")
+        body = node.get("body", [])
+        orelse = node.get("orelse", [])
+        test_sym = _node_to_symbol(test)
+        relations.append({
+            "line": ln,
+            "relation_tag": "while_test",
+            "lhs_tag": "while",
+            "rhs_tag": test_sym
+        })
+        _extract_relations(test, node, relations)
+        for stmt in body:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "while_body",
+                "lhs_tag": "while",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # With / AsyncWith
+    elif t in ("With", "AsyncWith"):
+        items = node.get("items", [])
+        body = node.get("body", [])
+        for item in items:
+            ctx = item.get("context_expr")
+            opt_vars = item.get("optional_vars")
+            ctx_sym = _node_to_symbol(ctx)
+            relations.append({
+                "line": ln,
+                "relation_tag": "with_context",
+                "lhs_tag": "with",
+                "rhs_tag": ctx_sym
+            })
+            _extract_relations(ctx, node, relations)
+            if opt_vars:
+                vars_sym = _node_to_symbol(opt_vars)
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "with_as",
+                    "lhs_tag": ctx_sym,
+                    "rhs_tag": vars_sym
+                })
+        for stmt in body:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "with_body",
+                "lhs_tag": "with",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # Try
+    elif t == "Try":
+        body = node.get("body", [])
+        handlers = node.get("handlers", [])
+        orelse = node.get("orelse", [])
+        finalbody = node.get("finalbody", [])
+        for stmt in body:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "try_body",
+                "lhs_tag": "try",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+        for handler in handlers:
+            exc_type = handler.get("type")
+            name = handler.get("name")
+            handler_body = handler.get("body", [])
+            if exc_type:
+                exc_sym = _node_to_symbol(exc_type)
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "handles",
+                    "lhs_tag": "except",
+                    "rhs_tag": exc_sym
+                })
+                _extract_relations(exc_type, node, relations)
+            if name:
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "except_as",
+                    "lhs_tag": "except",
+                    "rhs_tag": name
+                })
+            for stmt in handler_body:
+                stmt_sym = _node_to_symbol(stmt)
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "except_body",
+                    "lhs_tag": "except",
+                    "rhs_tag": stmt_sym
+                })
+                _extract_relations(stmt, node, relations)
+        for stmt in orelse:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "try_else",
+                "lhs_tag": "try",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+        for stmt in finalbody:
+            stmt_sym = _node_to_symbol(stmt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "finally_body",
+                "lhs_tag": "try",
+                "rhs_tag": stmt_sym
+            })
+            _extract_relations(stmt, node, relations)
+
+    # Raise
+    elif t == "Raise":
+        exc = node.get("exc")
+        cause = node.get("cause")
+        if exc:
+            exc_sym = _node_to_symbol(exc)
+            relations.append({
+                "line": ln,
+                "relation_tag": "raises",
+                "lhs_tag": "raise",
+                "rhs_tag": exc_sym
+            })
+            _extract_relations(exc, node, relations)
+        if cause:
+            cause_sym = _node_to_symbol(cause)
+            relations.append({
+                "line": ln,
+                "relation_tag": "raises_from",
+                "lhs_tag": exc_sym if exc else "raise",
+                "rhs_tag": cause_sym
+            })
+            _extract_relations(cause, node, relations)
+
+    # Import
     elif t == "Import":
         for alias in node.get("names", []):
-            # For bare imports, the module is the name itself
-            _emit(rels, ln, "imports", alias["name"], alias["name"])
-            if alias.get("asname"):
-                _emit(rels, ln, "aliases", alias["name"], alias["asname"])
+            name = alias.get("name")
+            asname = alias.get("asname")
+            relations.append({
+                "line": ln,
+                "relation_tag": "imports",
+                "lhs_tag": "module",
+                "rhs_tag": name
+            })
+            if asname:
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "aliases",
+                    "lhs_tag": name,
+                    "rhs_tag": asname
+                })
 
+    # ImportFrom
     elif t == "ImportFrom":
-        module = node.get("module") or ""
+        module = node.get("module", "")
         for alias in node.get("names", []):
-            _emit(rels, ln, "imports", module, alias["name"])
-            if alias.get("asname"):
-                _emit(rels, ln, "aliases", alias["name"], alias["asname"])
+            name = alias.get("name")
+            asname = alias.get("asname")
+            full_name = f"{module}.{name}" if module else name
+            relations.append({
+                "line": ln,
+                "relation_tag": "imports",
+                "lhs_tag": "module",
+                "rhs_tag": full_name
+            })
+            if asname:
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "aliases",
+                    "lhs_tag": full_name,
+                    "rhs_tag": asname
+                })
 
-    elif t == "If":
-        test_sym = _node_to_symbol(node["test"])
-        _emit(rels, ln, "if_test", scope, test_sym)
-        body_scope = f"if_body:{ln}"
-        _emit(rels, ln, "if_body", scope, body_scope)
-        _scan_expr(node["test"], scope, rels)
-        for i, child in enumerate(node.get("body", [])):
-            _visit_stmt(child, body_scope, rels, stmt_seq=i)
-        orelse = node.get("orelse", [])
-        if len(orelse) == 1 and isinstance(orelse[0], dict) \
-                and orelse[0].get("_type") == "If":
-            _emit(rels, _ln(orelse[0]), "elif_test", scope,
-                  _node_to_symbol(orelse[0]["test"]))
-        else_scope = f"else_body:{ln}"
-        for i, child in enumerate(orelse):
-            _visit_stmt(child, else_scope, rels, stmt_seq=i)
+    # Lambda
+    elif t == "Lambda":
+        args = node.get("args", {})
+        body = node.get("body")
+        lambda_id = f"lambda:{uid}"
+        for arg in args.get("args", []):
+            arg_name = arg.get("arg", "")
+            relations.append({
+                "line": ln,
+                "relation_tag": "param",
+                "lhs_tag": lambda_id,
+                "rhs_tag": arg_name
+            })
+        if body:
+            body_sym = _node_to_symbol(body)
+            relations.append({
+                "line": ln,
+                "relation_tag": "lambda_body",
+                "lhs_tag": lambda_id,
+                "rhs_tag": body_sym
+            })
+            _extract_relations(body, node, relations)
 
-    elif t in ("For", "AsyncFor"):
-        target_node = node.get("target")
-        target_sym = _node_to_symbol(target_node)
-        iter_sym = _node_to_symbol(node["iter"])
-        _emit(rels, ln, "for_target", scope, target_sym)
-        _emit(rels, ln, "for_iter", scope, iter_sym)
-        body_scope = f"for_body:{ln}"
-        _emit(rels, ln, "for_body", scope, body_scope)
-        # Check for tuple target (unpacking)
-        if isinstance(target_node, dict) and target_node.get("_type") == "Tuple":
-            _emit(rels, ln, "for_tuple_target", scope, target_sym)
-        _scan_expr(node["iter"], scope, rels)
-        for i, child in enumerate(node.get("body", [])):
-            _visit_stmt(child, body_scope, rels, stmt_seq=i)
-        else_scope = f"for_else:{ln}"
-        for i, child in enumerate(node.get("orelse", [])):
-            _visit_stmt(child, else_scope, rels, stmt_seq=i)
+    # IfExp (ternary)
+    elif t == "IfExp":
+        test = node.get("test")
+        body = node.get("body")
+        orelse = node.get("orelse")
+        ifexp_id = f"ifexp:{uid}"
+        test_sym = _node_to_symbol(test)
+        body_sym = _node_to_symbol(body)
+        else_sym = _node_to_symbol(orelse)
+        relations.append({
+            "line": ln,
+            "relation_tag": "if_expr_test",
+            "lhs_tag": ifexp_id,
+            "rhs_tag": test_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "if_expr_body",
+            "lhs_tag": ifexp_id,
+            "rhs_tag": body_sym
+        })
+        relations.append({
+            "line": ln,
+            "relation_tag": "if_expr_else",
+            "lhs_tag": ifexp_id,
+            "rhs_tag": else_sym
+        })
+        _extract_relations(test, node, relations)
+        _extract_relations(body, node, relations)
+        _extract_relations(orelse, node, relations)
 
-    elif t == "While":
-        _emit(rels, ln, "while_test", scope, _node_to_symbol(node["test"]))
-        body_scope = f"while_body:{ln}"
-        _emit(rels, ln, "while_body", scope, body_scope)
-        _scan_expr(node["test"], scope, rels)
-        for i, child in enumerate(node.get("body", [])):
-            _visit_stmt(child, body_scope, rels, stmt_seq=i)
-        else_scope = f"while_else:{ln}"
-        for i, child in enumerate(node.get("orelse", [])):
-            _visit_stmt(child, else_scope, rels, stmt_seq=i)
+    # Await
+    elif t == "Await":
+        value = node.get("value")
+        await_id = f"await:{uid}"
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "await_value",
+            "lhs_tag": await_id,
+            "rhs_tag": value_sym
+        })
+        _extract_relations(value, node, relations)
 
-    elif t in ("With", "AsyncWith"):
-        for item in node.get("items", []):
-            ctx = item.get("context_expr")
-            _emit(rels, ln, "with_context", scope, _node_to_symbol(ctx))
-            if item.get("optional_vars"):
-                _emit(rels, ln, "with_as", _node_to_symbol(ctx),
-                      _node_to_symbol(item["optional_vars"]))
-            _scan_expr(ctx, scope, rels)
-        body_scope = f"with_body:{ln}"
-        _emit(rels, ln, "with_body", scope, body_scope)
-        for i, child in enumerate(node.get("body", [])):
-            _visit_stmt(child, body_scope, rels, stmt_seq=i)
+    # Yield
+    elif t == "Yield":
+        value = node.get("value")
+        yield_id = f"yield:{uid}"
+        if value:
+            value_sym = _node_to_symbol(value)
+            relations.append({
+                "line": ln,
+                "relation_tag": "yields",
+                "lhs_tag": yield_id,
+                "rhs_tag": value_sym
+            })
+            _extract_relations(value, node, relations)
 
-    elif t in ("Try", "TryStar"):
-        _emit(rels, ln, "try_start", scope, f"try:{ln}")
-        try_scope = f"try_body:{ln}"
-        _emit(rels, ln, "try_body", scope, try_scope)
-        for i, child in enumerate(node.get("body", [])):
-            _visit_stmt(child, try_scope, rels, stmt_seq=i)
-        for handler in node.get("handlers", []):
-            if handler.get("type"):
-                _emit(rels, _ln(handler), "handles", scope,
-                      _node_to_symbol(handler["type"]))
-                if handler.get("name"):
-                    _emit(rels, _ln(handler), "except_as",
-                          _node_to_symbol(handler["type"]), handler["name"])
-            except_scope = f"except_body:{_ln(handler)}"
-            _emit(rels, _ln(handler), "except_body", scope, except_scope)
-            for i, child in enumerate(handler.get("body", [])):
-                _visit_stmt(child, except_scope, rels, stmt_seq=i)
-        if node.get("orelse"):
-            _emit(rels, ln, "try_else", scope, f"else:{ln}")
-            else_scope = f"else_body:{ln}"
-            _emit(rels, ln, "else_body", scope, else_scope)
-            for i, child in enumerate(node["orelse"]):
-                _visit_stmt(child, else_scope, rels, stmt_seq=i)
-        if node.get("finalbody"):
-            _emit(rels, ln, "try_finally", scope, f"finally:{ln}")
-            finally_scope = f"finally_body:{ln}"
-            _emit(rels, ln, "finally_body", scope, finally_scope)
-            for i, child in enumerate(node["finalbody"]):
-                _visit_stmt(child, finally_scope, rels, stmt_seq=i)
+    # YieldFrom
+    elif t == "YieldFrom":
+        value = node.get("value")
+        yield_id = f"yieldfrom:{uid}"
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "yields_from",
+            "lhs_tag": yield_id,
+            "rhs_tag": value_sym
+        })
+        _extract_relations(value, node, relations)
 
-    elif t == "Raise":
-        if node.get("exc"):
-            _emit(rels, ln, "raises", scope, _node_to_symbol(node["exc"]))
-            if node.get("cause"):
-                _emit(rels, ln, "raises_from", _node_to_symbol(node["exc"]),
-                      _node_to_symbol(node["cause"]))
-            _scan_expr(node["exc"], scope, rels)
+    # Dict
+    elif t == "Dict":
+        keys = node.get("keys", [])
+        values = node.get("values", [])
+        dict_id = f"dict:{uid}"
+        for k, v in zip(keys, values):
+            if k:
+                k_sym = _node_to_symbol(k)
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "dict_key",
+                    "lhs_tag": dict_id,
+                    "rhs_tag": k_sym
+                })
+                _extract_relations(k, node, relations)
+            v_sym = _node_to_symbol(v)
+            relations.append({
+                "line": ln,
+                "relation_tag": "dict_value",
+                "lhs_tag": dict_id,
+                "rhs_tag": v_sym
+            })
+            _extract_relations(v, node, relations)
 
-    elif t == "Return":
-        if node.get("value") is not None:
-            _emit(rels, ln, "returns", scope, _node_to_symbol(node["value"]))
-            _scan_expr(node["value"], scope, rels)
-        else:
-            # Bare 'return' statement
-            _emit(rels, ln, "returns", scope, "None")
+    # ListComp / SetComp / DictComp / GeneratorExp
+    elif t in ("ListComp", "SetComp", "DictComp", "GeneratorExp"):
+        generators = node.get("generators", [])
+        elt = node.get("elt")
+        for gen in generators:
+            target = gen.get("target")
+            iter_val = gen.get("iter")
+            ifs = gen.get("ifs", [])
+            target_sym = _node_to_symbol(target)
+            iter_sym = _node_to_symbol(iter_val)
+            relations.append({
+                "line": ln,
+                "relation_tag": "comprehension_target",
+                "lhs_tag": "comp",
+                "rhs_tag": target_sym
+            })
+            relations.append({
+                "line": ln,
+                "relation_tag": "comprehension_iter",
+                "lhs_tag": "comp",
+                "rhs_tag": iter_sym
+            })
+            _extract_relations(iter_val, node, relations)
+            for if_cond in ifs:
+                if_sym = _node_to_symbol(if_cond)
+                relations.append({
+                    "line": ln,
+                    "relation_tag": "comprehension_if",
+                    "lhs_tag": "comp",
+                    "rhs_tag": if_sym
+                })
+                _extract_relations(if_cond, node, relations)
+        if elt:
+            elt_sym = _node_to_symbol(elt)
+            relations.append({
+                "line": ln,
+                "relation_tag": "comprehension_body",
+                "lhs_tag": "comp",
+                "rhs_tag": elt_sym
+            })
+            _extract_relations(elt, node, relations)
 
-    elif t == "Expr":
-        # Expression statement (bare call, docstring, etc.)
-        val = node.get("value")
-        if isinstance(val, dict):
-            vt = val.get("_type", "")
-            if vt == "Constant":
-                pass  # docstring — skip
-            elif vt == "Yield":
-                yv = _node_to_symbol(val["value"]) if val.get("value") else "None"
-                _emit(rels, ln, "yields", scope, yv)
-            elif vt == "YieldFrom":
-                _emit(rels, ln, "yields_from", scope,
-                      _node_to_symbol(val["value"]))
-            else:
-                # Expression statement - emit expr_stmt for full expression
-                expr_sym = _node_to_symbol(val)
-                _emit(rels, ln, "expr_stmt", scope, expr_sym)
-                _scan_expr(val, scope, rels)
+    # Pass / Break / Continue
+    elif t == "Pass":
+        relations.append({
+            "line": ln,
+            "relation_tag": "pass_stmt",
+            "lhs_tag": "stmt",
+            "rhs_tag": "pass"
+        })
+    elif t == "Break":
+        relations.append({
+            "line": ln,
+            "relation_tag": "break_stmt",
+            "lhs_tag": "stmt",
+            "rhs_tag": "break"
+        })
+    elif t == "Continue":
+        relations.append({
+            "line": ln,
+            "relation_tag": "continue_stmt",
+            "lhs_tag": "stmt",
+            "rhs_tag": "continue"
+        })
 
+    # Global / Nonlocal
     elif t == "Global":
         for name in node.get("names", []):
-            _emit(rels, ln, "global_decl", scope, name)
-
+            relations.append({
+                "line": ln,
+                "relation_tag": "global_decl",
+                "lhs_tag": "global",
+                "rhs_tag": name
+            })
     elif t == "Nonlocal":
         for name in node.get("names", []):
-            _emit(rels, ln, "nonlocal_decl", scope, name)
+            relations.append({
+                "line": ln,
+                "relation_tag": "nonlocal_decl",
+                "lhs_tag": "nonlocal",
+                "rhs_tag": name
+            })
 
+    # Assert
     elif t == "Assert":
-        _emit(rels, ln, "assert_test", scope, _node_to_symbol(node["test"]))
-        if node.get("msg"):
-            _emit(rels, ln, "assert_msg", scope, _node_to_symbol(node["msg"]))
-        _scan_expr(node["test"], scope, rels)
+        test = node.get("test")
+        msg = node.get("msg")
+        test_sym = _node_to_symbol(test)
+        relations.append({
+            "line": ln,
+            "relation_tag": "assert_test",
+            "lhs_tag": "assert",
+            "rhs_tag": test_sym
+        })
+        _extract_relations(test, node, relations)
+        if msg:
+            msg_sym = _node_to_symbol(msg)
+            relations.append({
+                "line": ln,
+                "relation_tag": "assert_msg",
+                "lhs_tag": "assert",
+                "rhs_tag": msg_sym
+            })
+            _extract_relations(msg, node, relations)
 
+    # Delete
     elif t == "Delete":
         for target in node.get("targets", []):
-            _emit(rels, ln, "del_target", scope, _node_to_symbol(target))
+            target_sym = _node_to_symbol(target)
+            relations.append({
+                "line": ln,
+                "relation_tag": "del_target",
+                "lhs_tag": "del",
+                "rhs_tag": target_sym
+            })
+            _extract_relations(target, node, relations)
 
-    elif t == "Pass":
-        _emit(rels, ln, "pass_stmt", scope, "pass")
+    # NamedExpr (walrus operator)
+    elif t == "NamedExpr":
+        target = node.get("target")
+        value = node.get("value")
+        target_sym = _node_to_symbol(target)
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "walrus",
+            "lhs_tag": target_sym,
+            "rhs_tag": value_sym
+        })
+        _extract_relations(value, node, relations)
 
-    elif t == "Break":
-        _emit(rels, ln, "break_stmt", scope, "break")
+    # Constant
+    elif t == "Constant":
+        v = node.get("value")
+        if v is None:
+            relations.append({
+                "line": ln,
+                "relation_tag": "none_literal",
+                "lhs_tag": "const",
+                "rhs_tag": "None"
+            })
+        elif v is ...:
+            relations.append({
+                "line": ln,
+                "relation_tag": "ellipsis_literal",
+                "lhs_tag": "const",
+                "rhs_tag": "..."
+            })
+        elif isinstance(v, bool):
+            relations.append({
+                "line": ln,
+                "relation_tag": "const_value",
+                "lhs_tag": "const",
+                "rhs_tag": str(v)
+            })
+        elif isinstance(v, (int, float)):
+            relations.append({
+                "line": ln,
+                "relation_tag": "const_value",
+                "lhs_tag": "const",
+                "rhs_tag": str(v)
+            })
+        elif isinstance(v, str):
+            relations.append({
+                "line": ln,
+                "relation_tag": "string_literal",
+                "lhs_tag": "const",
+                "rhs_tag": _node_to_symbol(node)
+            })
+        elif isinstance(v, bytes):
+            relations.append({
+                "line": ln,
+                "relation_tag": "bytes_literal",
+                "lhs_tag": "const",
+                "rhs_tag": repr(v)
+            })
 
-    elif t == "Continue":
-        _emit(rels, ln, "continue_stmt", scope, "continue")
+    # Attribute
+    elif t == "Attribute":
+        value = node.get("value")
+        attr = node.get("attr")
+        value_sym = _node_to_symbol(value)
+        relations.append({
+            "line": ln,
+            "relation_tag": "member_access",
+            "lhs_tag": value_sym,
+            "rhs_tag": attr
+        })
+        _extract_relations(value, node, relations)
 
+    # Recurse into children for unhandled nodes
     else:
-        # Fallback: scan for expressions
-        _scan_expr(node, scope, rels)
+        for key, val in node.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(val, dict):
+                _extract_relations(val, node, relations)
+            elif isinstance(val, list):
+                for item in val:
+                    if isinstance(item, dict):
+                        _extract_relations(item, node, relations)
 
-
-def _visit_function(node: Dict, scope: str, rels: List[Dict],
-                    is_async: bool = False):
-    name = node["name"]
-    ln = _ln(node)
-    tag_name = f"async:{name}" if is_async else name
-    _emit(rels, ln, "defines", scope, tag_name)
-
-    if is_async:
-        _emit(rels, ln, "async_def", name, "async")
-
-    # Decorators
-    for dec in node.get("decorator_list", []):
-        dec_name = _node_to_symbol(dec)
-        _emit(rels, _ln(dec), "decorates", dec_name, name)
-        # Emit specific decorator types
-        if dec_name == "staticmethod":
-            _emit(rels, _ln(dec), "static_method", name, "staticmethod")
-        elif dec_name == "classmethod":
-            _emit(rels, _ln(dec), "class_method", name, "classmethod")
-        elif dec_name == "property":
-            _emit(rels, _ln(dec), "property_def", name, "property")
-
-    # Parameters
-    args = node.get("args", {})
-    all_positional = args.get("posonlyargs", []) + args.get("args", [])
-    defaults = args.get("defaults", [])
-    defaults_offset = len(all_positional) - len(defaults)
-
-    for i, arg in enumerate(all_positional):
-        _emit(rels, ln, "param", name, arg["arg"])
-        if arg.get("annotation"):
-            _emit(rels, ln, "annotation", arg["arg"],
-                  _node_to_symbol(arg["annotation"]))
-            _scan_expr(arg["annotation"], name, rels)
-        di = i - defaults_offset
-        if 0 <= di < len(defaults) and defaults[di] is not None:
-            _emit(rels, ln, "default_value", arg["arg"],
-                  _node_to_symbol(defaults[di]))
-            _scan_expr(defaults[di], name, rels)
-
-    if args.get("vararg"):
-        va = args["vararg"]
-        _emit(rels, ln, "star_param", name, va["arg"])
-        if va.get("annotation"):
-            _emit(rels, ln, "annotation", va["arg"],
-                  _node_to_symbol(va["annotation"]))
-            _scan_expr(va["annotation"], name, rels)
-
-    kw_defaults = args.get("kw_defaults", [])
-    for i, arg in enumerate(args.get("kwonlyargs", [])):
-        _emit(rels, ln, "param", name, arg["arg"])
-        if arg.get("annotation"):
-            _emit(rels, ln, "annotation", arg["arg"],
-                  _node_to_symbol(arg["annotation"]))
-            _scan_expr(arg["annotation"], name, rels)
-        if i < len(kw_defaults) and kw_defaults[i] is not None:
-            _emit(rels, ln, "default_value", arg["arg"],
-                  _node_to_symbol(kw_defaults[i]))
-            _scan_expr(kw_defaults[i], name, rels)
-
-    if args.get("kwarg"):
-        ka = args["kwarg"]
-        _emit(rels, ln, "double_star_param", name, ka["arg"])
-        if ka.get("annotation"):
-            _emit(rels, ln, "annotation", ka["arg"],
-                  _node_to_symbol(ka["annotation"]))
-            _scan_expr(ka["annotation"], name, rels)
-
-    # Return annotation
-    if node.get("returns"):
-        _emit(rels, ln, "returns", name, _node_to_symbol(node["returns"]))
-        _scan_expr(node["returns"], name, rels)
-
-    # Body — check for ellipsis body
-    body = node.get("body", [])
-    if len(body) == 1 and body[0].get("_type") == "Expr":
-        val = body[0].get("value", {})
-        if val.get("_type") == "Constant" and val.get("value") is ...:
-            _emit(rels, _ln(body[0]), "ellipsis_body", name, "...")
-            return
-
-    # Check for docstring
-    doc_info = _get_docstring(body)
-    if doc_info:
-        doc_ln, doc_str = doc_info
-        # Truncate docstring for symbol constraint (no newlines)
-        doc_sym = repr(doc_str)[:100].replace("\n", "\\n").replace(" ", "")
-        _emit(rels, doc_ln, "docstring", name, doc_sym)
-
-    for i, child in enumerate(body):
-        _emit(rels, _ln(child), "contains", name, f"stmt:{_ln(child)}")
-        _visit_stmt(child, name, rels, stmt_seq=i)
-
-
-def _visit_class(node: Dict, scope: str, rels: List[Dict]):
-    name = node["name"]
-    ln = _ln(node)
-    _emit(rels, ln, "defines", scope, name)
-
-    for dec in node.get("decorator_list", []):
-        _emit(rels, _ln(dec), "decorates", _node_to_symbol(dec), name)
-
-    for base in node.get("bases", []):
-        _emit(rels, ln, "bases", name, _node_to_symbol(base))
-
-    for kw in node.get("keywords", []):
-        if kw.get("arg") == "metaclass":
-            _emit(rels, ln, "metaclass", name, _node_to_symbol(kw["value"]))
-        elif kw.get("arg"):
-            _emit(rels, ln, "keyword_arg", name,
-                  f"{kw['arg']}={_node_to_symbol(kw['value'])}")
-
-    body = node.get("body", [])
-    # Check for docstring
-    doc_info = _get_docstring(body)
-    if doc_info:
-        doc_ln, doc_str = doc_info
-        doc_sym = repr(doc_str)[:100].replace("\n", "\\n").replace(" ", "")
-        _emit(rels, doc_ln, "docstring", name, doc_sym)
-
-    for i, child in enumerate(body):
-        _emit(rels, _ln(child), "contains", name, f"stmt:{_ln(child)}")
-        _visit_stmt(child, name, rels, stmt_seq=i)
+    return relations
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# Group relations into AstTagRelationGroup
 # ---------------------------------------------------------------------------
 
-def convert_python_to_ast_tag_jsonl(ast_obj: Dict) -> str:
-    """Convert a Python AST JSON dict to JSONL of AstTagRelation records.
+def _group_relations(relations: List[Dict]) -> List[Dict]:
+    """Group flat relations into AstTagRelationGroup records."""
+    # Group by (line, relation_tag, owner)
+    groups: Dict[Tuple[int, str, str], List[Dict]] = {}
+    for rel in relations:
+        line = rel.get("line", 0)
+        tag = rel.get("relation_tag", "")
+        lhs = rel.get("lhs_tag", "")
+        rhs = rel.get("rhs_tag", "")
+        # Use lhs as owner for grouping
+        key = (line, tag, lhs)
+        if key not in groups:
+            groups[key] = []
+        groups[key].append(rhs)
 
-    <- $ast_obj ast[Python] (JSON AST dict from ast/ directory)
-    -> JsonLines[AstTagRelation[Python]]
-    """
-    rels: List[Dict] = []
-    body = ast_obj.get("body", [])
+    result = []
+    for (line, tag, owner), members in groups.items():
+        result.append({
+            "line": line,
+            "relation_tag": tag,
+            "owner_tag": owner,
+            "member_tags": members
+        })
 
-    # Check for module-level docstring
-    doc_info = _get_docstring(body)
-    if doc_info:
-        doc_ln, doc_str = doc_info
-        doc_sym = repr(doc_str)[:100].replace("\n", "\\n").replace(" ", "")
-        _emit(rels, doc_ln, "docstring", "<module>", doc_sym)
+    # Sort by line
+    result.sort(key=lambda g: (g.get("line", 0), g.get("relation_tag", ""), g.get("owner_tag", "")))
+    return result
 
-    for i, child in enumerate(body):
-        _emit(rels, _ln(child), "contains", "<module>", f"stmt:{_ln(child)}")
-        _visit_stmt(child, "<module>", rels, stmt_seq=i)
-    return "\n".join(json.dumps(r, ensure_ascii=False) for r in rels)
 
+# ---------------------------------------------------------------------------
+# Main conversion function
+# ---------------------------------------------------------------------------
+
+def convert_python_to_jsonl(source_code: str) -> List[Dict]:
+    """Convert Python source code to AstTagRelationGroup JSONL records."""
+    tree = ast.parse(source_code)
+    node_dict = ast_to_dict(tree)
+    relations = _extract_relations(node_dict)
+    return _group_relations(relations)
+
+
+def convert_file_to_jsonl(filepath: str) -> List[Dict]:
+    """Convert a Python file to AstTagRelationGroup JSONL records."""
+    with open(filepath, "r", encoding="utf-8") as f:
+        source_code = f.read()
+    return convert_python_to_jsonl(source_code)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    CODEBASE_DIR = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "..", "code_auto_encoder", "codebase",
-    )
+    # Find all JSON AST files in the ast/ directory
+    base_dir = "ast"
+    if os.path.exists(base_dir):
+        json_files = []
+        for root, dirs, files in os.walk(base_dir):
+            for f in files:
+                if f.endswith(".json") and f != "__init__.json":
+                    json_files.append(os.path.join(root, f))
 
-    # Collect all .py files
-    py_files = []
-    for root, _dirs, files in os.walk(CODEBASE_DIR):
-        for f in sorted(files):
-            if f.endswith(".py") and f != "__init__.py":
-                py_files.append(os.path.join(root, f))
-    py_files.sort()
+        total_relations = 0
+        for json_file in sorted(json_files):
+            with open(json_file, "r", encoding="utf-8") as f:
+                node_dict = json.load(f)
+            relations = _extract_relations(node_dict)
+            groups = _group_relations(relations)
+            print(f"{json_file}: {len(groups)} relations")
+            total_relations += len(groups)
 
-    total_relations = 0
-    for path in py_files:
-        with open(path, "r", encoding="utf-8") as fh:
-            source = fh.read()
-        tree = ast.parse(source, filename=path)
-        ast_obj = ast_to_dict(tree)
-        jsonl = convert_python_to_ast_tag_jsonl(ast_obj)
-        n = len(jsonl.strip().splitlines()) if jsonl.strip() else 0
-        total_relations += n
-        rel = os.path.relpath(path, CODEBASE_DIR)
-        print(f"{rel}: {n} relations")
-
-    print(f"\n--- total: {len(py_files)} files, {total_relations} relations ---")
+        print(f"\n--- total: {len(json_files)} files, {total_relations} relations ---")
+    else:
+        print("No ast/ directory found. Usage: python convert_python_to_ast_tag_jsonl.py")
+        print("Or call convert_file_to_jsonl(filepath) directly.")

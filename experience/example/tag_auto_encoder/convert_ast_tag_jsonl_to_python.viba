@@ -1,7 +1,8 @@
 convert_ast_tag_jsonl_to_python[ProgrammingLanguage] :=
     $ast_obj ast[ProgrammingLanguage]
-    <- JsonLines[AstTagRelation[ProgrammingLanguage]]
+    <- JsonLines[$ast_tag_rel_group AstTagRelationGroup[ProgrammingLanguage]]
     # inline
     <- Import[./ast_tag_relation_group.viba]
+    <- { Assert that the $ast_tag_rel_group meets the AstTagRelationGroup schema }
 
 # at least 50 roundtrip tests
