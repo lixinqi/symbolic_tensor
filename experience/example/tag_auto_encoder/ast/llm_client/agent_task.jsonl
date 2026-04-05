@@ -1,0 +1,18 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["dataclasses", "dataclass"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$importfrom_0", "$importfrom_1", "$classdef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["typing", "Union", "List"]}
+{"line": 4, "relation_tag": "defines", "owner_tag": "$classdef_0", "member_tags": ["AgentTask"]}
+{"line": 4, "relation_tag": "decorates", "owner_tag": "dataclass", "member_tags": ["AgentTask"]}
+{"line": 5, "relation_tag": "annotation", "owner_tag": "$annassign_0", "member_tags": ["workspace_dir", "str"]}
+{"line": 4, "relation_tag": "stmt_seq", "owner_tag": "$classdef_0", "member_tags": ["0:$annassign_0", "1:$annassign_1", "2:$annassign_2", "3:$annassign_3"]}
+{"line": 4, "relation_tag": "contains", "owner_tag": "$classdef_0", "member_tags": ["$annassign_0", "$annassign_1", "$annassign_2", "$annassign_3"]}
+{"line": 6, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 6, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["str", "$subscript_1"]}
+{"line": 6, "relation_tag": "subscript_value", "owner_tag": "$subscript_1", "member_tags": ["List"]}
+{"line": 6, "relation_tag": "subscript", "owner_tag": "$subscript_1", "member_tags": ["str"]}
+{"line": 6, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["Union"]}
+{"line": 6, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["$tuple_0"]}
+{"line": 6, "relation_tag": "annotation", "owner_tag": "$annassign_1", "member_tags": ["output_relative_dir", "$subscript_0"]}
+{"line": 7, "relation_tag": "annotation", "owner_tag": "$annassign_2", "member_tags": ["prompt", "str"]}
+{"line": 8, "relation_tag": "annotation", "owner_tag": "$annassign_3", "member_tags": ["todo_file_content_hint", "str"]}
+{"line": 8, "relation_tag": "assigns", "owner_tag": "$annassign_3", "member_tags": ["'TODO'"]}

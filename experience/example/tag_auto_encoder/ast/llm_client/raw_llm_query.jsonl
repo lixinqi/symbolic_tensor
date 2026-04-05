@@ -1,0 +1,97 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["asyncio"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$import_1", "$importfrom_0", "$importfrom_1", "$assign_0", "$asyncfunctiondef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$import_1", "member_tags": ["os"]}
+{"line": 3, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["typing", "Dict", "Optional"]}
+{"line": 4, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["openai", "AsyncOpenAI"]}
+{"line": 5, "relation_tag": "dict_literal", "owner_tag": "$dict_0", "member_tags": ["dict"]}
+{"line": 6, "relation_tag": "attr_value", "owner_tag": "os.environ", "member_tags": ["os", "os", "os", "os", "os", "os"]}
+{"line": 6, "relation_tag": "attr_name", "owner_tag": "os.environ", "member_tags": ["environ", "environ", "environ", "environ", "environ", "environ"]}
+{"line": 6, "relation_tag": "attr_value", "owner_tag": "os.environ.get", "member_tags": ["os.environ", "os.environ", "os.environ", "os.environ", "os.environ", "os.environ"]}
+{"line": 6, "relation_tag": "attr_name", "owner_tag": "os.environ.get", "member_tags": ["get", "get", "get", "get", "get", "get"]}
+{"line": 6, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["os.environ.get"]}
+{"line": 6, "relation_tag": "call_pos_arg", "owner_tag": "$call_0", "member_tags": ["'LLM_API_KEY'", "''"]}
+{"line": 5, "relation_tag": "dict_key", "owner_tag": "$dict_0", "member_tags": ["'LLM_API_KEY'", "'LLM_BASE_URL'", "'LLM_MODEL'"]}
+{"line": 5, "relation_tag": "dict_value", "owner_tag": "$dict_0", "member_tags": ["$call_0", "$call_1", "$call_2"]}
+{"line": 7, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["os.environ.get"]}
+{"line": 7, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["'LLM_BASE_URL'", "''"]}
+{"line": 8, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["os.environ.get"]}
+{"line": 8, "relation_tag": "call_pos_arg", "owner_tag": "$call_2", "member_tags": ["'LLM_MODEL'", "''"]}
+{"line": 5, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["DEFAULT_LLM_ENV", "$dict_0"]}
+{"line": 10, "relation_tag": "defines", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["raw_llm_query"]}
+{"line": 10, "relation_tag": "async_def", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["async"]}
+{"line": 10, "relation_tag": "param", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["prompt", "llm_env"]}
+{"line": 10, "relation_tag": "param_annotation", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["prompt", "str", "llm_env", "$subscript_0"]}
+{"line": 10, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 10, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["str", "str"]}
+{"line": 10, "relation_tag": "subscript_value", "owner_tag": "$subscript_1", "member_tags": ["Dict"]}
+{"line": 10, "relation_tag": "subscript", "owner_tag": "$subscript_1", "member_tags": ["$tuple_0"]}
+{"line": 10, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["Optional"]}
+{"line": 10, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["$subscript_1"]}
+{"line": 10, "relation_tag": "param_default", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["llm_env", "None"]}
+{"line": 11, "relation_tag": "compare_left", "owner_tag": "$compare_0", "member_tags": ["llm_env"]}
+{"line": 11, "relation_tag": "compare_op", "owner_tag": "$compare_0", "member_tags": ["is_not"]}
+{"line": 11, "relation_tag": "compare_right", "owner_tag": "$compare_0", "member_tags": ["None"]}
+{"line": 11, "relation_tag": "if_expr_test", "owner_tag": "$ifexp_0", "member_tags": ["$compare_0"]}
+{"line": 11, "relation_tag": "if_expr_body", "owner_tag": "$ifexp_0", "member_tags": ["llm_env"]}
+{"line": 11, "relation_tag": "if_expr_else", "owner_tag": "$ifexp_0", "member_tags": ["DEFAULT_LLM_ENV"]}
+{"line": 11, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["env", "$ifexp_0"]}
+{"line": 10, "relation_tag": "stmt_seq", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["0:$assign_1", "1:$assign_2", "2:$try_0"]}
+{"line": 10, "relation_tag": "contains", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["$assign_1", "$assign_2", "$try_0"]}
+{"line": 12, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["AsyncOpenAI"]}
+{"line": 13, "relation_tag": "bool_op", "owner_tag": "$boolop_0", "member_tags": ["or"]}
+{"line": 13, "relation_tag": "attr_value", "owner_tag": "env.get", "member_tags": ["env", "env", "env"]}
+{"line": 13, "relation_tag": "attr_name", "owner_tag": "env.get", "member_tags": ["get", "get", "get"]}
+{"line": 13, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["env.get"]}
+{"line": 13, "relation_tag": "call_pos_arg", "owner_tag": "$call_4", "member_tags": ["'LLM_API_KEY'"]}
+{"line": 13, "relation_tag": "bool_op_operand", "owner_tag": "$boolop_0", "member_tags": ["$call_4", "$call_5"]}
+{"line": 13, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["os.environ.get"]}
+{"line": 13, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["'LLM_API_KEY'"]}
+{"line": 12, "relation_tag": "keyword_arg", "owner_tag": "$call_3", "member_tags": ["api_key", "$boolop_0", "base_url", "$boolop_1"]}
+{"line": 14, "relation_tag": "bool_op", "owner_tag": "$boolop_1", "member_tags": ["or"]}
+{"line": 14, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["env.get"]}
+{"line": 14, "relation_tag": "call_pos_arg", "owner_tag": "$call_6", "member_tags": ["'LLM_BASE_URL'"]}
+{"line": 14, "relation_tag": "bool_op_operand", "owner_tag": "$boolop_1", "member_tags": ["$call_6", "$call_7"]}
+{"line": 14, "relation_tag": "calls", "owner_tag": "$call_7", "member_tags": ["os.environ.get"]}
+{"line": 14, "relation_tag": "call_pos_arg", "owner_tag": "$call_7", "member_tags": ["'LLM_BASE_URL'"]}
+{"line": 12, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["client", "$call_3"]}
+{"line": 16, "relation_tag": "try_start", "owner_tag": "$try_0", "member_tags": ["try"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "client.chat", "member_tags": ["client"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "client.chat", "member_tags": ["chat"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "client.chat.completions", "member_tags": ["client.chat"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "client.chat.completions", "member_tags": ["completions"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "client.chat.completions.create", "member_tags": ["client.chat.completions"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "client.chat.completions.create", "member_tags": ["create"]}
+{"line": 17, "relation_tag": "calls", "owner_tag": "$call_8", "member_tags": ["client.chat.completions.create"]}
+{"line": 18, "relation_tag": "bool_op", "owner_tag": "$boolop_2", "member_tags": ["or"]}
+{"line": 18, "relation_tag": "calls", "owner_tag": "$call_9", "member_tags": ["env.get"]}
+{"line": 18, "relation_tag": "call_pos_arg", "owner_tag": "$call_9", "member_tags": ["'LLM_MODEL'"]}
+{"line": 18, "relation_tag": "bool_op_operand", "owner_tag": "$boolop_2", "member_tags": ["$call_9", "$call_10"]}
+{"line": 18, "relation_tag": "calls", "owner_tag": "$call_10", "member_tags": ["os.environ.get"]}
+{"line": 18, "relation_tag": "call_pos_arg", "owner_tag": "$call_10", "member_tags": ["'LLM_MODEL'"]}
+{"line": 17, "relation_tag": "keyword_arg", "owner_tag": "$call_8", "member_tags": ["model", "$boolop_2", "messages", "$list_0", "stream", "False"]}
+{"line": 19, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 20, "relation_tag": "dict_literal", "owner_tag": "$dict_1", "member_tags": ["dict"]}
+{"line": 20, "relation_tag": "dict_key", "owner_tag": "$dict_1", "member_tags": ["'role'", "'content'"]}
+{"line": 20, "relation_tag": "dict_value", "owner_tag": "$dict_1", "member_tags": ["'system'", "'You are a helpful assistant'"]}
+{"line": 19, "relation_tag": "collection_element", "owner_tag": "$list_0", "member_tags": ["$dict_1", "$dict_2"]}
+{"line": 21, "relation_tag": "dict_literal", "owner_tag": "$dict_2", "member_tags": ["dict"]}
+{"line": 21, "relation_tag": "dict_key", "owner_tag": "$dict_2", "member_tags": ["'role'", "'content'"]}
+{"line": 21, "relation_tag": "dict_value", "owner_tag": "$dict_2", "member_tags": ["'user'", "prompt"]}
+{"line": 17, "relation_tag": "await_value", "owner_tag": "$await_0", "member_tags": ["$call_8"]}
+{"line": 17, "relation_tag": "assigns", "owner_tag": "$assign_3", "member_tags": ["response", "$await_0"]}
+{"line": 16, "relation_tag": "try_body", "owner_tag": "$try_0", "member_tags": ["$assign_3", "$return_0"]}
+{"line": 25, "relation_tag": "attr_value", "owner_tag": "response.choices", "member_tags": ["response"]}
+{"line": 25, "relation_tag": "attr_name", "owner_tag": "response.choices", "member_tags": ["choices"]}
+{"line": 25, "relation_tag": "subscript_value", "owner_tag": "$subscript_2", "member_tags": ["response.choices"]}
+{"line": 25, "relation_tag": "subscript", "owner_tag": "$subscript_2", "member_tags": ["0"]}
+{"line": 25, "relation_tag": "attr_value", "owner_tag": "$attr_2", "member_tags": ["$subscript_2"]}
+{"line": 25, "relation_tag": "attr_name", "owner_tag": "$attr_2", "member_tags": ["message"]}
+{"line": 25, "relation_tag": "attr_value", "owner_tag": "$attr_1", "member_tags": ["$attr_2"]}
+{"line": 25, "relation_tag": "attr_name", "owner_tag": "$attr_1", "member_tags": ["content"]}
+{"line": 25, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["$attr_1"]}
+{"line": 27, "relation_tag": "attr_value", "owner_tag": "client.close", "member_tags": ["client"]}
+{"line": 27, "relation_tag": "attr_name", "owner_tag": "client.close", "member_tags": ["close"]}
+{"line": 27, "relation_tag": "calls", "owner_tag": "$call_11", "member_tags": ["client.close"]}
+{"line": 27, "relation_tag": "await_value", "owner_tag": "$await_1", "member_tags": ["$call_11"]}
+{"line": 27, "relation_tag": "expr_stmt", "owner_tag": "$expr_0", "member_tags": ["$await_1"]}
+{"line": 16, "relation_tag": "finally_body", "owner_tag": "$try_0", "member_tags": ["$expr_0"]}

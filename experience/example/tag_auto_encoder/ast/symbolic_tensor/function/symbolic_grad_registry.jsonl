@@ -1,0 +1,62 @@
+{"line": 1, "relation_tag": "docstring", "owner_tag": "$expr_0", "member_tags": ["$docstring_0"]}
+{"line": 1, "relation_tag": "text_content", "owner_tag": "$docstring_0", "member_tags": ["\nThread-local registry for passing symbolic gradient metadata between\nautograd Function backward calls.\nPyTorch autograd strips custom tensor attributes (st_relative_to, st_tensor_uid)\nwhen propagating gradients between Function nodes. This registry allows a\nbackward function to attach symbolic metadata to a gradient tensor, so the\nnext backward in the chain or the optimizer can retrieve it.\nKeys can be:\n  - st_tensor_uid strings (for inter-backward registry, keyed by forward tensor uid)\n  - Python id() of parameter tensors (for backward-to-optimizer registry)\nUsage:\n    symbolic_grad_registry.register(\"some_uid\", symbolic_grad)\n    symbolic_grad = symbolic_grad_registry.pop(\"some_uid\")\n"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$expr_0", "$import_0", "$assign_0", "$functiondef_0", "$functiondef_1", "$functiondef_2", "$functiondef_3"]}
+{"line": 15, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["threading"]}
+{"line": 16, "relation_tag": "attr_value", "owner_tag": "threading.local", "member_tags": ["threading"]}
+{"line": 16, "relation_tag": "attr_name", "owner_tag": "threading.local", "member_tags": ["local"]}
+{"line": 16, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["threading.local"]}
+{"line": 16, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["_local", "$call_0"]}
+{"line": 17, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["_get_store"]}
+{"line": 18, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["hasattr"]}
+{"line": 18, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["_local", "'store'"]}
+{"line": 18, "relation_tag": "unary_op", "owner_tag": "$unaryop_0", "member_tags": ["not"]}
+{"line": 18, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_0", "member_tags": ["$call_1"]}
+{"line": 18, "relation_tag": "if_test", "owner_tag": "$if_0", "member_tags": ["$unaryop_0"]}
+{"line": 19, "relation_tag": "dict_literal", "owner_tag": "$dict_0", "member_tags": ["dict"]}
+{"line": 19, "relation_tag": "attr_value", "owner_tag": "_local.store", "member_tags": ["_local", "_local"]}
+{"line": 19, "relation_tag": "attr_name", "owner_tag": "_local.store", "member_tags": ["store", "store"]}
+{"line": 19, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["_local.store", "$dict_0"]}
+{"line": 18, "relation_tag": "if_body", "owner_tag": "$if_0", "member_tags": ["$assign_1"]}
+{"line": 17, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$if_0", "1:$return_0"]}
+{"line": 17, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$if_0", "$return_0"]}
+{"line": 20, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["_local.store"]}
+{"line": 21, "relation_tag": "defines", "owner_tag": "$functiondef_1", "member_tags": ["register"]}
+{"line": 21, "relation_tag": "param", "owner_tag": "$functiondef_1", "member_tags": ["key", "symbolic_tensor"]}
+{"line": 21, "relation_tag": "docstring", "owner_tag": "$functiondef_1", "member_tags": ["$docstring_1"]}
+{"line": 21, "relation_tag": "text_content", "owner_tag": "$docstring_1", "member_tags": ["Associate a symbolic gradient with a key (string uid or int id)."]}
+{"line": 22, "relation_tag": "docstring", "owner_tag": "$expr_1", "member_tags": ["$docstring_2"]}
+{"line": 22, "relation_tag": "text_content", "owner_tag": "$docstring_2", "member_tags": ["Associate a symbolic gradient with a key (string uid or int id)."]}
+{"line": 21, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_1", "member_tags": ["0:$expr_1", "1:$assign_2"]}
+{"line": 21, "relation_tag": "contains", "owner_tag": "$functiondef_1", "member_tags": ["$expr_1", "$assign_2"]}
+{"line": 23, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["_get_store"]}
+{"line": 23, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["$call_2"]}
+{"line": 23, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["key"]}
+{"line": 23, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["$subscript_0", "symbolic_tensor"]}
+{"line": 24, "relation_tag": "defines", "owner_tag": "$functiondef_2", "member_tags": ["pop"]}
+{"line": 24, "relation_tag": "param", "owner_tag": "$functiondef_2", "member_tags": ["key"]}
+{"line": 24, "relation_tag": "docstring", "owner_tag": "$functiondef_2", "member_tags": ["$docstring_3"]}
+{"line": 24, "relation_tag": "text_content", "owner_tag": "$docstring_3", "member_tags": ["Retrieve and remove the symbolic gradient for a given key.\n    Returns None if not found."]}
+{"line": 25, "relation_tag": "docstring", "owner_tag": "$expr_2", "member_tags": ["$docstring_4"]}
+{"line": 25, "relation_tag": "text_content", "owner_tag": "$docstring_4", "member_tags": ["Retrieve and remove the symbolic gradient for a given key.\n    Returns None if not found."]}
+{"line": 24, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_2", "member_tags": ["0:$expr_2", "1:$return_1"]}
+{"line": 24, "relation_tag": "contains", "owner_tag": "$functiondef_2", "member_tags": ["$expr_2", "$return_1"]}
+{"line": 27, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["_get_store"]}
+{"line": 27, "relation_tag": "attr_value", "owner_tag": "$attr_0", "member_tags": ["$call_4"]}
+{"line": 27, "relation_tag": "attr_name", "owner_tag": "$attr_0", "member_tags": ["pop"]}
+{"line": 27, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["$attr_0"]}
+{"line": 27, "relation_tag": "call_pos_arg", "owner_tag": "$call_3", "member_tags": ["key", "None"]}
+{"line": 27, "relation_tag": "returns", "owner_tag": "$return_1", "member_tags": ["$call_3"]}
+{"line": 28, "relation_tag": "defines", "owner_tag": "$functiondef_3", "member_tags": ["peek"]}
+{"line": 28, "relation_tag": "param", "owner_tag": "$functiondef_3", "member_tags": ["key"]}
+{"line": 28, "relation_tag": "docstring", "owner_tag": "$functiondef_3", "member_tags": ["$docstring_5"]}
+{"line": 28, "relation_tag": "text_content", "owner_tag": "$docstring_5", "member_tags": ["Retrieve the symbolic gradient without removing it.\n    Returns None if not found."]}
+{"line": 29, "relation_tag": "docstring", "owner_tag": "$expr_3", "member_tags": ["$docstring_6"]}
+{"line": 29, "relation_tag": "text_content", "owner_tag": "$docstring_6", "member_tags": ["Retrieve the symbolic gradient without removing it.\n    Returns None if not found."]}
+{"line": 28, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_3", "member_tags": ["0:$expr_3", "1:$return_2"]}
+{"line": 28, "relation_tag": "contains", "owner_tag": "$functiondef_3", "member_tags": ["$expr_3", "$return_2"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["_get_store"]}
+{"line": 31, "relation_tag": "attr_value", "owner_tag": "$attr_1", "member_tags": ["$call_6"]}
+{"line": 31, "relation_tag": "attr_name", "owner_tag": "$attr_1", "member_tags": ["get"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["$attr_1"]}
+{"line": 31, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["key", "None"]}
+{"line": 31, "relation_tag": "returns", "owner_tag": "$return_2", "member_tags": ["$call_5"]}

@@ -1,0 +1,120 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["asyncio"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$import_1", "$import_2", "$importfrom_0", "$importfrom_1", "$asyncfunctiondef_0", "$functiondef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$import_1", "member_tags": ["os"]}
+{"line": 3, "relation_tag": "imports", "owner_tag": "$import_2", "member_tags": ["sys"]}
+{"line": 4, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["typing", "Dict", "Optional"]}
+{"line": 5, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["claude_agent_sdk", "query", "ClaudeAgentOptions"]}
+{"line": 6, "relation_tag": "defines", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["coding_agent_query"]}
+{"line": 6, "relation_tag": "async_def", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["async"]}
+{"line": 6, "relation_tag": "param", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["prompt", "cwd", "allowed_tools", "permission_mode", "llm_env"]}
+{"line": 6, "relation_tag": "param_annotation", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["prompt", "str", "cwd", "$binop_0", "allowed_tools", "$subscript_0", "permission_mode", "str", "llm_env", "$subscript_1"]}
+{"line": 8, "relation_tag": "bin_op", "owner_tag": "$binop_0", "member_tags": ["|"]}
+{"line": 8, "relation_tag": "bin_op_left", "owner_tag": "$binop_0", "member_tags": ["str"]}
+{"line": 8, "relation_tag": "bin_op_right", "owner_tag": "$binop_0", "member_tags": ["None"]}
+{"line": 6, "relation_tag": "param_default", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["cwd", "None", "allowed_tools", "None", "permission_mode", "'acceptEdits'", "llm_env", "None"]}
+{"line": 9, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["list"]}
+{"line": 9, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["str"]}
+{"line": 11, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 11, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["str", "str"]}
+{"line": 11, "relation_tag": "subscript_value", "owner_tag": "$subscript_2", "member_tags": ["Dict"]}
+{"line": 11, "relation_tag": "subscript", "owner_tag": "$subscript_2", "member_tags": ["$tuple_0"]}
+{"line": 11, "relation_tag": "subscript_value", "owner_tag": "$subscript_1", "member_tags": ["Optional"]}
+{"line": 11, "relation_tag": "subscript", "owner_tag": "$subscript_1", "member_tags": ["$subscript_2"]}
+{"line": 13, "relation_tag": "compare_left", "owner_tag": "$compare_0", "member_tags": ["allowed_tools"]}
+{"line": 13, "relation_tag": "compare_op", "owner_tag": "$compare_0", "member_tags": ["is"]}
+{"line": 13, "relation_tag": "compare_right", "owner_tag": "$compare_0", "member_tags": ["None"]}
+{"line": 13, "relation_tag": "if_test", "owner_tag": "$if_0", "member_tags": ["$compare_0"]}
+{"line": 14, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 14, "relation_tag": "collection_element", "owner_tag": "$list_0", "member_tags": ["'Read'", "'Edit'"]}
+{"line": 14, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["allowed_tools", "$list_0"]}
+{"line": 13, "relation_tag": "if_body", "owner_tag": "$if_0", "member_tags": ["$assign_0"]}
+{"line": 6, "relation_tag": "stmt_seq", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["0:$if_0", "1:$assign_1", "2:$if_1", "3:$try_0"]}
+{"line": 6, "relation_tag": "contains", "owner_tag": "$asyncfunctiondef_0", "member_tags": ["$if_0", "$assign_1", "$if_1", "$try_0"]}
+{"line": 15, "relation_tag": "dict_literal", "owner_tag": "$dict_0", "member_tags": ["dict"]}
+{"line": 15, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["env_backup", "$dict_0"]}
+{"line": 16, "relation_tag": "compare_left", "owner_tag": "$compare_1", "member_tags": ["llm_env"]}
+{"line": 16, "relation_tag": "compare_op", "owner_tag": "$compare_1", "member_tags": ["is_not"]}
+{"line": 16, "relation_tag": "compare_right", "owner_tag": "$compare_1", "member_tags": ["None"]}
+{"line": 16, "relation_tag": "if_test", "owner_tag": "$if_1", "member_tags": ["$compare_1"]}
+{"line": 17, "relation_tag": "tuple_literal", "owner_tag": "$tuple_1", "member_tags": ["Tuple"]}
+{"line": 17, "relation_tag": "collection_element", "owner_tag": "$tuple_1", "member_tags": ["key", "val"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "llm_env.items", "member_tags": ["llm_env"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "llm_env.items", "member_tags": ["items"]}
+{"line": 17, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["llm_env.items"]}
+{"line": 17, "relation_tag": "for_target", "owner_tag": "$for_0", "member_tags": ["$tuple_1"]}
+{"line": 17, "relation_tag": "for_iter", "owner_tag": "$for_0", "member_tags": ["$call_0"]}
+{"line": 18, "relation_tag": "attr_value", "owner_tag": "os.environ", "member_tags": ["os", "os", "os", "os"]}
+{"line": 18, "relation_tag": "attr_name", "owner_tag": "os.environ", "member_tags": ["environ", "environ", "environ", "environ"]}
+{"line": 18, "relation_tag": "attr_value", "owner_tag": "os.environ.get", "member_tags": ["os.environ"]}
+{"line": 18, "relation_tag": "attr_name", "owner_tag": "os.environ.get", "member_tags": ["get"]}
+{"line": 18, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["os.environ.get"]}
+{"line": 18, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["key"]}
+{"line": 18, "relation_tag": "subscript_value", "owner_tag": "$subscript_3", "member_tags": ["env_backup"]}
+{"line": 18, "relation_tag": "subscript", "owner_tag": "$subscript_3", "member_tags": ["key"]}
+{"line": 18, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["$subscript_3", "$call_1"]}
+{"line": 17, "relation_tag": "for_body", "owner_tag": "$for_0", "member_tags": ["$assign_2", "$assign_3"]}
+{"line": 19, "relation_tag": "subscript_value", "owner_tag": "$subscript_4", "member_tags": ["os.environ"]}
+{"line": 19, "relation_tag": "subscript", "owner_tag": "$subscript_4", "member_tags": ["key"]}
+{"line": 19, "relation_tag": "assigns", "owner_tag": "$assign_3", "member_tags": ["$subscript_4", "val"]}
+{"line": 16, "relation_tag": "if_body", "owner_tag": "$if_1", "member_tags": ["$for_0"]}
+{"line": 20, "relation_tag": "try_start", "owner_tag": "$try_0", "member_tags": ["try"]}
+{"line": 21, "relation_tag": "async_for", "owner_tag": "$asyncfor_0", "member_tags": ["async"]}
+{"line": 21, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["query"]}
+{"line": 21, "relation_tag": "keyword_arg", "owner_tag": "$call_2", "member_tags": ["prompt", "prompt", "options", "$call_3"]}
+{"line": 23, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["ClaudeAgentOptions"]}
+{"line": 23, "relation_tag": "keyword_arg", "owner_tag": "$call_3", "member_tags": ["allowed_tools", "allowed_tools", "permission_mode", "permission_mode", "cwd", "cwd"]}
+{"line": 21, "relation_tag": "for_target", "owner_tag": "$asyncfor_0", "member_tags": ["item"]}
+{"line": 21, "relation_tag": "for_iter", "owner_tag": "$asyncfor_0", "member_tags": ["$call_2"]}
+{"line": 29, "relation_tag": "yields", "owner_tag": "$expr_0", "member_tags": ["item"]}
+{"line": 21, "relation_tag": "for_body", "owner_tag": "$asyncfor_0", "member_tags": ["$expr_0"]}
+{"line": 20, "relation_tag": "try_body", "owner_tag": "$try_0", "member_tags": ["$asyncfor_0"]}
+{"line": 31, "relation_tag": "compare_left", "owner_tag": "$compare_2", "member_tags": ["llm_env"]}
+{"line": 31, "relation_tag": "compare_op", "owner_tag": "$compare_2", "member_tags": ["is_not"]}
+{"line": 31, "relation_tag": "compare_right", "owner_tag": "$compare_2", "member_tags": ["None"]}
+{"line": 31, "relation_tag": "if_test", "owner_tag": "$if_2", "member_tags": ["$compare_2"]}
+{"line": 32, "relation_tag": "for_target", "owner_tag": "$for_1", "member_tags": ["key"]}
+{"line": 32, "relation_tag": "for_iter", "owner_tag": "$for_1", "member_tags": ["llm_env"]}
+{"line": 33, "relation_tag": "attr_value", "owner_tag": "env_backup.get", "member_tags": ["env_backup"]}
+{"line": 33, "relation_tag": "attr_name", "owner_tag": "env_backup.get", "member_tags": ["get"]}
+{"line": 33, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["env_backup.get"]}
+{"line": 33, "relation_tag": "call_pos_arg", "owner_tag": "$call_4", "member_tags": ["key"]}
+{"line": 33, "relation_tag": "compare_left", "owner_tag": "$compare_3", "member_tags": ["$call_4"]}
+{"line": 33, "relation_tag": "compare_op", "owner_tag": "$compare_3", "member_tags": ["is_not"]}
+{"line": 33, "relation_tag": "compare_right", "owner_tag": "$compare_3", "member_tags": ["None"]}
+{"line": 33, "relation_tag": "if_test", "owner_tag": "$if_3", "member_tags": ["$compare_3"]}
+{"line": 34, "relation_tag": "subscript_value", "owner_tag": "$subscript_5", "member_tags": ["env_backup"]}
+{"line": 34, "relation_tag": "subscript", "owner_tag": "$subscript_5", "member_tags": ["key"]}
+{"line": 34, "relation_tag": "subscript_value", "owner_tag": "$subscript_6", "member_tags": ["os.environ"]}
+{"line": 34, "relation_tag": "subscript", "owner_tag": "$subscript_6", "member_tags": ["key"]}
+{"line": 34, "relation_tag": "assigns", "owner_tag": "$assign_4", "member_tags": ["$subscript_6", "$subscript_5"]}
+{"line": 33, "relation_tag": "if_body", "owner_tag": "$if_3", "member_tags": ["$assign_4"]}
+{"line": 36, "relation_tag": "attr_value", "owner_tag": "os.environ.pop", "member_tags": ["os.environ"]}
+{"line": 36, "relation_tag": "attr_name", "owner_tag": "os.environ.pop", "member_tags": ["pop"]}
+{"line": 36, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["os.environ.pop"]}
+{"line": 36, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["key", "None"]}
+{"line": 36, "relation_tag": "expr_stmt", "owner_tag": "$expr_1", "member_tags": ["$call_5"]}
+{"line": 33, "relation_tag": "else_body", "owner_tag": "$if_3", "member_tags": ["$expr_1"]}
+{"line": 32, "relation_tag": "for_body", "owner_tag": "$for_1", "member_tags": ["$if_3"]}
+{"line": 31, "relation_tag": "if_body", "owner_tag": "$if_2", "member_tags": ["$for_1"]}
+{"line": 20, "relation_tag": "finally_body", "owner_tag": "$try_0", "member_tags": ["$if_2"]}
+{"line": 37, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["async_run"]}
+{"line": 37, "relation_tag": "param", "owner_tag": "$functiondef_0", "member_tags": ["handlers"]}
+{"line": 37, "relation_tag": "param_annotation", "owner_tag": "$functiondef_0", "member_tags": ["handlers", "list"]}
+{"line": 38, "relation_tag": "defines", "owner_tag": "$asyncfunctiondef_1", "member_tags": ["func"]}
+{"line": 38, "relation_tag": "async_def", "owner_tag": "$asyncfunctiondef_1", "member_tags": ["async"]}
+{"line": 39, "relation_tag": "attr_value", "owner_tag": "asyncio.gather", "member_tags": ["asyncio"]}
+{"line": 39, "relation_tag": "attr_name", "owner_tag": "asyncio.gather", "member_tags": ["gather"]}
+{"line": 39, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["asyncio.gather"]}
+{"line": 39, "relation_tag": "call_pos_arg", "owner_tag": "$call_6", "member_tags": ["*handlers"]}
+{"line": 39, "relation_tag": "await_value", "owner_tag": "$await_0", "member_tags": ["$call_6"]}
+{"line": 39, "relation_tag": "expr_stmt", "owner_tag": "$expr_2", "member_tags": ["$await_0"]}
+{"line": 38, "relation_tag": "stmt_seq", "owner_tag": "$asyncfunctiondef_1", "member_tags": ["0:$expr_2"]}
+{"line": 38, "relation_tag": "contains", "owner_tag": "$asyncfunctiondef_1", "member_tags": ["$expr_2"]}
+{"line": 37, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$asyncfunctiondef_1", "1:$expr_3"]}
+{"line": 37, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$asyncfunctiondef_1", "$expr_3"]}
+{"line": 40, "relation_tag": "attr_value", "owner_tag": "asyncio.run", "member_tags": ["asyncio"]}
+{"line": 40, "relation_tag": "attr_name", "owner_tag": "asyncio.run", "member_tags": ["run"]}
+{"line": 40, "relation_tag": "calls", "owner_tag": "$call_7", "member_tags": ["asyncio.run"]}
+{"line": 40, "relation_tag": "calls", "owner_tag": "$call_8", "member_tags": ["func"]}
+{"line": 40, "relation_tag": "call_pos_arg", "owner_tag": "$call_7", "member_tags": ["$call_8"]}
+{"line": 40, "relation_tag": "expr_stmt", "owner_tag": "$expr_3", "member_tags": ["$call_7"]}

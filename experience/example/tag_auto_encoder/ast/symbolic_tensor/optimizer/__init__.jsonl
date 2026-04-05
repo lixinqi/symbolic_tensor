@@ -1,0 +1,5 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["experience.symbolic_tensor.optimizer.st_sgd", "StSGD"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$importfrom_0", "$assign_0"]}
+{"line": 2, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 2, "relation_tag": "collection_element", "owner_tag": "$list_0", "member_tags": ["'StSGD'"]}
+{"line": 2, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["__all__", "$list_0"]}

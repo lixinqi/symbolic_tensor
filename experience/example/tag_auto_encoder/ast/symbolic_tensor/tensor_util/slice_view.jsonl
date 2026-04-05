@@ -1,0 +1,1139 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["os"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$import_1", "$import_2", "$importfrom_0", "$importfrom_1", "$importfrom_2", "$assign_0", "$functiondef_0", "$functiondef_1", "$functiondef_2", "$functiondef_3", "$if_10"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$import_1", "member_tags": ["itertools"]}
+{"line": 3, "relation_tag": "imports", "owner_tag": "$import_2", "member_tags": ["torch"]}
+{"line": 4, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["pathlib", "Path"]}
+{"line": 5, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["typing", "List", "Tuple", "Union"]}
+{"line": 6, "relation_tag": "imports", "owner_tag": "$importfrom_2", "member_tags": ["experience.symbolic_tensor.tensor_util.make_tensor", "make_tensor", "NestedList"]}
+{"line": 7, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 7, "relation_tag": "attr_value", "owner_tag": "torch.Tensor", "member_tags": ["torch", "torch", "torch", "torch", "torch"]}
+{"line": 7, "relation_tag": "attr_name", "owner_tag": "torch.Tensor", "member_tags": ["Tensor", "Tensor", "Tensor", "Tensor", "Tensor"]}
+{"line": 7, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["torch.Tensor", "slice", "int"]}
+{"line": 7, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["Union"]}
+{"line": 7, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["$tuple_0"]}
+{"line": 7, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["SliceElement", "$subscript_0"]}
+{"line": 8, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["_get_storage_path"]}
+{"line": 8, "relation_tag": "param", "owner_tag": "$functiondef_0", "member_tags": ["tensor", "coordinates"]}
+{"line": 8, "relation_tag": "param_annotation", "owner_tag": "$functiondef_0", "member_tags": ["tensor", "torch.Tensor", "coordinates", "$subscript_1"]}
+{"line": 8, "relation_tag": "subscript_value", "owner_tag": "$subscript_1", "member_tags": ["List"]}
+{"line": 8, "relation_tag": "subscript", "owner_tag": "$subscript_1", "member_tags": ["int"]}
+{"line": 8, "relation_tag": "returns", "owner_tag": "$functiondef_0", "member_tags": ["Path"]}
+{"line": 8, "relation_tag": "docstring", "owner_tag": "$functiondef_0", "member_tags": ["$docstring_0"]}
+{"line": 8, "relation_tag": "text_content", "owner_tag": "$docstring_0", "member_tags": ["Get the storage file Path for a given set of coordinates."]}
+{"line": 9, "relation_tag": "docstring", "owner_tag": "$expr_0", "member_tags": ["$docstring_1"]}
+{"line": 9, "relation_tag": "text_content", "owner_tag": "$docstring_1", "member_tags": ["Get the storage file Path for a given set of coordinates."]}
+{"line": 8, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$expr_0", "1:$assign_1", "2:$assign_2", "3:$assign_3", "4:$return_0"]}
+{"line": 8, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$expr_0", "$assign_1", "$assign_2", "$assign_3", "$return_0"]}
+{"line": 10, "relation_tag": "attr_value", "owner_tag": "tensor.stride", "member_tags": ["tensor"]}
+{"line": 10, "relation_tag": "attr_name", "owner_tag": "tensor.stride", "member_tags": ["stride"]}
+{"line": 10, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["tensor.stride"]}
+{"line": 10, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["stride", "$call_0"]}
+{"line": 11, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["sum"]}
+{"line": 11, "relation_tag": "tuple_literal", "owner_tag": "$comp_0", "member_tags": ["GeneratorExp"]}
+{"line": 11, "relation_tag": "bin_op", "owner_tag": "$binop_0", "member_tags": ["*"]}
+{"line": 11, "relation_tag": "bin_op_left", "owner_tag": "$binop_0", "member_tags": ["c"]}
+{"line": 11, "relation_tag": "bin_op_right", "owner_tag": "$binop_0", "member_tags": ["s"]}
+{"line": 11, "relation_tag": "comprehension_body", "owner_tag": "$comp_0", "member_tags": ["$binop_0"]}
+{"line": 11, "relation_tag": "tuple_literal", "owner_tag": "$tuple_1", "member_tags": ["Tuple"]}
+{"line": 11, "relation_tag": "collection_element", "owner_tag": "$tuple_1", "member_tags": ["c", "s"]}
+{"line": 11, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["zip"]}
+{"line": 11, "relation_tag": "call_pos_arg", "owner_tag": "$call_2", "member_tags": ["coordinates", "stride"]}
+{"line": 11, "relation_tag": "comprehension_target", "owner_tag": "$comp_0", "member_tags": ["$tuple_1"]}
+{"line": 11, "relation_tag": "comprehension_iter", "owner_tag": "$comp_0", "member_tags": ["$call_2"]}
+{"line": 11, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["$comp_0"]}
+{"line": 11, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["flat_index", "$call_1"]}
+{"line": 12, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["list"]}
+{"line": 12, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["str"]}
+{"line": 12, "relation_tag": "call_pos_arg", "owner_tag": "$call_4", "member_tags": ["flat_index"]}
+{"line": 12, "relation_tag": "call_pos_arg", "owner_tag": "$call_3", "member_tags": ["$call_4"]}
+{"line": 12, "relation_tag": "assigns", "owner_tag": "$assign_3", "member_tags": ["digits", "$call_3"]}
+{"line": 13, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["Path"]}
+{"line": 14, "relation_tag": "attr_value", "owner_tag": "tensor.st_relative_to", "member_tags": ["tensor"]}
+{"line": 14, "relation_tag": "attr_name", "owner_tag": "tensor.st_relative_to", "member_tags": ["st_relative_to"]}
+{"line": 13, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["tensor.st_relative_to", "tensor.st_tensor_uid", "'storage'", "$call_6", "'data'"]}
+{"line": 15, "relation_tag": "attr_value", "owner_tag": "tensor.st_tensor_uid", "member_tags": ["tensor"]}
+{"line": 15, "relation_tag": "attr_name", "owner_tag": "tensor.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "os.path", "member_tags": ["os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os", "os"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "os.path", "member_tags": ["path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path"]}
+{"line": 17, "relation_tag": "attr_value", "owner_tag": "os.path.join", "member_tags": ["os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path", "os.path"]}
+{"line": 17, "relation_tag": "attr_name", "owner_tag": "os.path.join", "member_tags": ["join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join", "join"]}
+{"line": 17, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["os.path.join"]}
+{"line": 17, "relation_tag": "call_pos_arg", "owner_tag": "$call_6", "member_tags": ["*digits"]}
+{"line": 13, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["$call_5"]}
+{"line": 20, "relation_tag": "defines", "owner_tag": "$functiondef_1", "member_tags": ["_normalize_slice_element"]}
+{"line": 20, "relation_tag": "param", "owner_tag": "$functiondef_1", "member_tags": ["elem", "dim_size"]}
+{"line": 20, "relation_tag": "param_annotation", "owner_tag": "$functiondef_1", "member_tags": ["elem", "SliceElement", "dim_size", "int"]}
+{"line": 22, "relation_tag": "tuple_literal", "owner_tag": "$tuple_2", "member_tags": ["Tuple"]}
+{"line": 22, "relation_tag": "subscript_value", "owner_tag": "$subscript_3", "member_tags": ["List"]}
+{"line": 22, "relation_tag": "subscript", "owner_tag": "$subscript_3", "member_tags": ["int"]}
+{"line": 22, "relation_tag": "collection_element", "owner_tag": "$tuple_2", "member_tags": ["$subscript_3", "bool"]}
+{"line": 22, "relation_tag": "subscript_value", "owner_tag": "$subscript_2", "member_tags": ["Tuple"]}
+{"line": 22, "relation_tag": "subscript", "owner_tag": "$subscript_2", "member_tags": ["$tuple_2"]}
+{"line": 20, "relation_tag": "returns", "owner_tag": "$functiondef_1", "member_tags": ["$subscript_2"]}
+{"line": 20, "relation_tag": "docstring", "owner_tag": "$functiondef_1", "member_tags": ["$docstring_2"]}
+{"line": 20, "relation_tag": "text_content", "owner_tag": "$docstring_2", "member_tags": ["Normalize a slice element to (list of indices, collapses_dim).\n    Returns:\n        indices: list of selected indices for this dimension.\n        collapses: True if this element collapses the dimension (int or 0-rank tensor).\n    "]}
+{"line": 23, "relation_tag": "docstring", "owner_tag": "$expr_1", "member_tags": ["$docstring_3"]}
+{"line": 23, "relation_tag": "text_content", "owner_tag": "$docstring_3", "member_tags": ["Normalize a slice element to (list of indices, collapses_dim).\n    Returns:\n        indices: list of selected indices for this dimension.\n        collapses: True if this element collapses the dimension (int or 0-rank tensor).\n    "]}
+{"line": 20, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_1", "member_tags": ["0:$expr_1", "1:$if_0"]}
+{"line": 20, "relation_tag": "contains", "owner_tag": "$functiondef_1", "member_tags": ["$expr_1", "$if_0"]}
+{"line": 28, "relation_tag": "calls", "owner_tag": "$call_7", "member_tags": ["isinstance"]}
+{"line": 28, "relation_tag": "call_pos_arg", "owner_tag": "$call_7", "member_tags": ["elem", "int"]}
+{"line": 28, "relation_tag": "if_test", "owner_tag": "$if_0", "member_tags": ["$call_7"]}
+{"line": 29, "relation_tag": "tuple_literal", "owner_tag": "$tuple_3", "member_tags": ["Tuple"]}
+{"line": 29, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 29, "relation_tag": "collection_element", "owner_tag": "$list_0", "member_tags": ["elem"]}
+{"line": 29, "relation_tag": "collection_element", "owner_tag": "$tuple_3", "member_tags": ["$list_0", "True"]}
+{"line": 29, "relation_tag": "returns", "owner_tag": "$return_1", "member_tags": ["$tuple_3"]}
+{"line": 28, "relation_tag": "if_body", "owner_tag": "$if_0", "member_tags": ["$return_1"]}
+{"line": 30, "relation_tag": "calls", "owner_tag": "$call_8", "member_tags": ["isinstance"]}
+{"line": 30, "relation_tag": "call_pos_arg", "owner_tag": "$call_8", "member_tags": ["elem", "slice"]}
+{"line": 30, "relation_tag": "if_test", "owner_tag": "$if_1", "member_tags": ["$call_8"]}
+{"line": 31, "relation_tag": "tuple_literal", "owner_tag": "$tuple_4", "member_tags": ["Tuple"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_9", "member_tags": ["list"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_10", "member_tags": ["range"]}
+{"line": 31, "relation_tag": "attr_value", "owner_tag": "elem.indices", "member_tags": ["elem"]}
+{"line": 31, "relation_tag": "attr_name", "owner_tag": "elem.indices", "member_tags": ["indices"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_11", "member_tags": ["elem.indices"]}
+{"line": 31, "relation_tag": "call_pos_arg", "owner_tag": "$call_11", "member_tags": ["dim_size"]}
+{"line": 31, "relation_tag": "call_pos_arg", "owner_tag": "$call_10", "member_tags": ["*$call_11"]}
+{"line": 31, "relation_tag": "call_pos_arg", "owner_tag": "$call_9", "member_tags": ["$call_10"]}
+{"line": 31, "relation_tag": "collection_element", "owner_tag": "$tuple_4", "member_tags": ["$call_9", "False"]}
+{"line": 31, "relation_tag": "returns", "owner_tag": "$return_2", "member_tags": ["$tuple_4"]}
+{"line": 30, "relation_tag": "if_body", "owner_tag": "$if_1", "member_tags": ["$return_2"]}
+{"line": 32, "relation_tag": "calls", "owner_tag": "$call_12", "member_tags": ["isinstance"]}
+{"line": 32, "relation_tag": "call_pos_arg", "owner_tag": "$call_12", "member_tags": ["elem", "torch.Tensor"]}
+{"line": 32, "relation_tag": "if_test", "owner_tag": "$if_2", "member_tags": ["$call_12"]}
+{"line": 33, "relation_tag": "attr_value", "owner_tag": "elem.dim", "member_tags": ["elem"]}
+{"line": 33, "relation_tag": "attr_name", "owner_tag": "elem.dim", "member_tags": ["dim"]}
+{"line": 33, "relation_tag": "calls", "owner_tag": "$call_13", "member_tags": ["elem.dim"]}
+{"line": 33, "relation_tag": "compare_left", "owner_tag": "$compare_0", "member_tags": ["$call_13"]}
+{"line": 33, "relation_tag": "compare_op", "owner_tag": "$compare_0", "member_tags": ["=="]}
+{"line": 33, "relation_tag": "compare_right", "owner_tag": "$compare_0", "member_tags": ["0"]}
+{"line": 33, "relation_tag": "if_test", "owner_tag": "$if_3", "member_tags": ["$compare_0"]}
+{"line": 34, "relation_tag": "tuple_literal", "owner_tag": "$tuple_5", "member_tags": ["Tuple"]}
+{"line": 34, "relation_tag": "list_literal", "owner_tag": "$list_1", "member_tags": ["List"]}
+{"line": 34, "relation_tag": "calls", "owner_tag": "$call_14", "member_tags": ["int"]}
+{"line": 34, "relation_tag": "attr_value", "owner_tag": "elem.item", "member_tags": ["elem"]}
+{"line": 34, "relation_tag": "attr_name", "owner_tag": "elem.item", "member_tags": ["item"]}
+{"line": 34, "relation_tag": "calls", "owner_tag": "$call_15", "member_tags": ["elem.item"]}
+{"line": 34, "relation_tag": "call_pos_arg", "owner_tag": "$call_14", "member_tags": ["$call_15"]}
+{"line": 34, "relation_tag": "collection_element", "owner_tag": "$list_1", "member_tags": ["$call_14"]}
+{"line": 34, "relation_tag": "collection_element", "owner_tag": "$tuple_5", "member_tags": ["$list_1", "True"]}
+{"line": 34, "relation_tag": "returns", "owner_tag": "$return_3", "member_tags": ["$tuple_5"]}
+{"line": 33, "relation_tag": "if_body", "owner_tag": "$if_3", "member_tags": ["$return_3"]}
+{"line": 36, "relation_tag": "tuple_literal", "owner_tag": "$tuple_6", "member_tags": ["Tuple"]}
+{"line": 36, "relation_tag": "attr_value", "owner_tag": "elem.tolist", "member_tags": ["elem"]}
+{"line": 36, "relation_tag": "attr_name", "owner_tag": "elem.tolist", "member_tags": ["tolist"]}
+{"line": 36, "relation_tag": "calls", "owner_tag": "$call_16", "member_tags": ["elem.tolist"]}
+{"line": 36, "relation_tag": "collection_element", "owner_tag": "$tuple_6", "member_tags": ["$call_16", "False"]}
+{"line": 36, "relation_tag": "returns", "owner_tag": "$return_4", "member_tags": ["$tuple_6"]}
+{"line": 33, "relation_tag": "else_body", "owner_tag": "$if_3", "member_tags": ["$return_4"]}
+{"line": 32, "relation_tag": "if_body", "owner_tag": "$if_2", "member_tags": ["$if_3"]}
+{"line": 38, "relation_tag": "calls", "owner_tag": "$call_17", "member_tags": ["TypeError"]}
+{"line": 38, "relation_tag": "fstring_elem", "owner_tag": "$fstring_0", "member_tags": ["lit:Unsupported slice element type: ", "val:$call_18"]}
+{"line": 38, "relation_tag": "calls", "owner_tag": "$call_18", "member_tags": ["type"]}
+{"line": 38, "relation_tag": "call_pos_arg", "owner_tag": "$call_18", "member_tags": ["elem"]}
+{"line": 38, "relation_tag": "call_pos_arg", "owner_tag": "$call_17", "member_tags": ["$fstring_0"]}
+{"line": 38, "relation_tag": "raises", "owner_tag": "$raise_0", "member_tags": ["$call_17"]}
+{"line": 32, "relation_tag": "else_body", "owner_tag": "$if_2", "member_tags": ["$raise_0"]}
+{"line": 30, "relation_tag": "else_body", "owner_tag": "$if_1", "member_tags": ["$if_2"]}
+{"line": 28, "relation_tag": "else_body", "owner_tag": "$if_0", "member_tags": ["$if_1"]}
+{"line": 39, "relation_tag": "defines", "owner_tag": "$functiondef_2", "member_tags": ["_build_nested"]}
+{"line": 39, "relation_tag": "param", "owner_tag": "$functiondef_2", "member_tags": ["flat_paths", "shape"]}
+{"line": 39, "relation_tag": "subscript_value", "owner_tag": "$subscript_4", "member_tags": ["List"]}
+{"line": 39, "relation_tag": "subscript", "owner_tag": "$subscript_4", "member_tags": ["Path"]}
+{"line": 39, "relation_tag": "param_annotation", "owner_tag": "$functiondef_2", "member_tags": ["flat_paths", "$subscript_4", "shape", "$subscript_5"]}
+{"line": 39, "relation_tag": "subscript_value", "owner_tag": "$subscript_5", "member_tags": ["List"]}
+{"line": 39, "relation_tag": "subscript", "owner_tag": "$subscript_5", "member_tags": ["int"]}
+{"line": 39, "relation_tag": "returns", "owner_tag": "$functiondef_2", "member_tags": ["NestedList"]}
+{"line": 39, "relation_tag": "docstring", "owner_tag": "$functiondef_2", "member_tags": ["$docstring_4"]}
+{"line": 39, "relation_tag": "text_content", "owner_tag": "$docstring_4", "member_tags": ["Reshape a flat list of Paths into a nested list according to shape."]}
+{"line": 40, "relation_tag": "docstring", "owner_tag": "$expr_2", "member_tags": ["$docstring_5"]}
+{"line": 40, "relation_tag": "text_content", "owner_tag": "$docstring_5", "member_tags": ["Reshape a flat list of Paths into a nested list according to shape."]}
+{"line": 39, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_2", "member_tags": ["0:$expr_2", "1:$if_4", "2:$if_5", "3:$assign_4", "4:$for_0", "5:$assign_5", "6:$for_1", "7:$return_7"]}
+{"line": 39, "relation_tag": "contains", "owner_tag": "$functiondef_2", "member_tags": ["$expr_2", "$if_4", "$if_5", "$assign_4", "$for_0", "$assign_5", "$for_1", "$return_7"]}
+{"line": 41, "relation_tag": "unary_op", "owner_tag": "$unaryop_0", "member_tags": ["not"]}
+{"line": 41, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_0", "member_tags": ["shape"]}
+{"line": 41, "relation_tag": "if_test", "owner_tag": "$if_4", "member_tags": ["$unaryop_0"]}
+{"line": 42, "relation_tag": "subscript_value", "owner_tag": "$subscript_6", "member_tags": ["flat_paths"]}
+{"line": 42, "relation_tag": "subscript", "owner_tag": "$subscript_6", "member_tags": ["0"]}
+{"line": 42, "relation_tag": "returns", "owner_tag": "$return_5", "member_tags": ["$subscript_6"]}
+{"line": 41, "relation_tag": "if_body", "owner_tag": "$if_4", "member_tags": ["$return_5"]}
+{"line": 43, "relation_tag": "calls", "owner_tag": "$call_19", "member_tags": ["len"]}
+{"line": 43, "relation_tag": "call_pos_arg", "owner_tag": "$call_19", "member_tags": ["shape"]}
+{"line": 43, "relation_tag": "compare_left", "owner_tag": "$compare_1", "member_tags": ["$call_19"]}
+{"line": 43, "relation_tag": "compare_op", "owner_tag": "$compare_1", "member_tags": ["=="]}
+{"line": 43, "relation_tag": "compare_right", "owner_tag": "$compare_1", "member_tags": ["1"]}
+{"line": 43, "relation_tag": "if_test", "owner_tag": "$if_5", "member_tags": ["$compare_1"]}
+{"line": 44, "relation_tag": "returns", "owner_tag": "$return_6", "member_tags": ["flat_paths"]}
+{"line": 43, "relation_tag": "if_body", "owner_tag": "$if_5", "member_tags": ["$return_6"]}
+{"line": 45, "relation_tag": "assigns", "owner_tag": "$assign_4", "member_tags": ["chunk_size", "1"]}
+{"line": 46, "relation_tag": "slice_lower", "owner_tag": "$slice_0", "member_tags": ["1"]}
+{"line": 46, "relation_tag": "subscript_value", "owner_tag": "$subscript_7", "member_tags": ["shape"]}
+{"line": 46, "relation_tag": "subscript", "owner_tag": "$subscript_7", "member_tags": ["$slice_0"]}
+{"line": 46, "relation_tag": "for_target", "owner_tag": "$for_0", "member_tags": ["s"]}
+{"line": 46, "relation_tag": "for_iter", "owner_tag": "$for_0", "member_tags": ["$subscript_7"]}
+{"line": 47, "relation_tag": "aug_assigns", "owner_tag": "$augassign_0", "member_tags": ["chunk_size", "s"]}
+{"line": 47, "relation_tag": "aug_op", "owner_tag": "$augassign_0", "member_tags": ["*"]}
+{"line": 46, "relation_tag": "for_body", "owner_tag": "$for_0", "member_tags": ["$augassign_0"]}
+{"line": 48, "relation_tag": "list_literal", "owner_tag": "$list_2", "member_tags": ["List"]}
+{"line": 48, "relation_tag": "assigns", "owner_tag": "$assign_5", "member_tags": ["result", "$list_2"]}
+{"line": 49, "relation_tag": "calls", "owner_tag": "$call_20", "member_tags": ["range"]}
+{"line": 49, "relation_tag": "subscript_value", "owner_tag": "$subscript_8", "member_tags": ["shape"]}
+{"line": 49, "relation_tag": "subscript", "owner_tag": "$subscript_8", "member_tags": ["0"]}
+{"line": 49, "relation_tag": "call_pos_arg", "owner_tag": "$call_20", "member_tags": ["$subscript_8"]}
+{"line": 49, "relation_tag": "for_target", "owner_tag": "$for_1", "member_tags": ["i"]}
+{"line": 49, "relation_tag": "for_iter", "owner_tag": "$for_1", "member_tags": ["$call_20"]}
+{"line": 50, "relation_tag": "bin_op", "owner_tag": "$binop_1", "member_tags": ["*"]}
+{"line": 50, "relation_tag": "bin_op_left", "owner_tag": "$binop_1", "member_tags": ["i"]}
+{"line": 50, "relation_tag": "bin_op_right", "owner_tag": "$binop_1", "member_tags": ["chunk_size"]}
+{"line": 50, "relation_tag": "assigns", "owner_tag": "$assign_6", "member_tags": ["start", "$binop_1"]}
+{"line": 49, "relation_tag": "for_body", "owner_tag": "$for_1", "member_tags": ["$assign_6", "$expr_3"]}
+{"line": 51, "relation_tag": "attr_value", "owner_tag": "result.append", "member_tags": ["result"]}
+{"line": 51, "relation_tag": "attr_name", "owner_tag": "result.append", "member_tags": ["append"]}
+{"line": 51, "relation_tag": "calls", "owner_tag": "$call_21", "member_tags": ["result.append"]}
+{"line": 51, "relation_tag": "calls", "owner_tag": "$call_22", "member_tags": ["_build_nested"]}
+{"line": 51, "relation_tag": "slice_lower", "owner_tag": "$slice_1", "member_tags": ["start"]}
+{"line": 51, "relation_tag": "bin_op", "owner_tag": "$binop_2", "member_tags": ["+"]}
+{"line": 51, "relation_tag": "bin_op_left", "owner_tag": "$binop_2", "member_tags": ["start"]}
+{"line": 51, "relation_tag": "bin_op_right", "owner_tag": "$binop_2", "member_tags": ["chunk_size"]}
+{"line": 51, "relation_tag": "slice_upper", "owner_tag": "$slice_1", "member_tags": ["$binop_2"]}
+{"line": 51, "relation_tag": "subscript_value", "owner_tag": "$subscript_9", "member_tags": ["flat_paths"]}
+{"line": 51, "relation_tag": "subscript", "owner_tag": "$subscript_9", "member_tags": ["$slice_1"]}
+{"line": 51, "relation_tag": "call_pos_arg", "owner_tag": "$call_22", "member_tags": ["$subscript_9", "$subscript_10"]}
+{"line": 51, "relation_tag": "slice_lower", "owner_tag": "$slice_2", "member_tags": ["1"]}
+{"line": 51, "relation_tag": "subscript_value", "owner_tag": "$subscript_10", "member_tags": ["shape"]}
+{"line": 51, "relation_tag": "subscript", "owner_tag": "$subscript_10", "member_tags": ["$slice_2"]}
+{"line": 51, "relation_tag": "call_pos_arg", "owner_tag": "$call_21", "member_tags": ["$call_22"]}
+{"line": 51, "relation_tag": "expr_stmt", "owner_tag": "$expr_3", "member_tags": ["$call_21"]}
+{"line": 52, "relation_tag": "returns", "owner_tag": "$return_7", "member_tags": ["result"]}
+{"line": 53, "relation_tag": "defines", "owner_tag": "$functiondef_3", "member_tags": ["slice_view"]}
+{"line": 53, "relation_tag": "param", "owner_tag": "$functiondef_3", "member_tags": ["input", "slice_tensors"]}
+{"line": 53, "relation_tag": "param_annotation", "owner_tag": "$functiondef_3", "member_tags": ["input", "torch.Tensor", "slice_tensors", "$subscript_11"]}
+{"line": 55, "relation_tag": "subscript_value", "owner_tag": "$subscript_11", "member_tags": ["List"]}
+{"line": 55, "relation_tag": "subscript", "owner_tag": "$subscript_11", "member_tags": ["SliceElement"]}
+{"line": 53, "relation_tag": "returns", "owner_tag": "$functiondef_3", "member_tags": ["torch.Tensor"]}
+{"line": 53, "relation_tag": "docstring", "owner_tag": "$functiondef_3", "member_tags": ["$docstring_6"]}
+{"line": 53, "relation_tag": "text_content", "owner_tag": "$docstring_6", "member_tags": ["\n    Create a symbolic tensor view by selecting elements from an input tensor\n    using index tensors, slices, or ints (one per dimension), symlinking to\n    the source files.\n    Dimension collapsing follows NumPy/PyTorch conventions:\n    - int or 0-rank Tensor: selects a single index, collapses the dimension\n    - 1D Tensor: selects specific indices, keeps the dimension\n    - slice: selects a range, keeps the dimension\n    Args:\n        input: A symbolic tensor with st_relative_to and st_tensor_uid attributes.\n        slice_tensors: A list of indexing elements, one per dimension of input.\n    Returns:\n        A new symbolic tensor with symlinks to the selected source files.\n        Output ndim = input ndim - (number of int elements) - (number of 0-rank tensors).\n    "]}
+{"line": 57, "relation_tag": "docstring", "owner_tag": "$expr_4", "member_tags": ["$docstring_7"]}
+{"line": 57, "relation_tag": "text_content", "owner_tag": "$docstring_7", "member_tags": ["\n    Create a symbolic tensor view by selecting elements from an input tensor\n    using index tensors, slices, or ints (one per dimension), symlinking to\n    the source files.\n    Dimension collapsing follows NumPy/PyTorch conventions:\n    - int or 0-rank Tensor: selects a single index, collapses the dimension\n    - 1D Tensor: selects specific indices, keeps the dimension\n    - slice: selects a range, keeps the dimension\n    Args:\n        input: A symbolic tensor with st_relative_to and st_tensor_uid attributes.\n        slice_tensors: A list of indexing elements, one per dimension of input.\n    Returns:\n        A new symbolic tensor with symlinks to the selected source files.\n        Output ndim = input ndim - (number of int elements) - (number of 0-rank tensors).\n    "]}
+{"line": 53, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_3", "member_tags": ["0:$expr_4", "1:$assert_0", "2:$assign_7", "3:$assign_8", "4:$assign_9", "5:$for_2", "6:$if_7", "7:$assign_15", "8:$annassign_0", "9:$for_3", "10:$for_4", "11:$if_9", "12:$assign_18", "13:$assign_19", "14:$assign_20", "15:$assert_1", "16:$return_9"]}
+{"line": 53, "relation_tag": "contains", "owner_tag": "$functiondef_3", "member_tags": ["$expr_4", "$assert_0", "$assign_7", "$assign_8", "$assign_9", "$for_2", "$if_7", "$assign_15", "$annassign_0", "$for_3", "$for_4", "$if_9", "$assign_18", "$assign_19", "$assign_20", "$assert_1", "$return_9"]}
+{"line": 72, "relation_tag": "calls", "owner_tag": "$call_23", "member_tags": ["len"]}
+{"line": 72, "relation_tag": "call_pos_arg", "owner_tag": "$call_23", "member_tags": ["slice_tensors"]}
+{"line": 72, "relation_tag": "compare_left", "owner_tag": "$compare_2", "member_tags": ["$call_23"]}
+{"line": 72, "relation_tag": "calls", "owner_tag": "$call_24", "member_tags": ["len"]}
+{"line": 72, "relation_tag": "attr_value", "owner_tag": "input.size", "member_tags": ["input", "input", "input", "input"]}
+{"line": 72, "relation_tag": "attr_name", "owner_tag": "input.size", "member_tags": ["size", "size", "size", "size"]}
+{"line": 72, "relation_tag": "calls", "owner_tag": "$call_25", "member_tags": ["input.size"]}
+{"line": 72, "relation_tag": "call_pos_arg", "owner_tag": "$call_24", "member_tags": ["$call_25"]}
+{"line": 72, "relation_tag": "compare_op", "owner_tag": "$compare_2", "member_tags": ["=="]}
+{"line": 72, "relation_tag": "compare_right", "owner_tag": "$compare_2", "member_tags": ["$call_24"]}
+{"line": 72, "relation_tag": "assert_test", "owner_tag": "$assert_0", "member_tags": ["$compare_2"]}
+{"line": 73, "relation_tag": "fstring_elem", "owner_tag": "$fstring_1", "member_tags": ["lit:Expected ", "val:$call_26", "lit: slice elements, got ", "val:$call_28"]}
+{"line": 73, "relation_tag": "calls", "owner_tag": "$call_26", "member_tags": ["len"]}
+{"line": 73, "relation_tag": "calls", "owner_tag": "$call_27", "member_tags": ["input.size"]}
+{"line": 73, "relation_tag": "call_pos_arg", "owner_tag": "$call_26", "member_tags": ["$call_27"]}
+{"line": 73, "relation_tag": "calls", "owner_tag": "$call_28", "member_tags": ["len"]}
+{"line": 73, "relation_tag": "call_pos_arg", "owner_tag": "$call_28", "member_tags": ["slice_tensors"]}
+{"line": 72, "relation_tag": "assert_msg", "owner_tag": "$assert_0", "member_tags": ["$fstring_1"]}
+{"line": 75, "relation_tag": "calls", "owner_tag": "$call_29", "member_tags": ["input.size"]}
+{"line": 75, "relation_tag": "assigns", "owner_tag": "$assign_7", "member_tags": ["input_size", "$call_29"]}
+{"line": 76, "relation_tag": "list_literal", "owner_tag": "$list_3", "member_tags": ["List"]}
+{"line": 76, "relation_tag": "assigns", "owner_tag": "$assign_8", "member_tags": ["per_dim", "$list_3"]}
+{"line": 77, "relation_tag": "list_literal", "owner_tag": "$list_4", "member_tags": ["List"]}
+{"line": 77, "relation_tag": "assigns", "owner_tag": "$assign_9", "member_tags": ["output_shape", "$list_4"]}
+{"line": 78, "relation_tag": "tuple_literal", "owner_tag": "$tuple_7", "member_tags": ["Tuple"]}
+{"line": 78, "relation_tag": "collection_element", "owner_tag": "$tuple_7", "member_tags": ["d", "elem"]}
+{"line": 78, "relation_tag": "calls", "owner_tag": "$call_30", "member_tags": ["enumerate"]}
+{"line": 78, "relation_tag": "call_pos_arg", "owner_tag": "$call_30", "member_tags": ["slice_tensors"]}
+{"line": 78, "relation_tag": "for_target", "owner_tag": "$for_2", "member_tags": ["$tuple_7"]}
+{"line": 78, "relation_tag": "for_iter", "owner_tag": "$for_2", "member_tags": ["$call_30"]}
+{"line": 79, "relation_tag": "calls", "owner_tag": "$call_31", "member_tags": ["_normalize_slice_element"]}
+{"line": 79, "relation_tag": "call_pos_arg", "owner_tag": "$call_31", "member_tags": ["elem", "$subscript_12"]}
+{"line": 79, "relation_tag": "subscript_value", "owner_tag": "$subscript_12", "member_tags": ["input_size"]}
+{"line": 79, "relation_tag": "subscript", "owner_tag": "$subscript_12", "member_tags": ["d"]}
+{"line": 79, "relation_tag": "tuple_literal", "owner_tag": "$tuple_8", "member_tags": ["Tuple"]}
+{"line": 79, "relation_tag": "collection_element", "owner_tag": "$tuple_8", "member_tags": ["indices", "collapses"]}
+{"line": 79, "relation_tag": "assigns", "owner_tag": "$assign_10", "member_tags": ["$tuple_8", "$call_31"]}
+{"line": 78, "relation_tag": "for_body", "owner_tag": "$for_2", "member_tags": ["$assign_10", "$expr_5", "$if_6"]}
+{"line": 80, "relation_tag": "attr_value", "owner_tag": "per_dim.append", "member_tags": ["per_dim"]}
+{"line": 80, "relation_tag": "attr_name", "owner_tag": "per_dim.append", "member_tags": ["append"]}
+{"line": 80, "relation_tag": "calls", "owner_tag": "$call_32", "member_tags": ["per_dim.append"]}
+{"line": 80, "relation_tag": "tuple_literal", "owner_tag": "$tuple_9", "member_tags": ["Tuple"]}
+{"line": 80, "relation_tag": "collection_element", "owner_tag": "$tuple_9", "member_tags": ["indices", "collapses"]}
+{"line": 80, "relation_tag": "call_pos_arg", "owner_tag": "$call_32", "member_tags": ["$tuple_9"]}
+{"line": 80, "relation_tag": "expr_stmt", "owner_tag": "$expr_5", "member_tags": ["$call_32"]}
+{"line": 81, "relation_tag": "unary_op", "owner_tag": "$unaryop_1", "member_tags": ["not"]}
+{"line": 81, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_1", "member_tags": ["collapses"]}
+{"line": 81, "relation_tag": "if_test", "owner_tag": "$if_6", "member_tags": ["$unaryop_1"]}
+{"line": 82, "relation_tag": "attr_value", "owner_tag": "output_shape.append", "member_tags": ["output_shape"]}
+{"line": 82, "relation_tag": "attr_name", "owner_tag": "output_shape.append", "member_tags": ["append"]}
+{"line": 82, "relation_tag": "calls", "owner_tag": "$call_33", "member_tags": ["output_shape.append"]}
+{"line": 82, "relation_tag": "calls", "owner_tag": "$call_34", "member_tags": ["len"]}
+{"line": 82, "relation_tag": "call_pos_arg", "owner_tag": "$call_34", "member_tags": ["indices"]}
+{"line": 82, "relation_tag": "call_pos_arg", "owner_tag": "$call_33", "member_tags": ["$call_34"]}
+{"line": 82, "relation_tag": "expr_stmt", "owner_tag": "$expr_6", "member_tags": ["$call_33"]}
+{"line": 81, "relation_tag": "if_body", "owner_tag": "$if_6", "member_tags": ["$expr_6"]}
+{"line": 83, "relation_tag": "compare_left", "owner_tag": "$compare_3", "member_tags": ["0"]}
+{"line": 83, "relation_tag": "compare_op", "owner_tag": "$compare_3", "member_tags": ["in"]}
+{"line": 83, "relation_tag": "compare_right", "owner_tag": "$compare_3", "member_tags": ["output_shape"]}
+{"line": 83, "relation_tag": "if_test", "owner_tag": "$if_7", "member_tags": ["$compare_3"]}
+{"line": 84, "relation_tag": "calls", "owner_tag": "$call_35", "member_tags": ["make_tensor"]}
+{"line": 84, "relation_tag": "list_literal", "owner_tag": "$list_5", "member_tags": ["List"]}
+{"line": 84, "relation_tag": "call_pos_arg", "owner_tag": "$call_35", "member_tags": ["$list_5", "input.st_relative_to"]}
+{"line": 84, "relation_tag": "attr_value", "owner_tag": "input.st_relative_to", "member_tags": ["input", "input"]}
+{"line": 84, "relation_tag": "attr_name", "owner_tag": "input.st_relative_to", "member_tags": ["st_relative_to", "st_relative_to"]}
+{"line": 84, "relation_tag": "keyword_arg", "owner_tag": "$call_35", "member_tags": ["symlink", "True"]}
+{"line": 84, "relation_tag": "assigns", "owner_tag": "$assign_11", "member_tags": ["ret", "$call_35"]}
+{"line": 83, "relation_tag": "if_body", "owner_tag": "$if_7", "member_tags": ["$assign_11", "$assign_12", "$assign_13", "$assign_14", "$return_8"]}
+{"line": 85, "relation_tag": "attr_value", "owner_tag": "ret.view", "member_tags": ["ret"]}
+{"line": 85, "relation_tag": "attr_name", "owner_tag": "ret.view", "member_tags": ["view"]}
+{"line": 85, "relation_tag": "calls", "owner_tag": "$call_36", "member_tags": ["ret.view"]}
+{"line": 85, "relation_tag": "call_pos_arg", "owner_tag": "$call_36", "member_tags": ["output_shape"]}
+{"line": 85, "relation_tag": "assigns", "owner_tag": "$assign_12", "member_tags": ["reshaped", "$call_36"]}
+{"line": 86, "relation_tag": "attr_value", "owner_tag": "ret.st_relative_to", "member_tags": ["ret"]}
+{"line": 86, "relation_tag": "attr_name", "owner_tag": "ret.st_relative_to", "member_tags": ["st_relative_to"]}
+{"line": 86, "relation_tag": "attr_value", "owner_tag": "reshaped.st_relative_to", "member_tags": ["reshaped"]}
+{"line": 86, "relation_tag": "attr_name", "owner_tag": "reshaped.st_relative_to", "member_tags": ["st_relative_to"]}
+{"line": 86, "relation_tag": "assigns", "owner_tag": "$assign_13", "member_tags": ["reshaped.st_relative_to", "ret.st_relative_to"]}
+{"line": 87, "relation_tag": "attr_value", "owner_tag": "ret.st_tensor_uid", "member_tags": ["ret"]}
+{"line": 87, "relation_tag": "attr_name", "owner_tag": "ret.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 87, "relation_tag": "attr_value", "owner_tag": "reshaped.st_tensor_uid", "member_tags": ["reshaped"]}
+{"line": 87, "relation_tag": "attr_name", "owner_tag": "reshaped.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 87, "relation_tag": "assigns", "owner_tag": "$assign_14", "member_tags": ["reshaped.st_tensor_uid", "ret.st_tensor_uid"]}
+{"line": 88, "relation_tag": "returns", "owner_tag": "$return_8", "member_tags": ["reshaped"]}
+{"line": 89, "relation_tag": "list_literal", "owner_tag": "$comp_1", "member_tags": ["ListComp"]}
+{"line": 89, "relation_tag": "comprehension_body", "owner_tag": "$comp_1", "member_tags": ["idx"]}
+{"line": 89, "relation_tag": "tuple_literal", "owner_tag": "$tuple_10", "member_tags": ["Tuple"]}
+{"line": 89, "relation_tag": "collection_element", "owner_tag": "$tuple_10", "member_tags": ["idx", "_"]}
+{"line": 89, "relation_tag": "comprehension_target", "owner_tag": "$comp_1", "member_tags": ["$tuple_10"]}
+{"line": 89, "relation_tag": "comprehension_iter", "owner_tag": "$comp_1", "member_tags": ["per_dim"]}
+{"line": 89, "relation_tag": "assigns", "owner_tag": "$assign_15", "member_tags": ["all_indices", "$comp_1"]}
+{"line": 90, "relation_tag": "subscript_value", "owner_tag": "$subscript_13", "member_tags": ["List"]}
+{"line": 90, "relation_tag": "subscript", "owner_tag": "$subscript_13", "member_tags": ["Path"]}
+{"line": 90, "relation_tag": "annotation", "owner_tag": "$annassign_0", "member_tags": ["selected_paths", "$subscript_13"]}
+{"line": 90, "relation_tag": "list_literal", "owner_tag": "$list_6", "member_tags": ["List"]}
+{"line": 90, "relation_tag": "assigns", "owner_tag": "$annassign_0", "member_tags": ["$list_6"]}
+{"line": 91, "relation_tag": "attr_value", "owner_tag": "itertools.product", "member_tags": ["itertools"]}
+{"line": 91, "relation_tag": "attr_name", "owner_tag": "itertools.product", "member_tags": ["product"]}
+{"line": 91, "relation_tag": "calls", "owner_tag": "$call_37", "member_tags": ["itertools.product"]}
+{"line": 91, "relation_tag": "call_pos_arg", "owner_tag": "$call_37", "member_tags": ["*all_indices"]}
+{"line": 91, "relation_tag": "for_target", "owner_tag": "$for_3", "member_tags": ["combo"]}
+{"line": 91, "relation_tag": "for_iter", "owner_tag": "$for_3", "member_tags": ["$call_37"]}
+{"line": 92, "relation_tag": "attr_value", "owner_tag": "selected_paths.append", "member_tags": ["selected_paths"]}
+{"line": 92, "relation_tag": "attr_name", "owner_tag": "selected_paths.append", "member_tags": ["append"]}
+{"line": 92, "relation_tag": "calls", "owner_tag": "$call_38", "member_tags": ["selected_paths.append"]}
+{"line": 92, "relation_tag": "calls", "owner_tag": "$call_39", "member_tags": ["_get_storage_path"]}
+{"line": 92, "relation_tag": "call_pos_arg", "owner_tag": "$call_39", "member_tags": ["input", "$call_40"]}
+{"line": 92, "relation_tag": "calls", "owner_tag": "$call_40", "member_tags": ["list"]}
+{"line": 92, "relation_tag": "call_pos_arg", "owner_tag": "$call_40", "member_tags": ["combo"]}
+{"line": 92, "relation_tag": "call_pos_arg", "owner_tag": "$call_38", "member_tags": ["$call_39"]}
+{"line": 92, "relation_tag": "expr_stmt", "owner_tag": "$expr_7", "member_tags": ["$call_38"]}
+{"line": 91, "relation_tag": "for_body", "owner_tag": "$for_3", "member_tags": ["$expr_7"]}
+{"line": 93, "relation_tag": "for_target", "owner_tag": "$for_4", "member_tags": ["p"]}
+{"line": 93, "relation_tag": "for_iter", "owner_tag": "$for_4", "member_tags": ["selected_paths"]}
+{"line": 94, "relation_tag": "attr_value", "owner_tag": "p.parent", "member_tags": ["p", "p"]}
+{"line": 94, "relation_tag": "attr_name", "owner_tag": "p.parent", "member_tags": ["parent", "parent"]}
+{"line": 94, "relation_tag": "attr_value", "owner_tag": "p.parent.exists", "member_tags": ["p.parent"]}
+{"line": 94, "relation_tag": "attr_name", "owner_tag": "p.parent.exists", "member_tags": ["exists"]}
+{"line": 94, "relation_tag": "calls", "owner_tag": "$call_41", "member_tags": ["p.parent.exists"]}
+{"line": 94, "relation_tag": "unary_op", "owner_tag": "$unaryop_2", "member_tags": ["not"]}
+{"line": 94, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_2", "member_tags": ["$call_41"]}
+{"line": 94, "relation_tag": "if_test", "owner_tag": "$if_8", "member_tags": ["$unaryop_2"]}
+{"line": 95, "relation_tag": "attr_value", "owner_tag": "p.parent.mkdir", "member_tags": ["p.parent"]}
+{"line": 95, "relation_tag": "attr_name", "owner_tag": "p.parent.mkdir", "member_tags": ["mkdir"]}
+{"line": 95, "relation_tag": "calls", "owner_tag": "$call_42", "member_tags": ["p.parent.mkdir"]}
+{"line": 95, "relation_tag": "keyword_arg", "owner_tag": "$call_42", "member_tags": ["parents", "True", "exist_ok", "True"]}
+{"line": 95, "relation_tag": "expr_stmt", "owner_tag": "$expr_8", "member_tags": ["$call_42"]}
+{"line": 94, "relation_tag": "if_body", "owner_tag": "$if_8", "member_tags": ["$expr_8"]}
+{"line": 93, "relation_tag": "for_body", "owner_tag": "$for_4", "member_tags": ["$if_8"]}
+{"line": 96, "relation_tag": "if_test", "owner_tag": "$if_9", "member_tags": ["output_shape"]}
+{"line": 97, "relation_tag": "calls", "owner_tag": "$call_43", "member_tags": ["_build_nested"]}
+{"line": 97, "relation_tag": "call_pos_arg", "owner_tag": "$call_43", "member_tags": ["selected_paths", "output_shape"]}
+{"line": 97, "relation_tag": "assigns", "owner_tag": "$assign_16", "member_tags": ["nested_paths", "$call_43"]}
+{"line": 96, "relation_tag": "if_body", "owner_tag": "$if_9", "member_tags": ["$assign_16"]}
+{"line": 99, "relation_tag": "subscript_value", "owner_tag": "$subscript_14", "member_tags": ["selected_paths"]}
+{"line": 99, "relation_tag": "subscript", "owner_tag": "$subscript_14", "member_tags": ["0"]}
+{"line": 99, "relation_tag": "assigns", "owner_tag": "$assign_17", "member_tags": ["nested_paths", "$subscript_14"]}
+{"line": 96, "relation_tag": "else_body", "owner_tag": "$if_9", "member_tags": ["$assign_17"]}
+{"line": 100, "relation_tag": "calls", "owner_tag": "$call_44", "member_tags": ["make_tensor"]}
+{"line": 100, "relation_tag": "call_pos_arg", "owner_tag": "$call_44", "member_tags": ["nested_paths", "input.st_relative_to"]}
+{"line": 100, "relation_tag": "keyword_arg", "owner_tag": "$call_44", "member_tags": ["symlink", "True"]}
+{"line": 100, "relation_tag": "assigns", "owner_tag": "$assign_18", "member_tags": ["ret", "$call_44"]}
+{"line": 101, "relation_tag": "calls", "owner_tag": "$call_45", "member_tags": ["sum"]}
+{"line": 101, "relation_tag": "tuple_literal", "owner_tag": "$comp_2", "member_tags": ["GeneratorExp"]}
+{"line": 101, "relation_tag": "comprehension_body", "owner_tag": "$comp_2", "member_tags": ["1"]}
+{"line": 101, "relation_tag": "tuple_literal", "owner_tag": "$tuple_11", "member_tags": ["Tuple"]}
+{"line": 101, "relation_tag": "collection_element", "owner_tag": "$tuple_11", "member_tags": ["_", "collapses"]}
+{"line": 101, "relation_tag": "comprehension_target", "owner_tag": "$comp_2", "member_tags": ["$tuple_11"]}
+{"line": 101, "relation_tag": "comprehension_iter", "owner_tag": "$comp_2", "member_tags": ["per_dim"]}
+{"line": 101, "relation_tag": "comprehension_if", "owner_tag": "$comp_2", "member_tags": ["collapses"]}
+{"line": 101, "relation_tag": "call_pos_arg", "owner_tag": "$call_45", "member_tags": ["$comp_2"]}
+{"line": 101, "relation_tag": "assigns", "owner_tag": "$assign_19", "member_tags": ["count_collapsed", "$call_45"]}
+{"line": 102, "relation_tag": "calls", "owner_tag": "$call_46", "member_tags": ["len"]}
+{"line": 102, "relation_tag": "calls", "owner_tag": "$call_47", "member_tags": ["input.size"]}
+{"line": 102, "relation_tag": "call_pos_arg", "owner_tag": "$call_46", "member_tags": ["$call_47"]}
+{"line": 102, "relation_tag": "bin_op", "owner_tag": "$binop_3", "member_tags": ["-"]}
+{"line": 102, "relation_tag": "bin_op_left", "owner_tag": "$binop_3", "member_tags": ["$call_46"]}
+{"line": 102, "relation_tag": "bin_op_right", "owner_tag": "$binop_3", "member_tags": ["count_collapsed"]}
+{"line": 102, "relation_tag": "assigns", "owner_tag": "$assign_20", "member_tags": ["expected_ndim", "$binop_3"]}
+{"line": 103, "relation_tag": "calls", "owner_tag": "$call_48", "member_tags": ["len"]}
+{"line": 103, "relation_tag": "attr_value", "owner_tag": "ret.size", "member_tags": ["ret", "ret"]}
+{"line": 103, "relation_tag": "attr_name", "owner_tag": "ret.size", "member_tags": ["size", "size"]}
+{"line": 103, "relation_tag": "calls", "owner_tag": "$call_49", "member_tags": ["ret.size"]}
+{"line": 103, "relation_tag": "call_pos_arg", "owner_tag": "$call_48", "member_tags": ["$call_49"]}
+{"line": 103, "relation_tag": "compare_left", "owner_tag": "$compare_4", "member_tags": ["$call_48"]}
+{"line": 103, "relation_tag": "compare_op", "owner_tag": "$compare_4", "member_tags": ["=="]}
+{"line": 103, "relation_tag": "compare_right", "owner_tag": "$compare_4", "member_tags": ["expected_ndim"]}
+{"line": 103, "relation_tag": "assert_test", "owner_tag": "$assert_1", "member_tags": ["$compare_4"]}
+{"line": 104, "relation_tag": "fstring_elem", "owner_tag": "$fstring_2", "member_tags": ["lit:Expected output ndim ", "val:expected_ndim", "lit:, got ", "val:$call_50"]}
+{"line": 104, "relation_tag": "calls", "owner_tag": "$call_50", "member_tags": ["len"]}
+{"line": 104, "relation_tag": "calls", "owner_tag": "$call_51", "member_tags": ["ret.size"]}
+{"line": 104, "relation_tag": "call_pos_arg", "owner_tag": "$call_50", "member_tags": ["$call_51"]}
+{"line": 103, "relation_tag": "assert_msg", "owner_tag": "$assert_1", "member_tags": ["$fstring_2"]}
+{"line": 106, "relation_tag": "returns", "owner_tag": "$return_9", "member_tags": ["ret"]}
+{"line": 107, "relation_tag": "compare_left", "owner_tag": "$compare_5", "member_tags": ["__name__"]}
+{"line": 107, "relation_tag": "compare_op", "owner_tag": "$compare_5", "member_tags": ["=="]}
+{"line": 107, "relation_tag": "compare_right", "owner_tag": "$compare_5", "member_tags": ["'__main__'"]}
+{"line": 107, "relation_tag": "if_test", "owner_tag": "$if_10", "member_tags": ["$compare_5"]}
+{"line": 108, "relation_tag": "imports", "owner_tag": "$import_3", "member_tags": ["tempfile"]}
+{"line": 107, "relation_tag": "if_body", "owner_tag": "$if_10", "member_tags": ["$import_3", "$importfrom_3", "$expr_9", "$functiondef_4", "$expr_14", "$with_0", "$expr_19", "$with_3", "$expr_25", "$with_8", "$expr_29", "$with_11", "$expr_33", "$with_14", "$expr_37", "$with_17", "$expr_44", "$with_19", "$expr_48", "$with_20", "$expr_50", "$with_21", "$expr_53", "$with_22", "$expr_61"]}
+{"line": 109, "relation_tag": "imports", "owner_tag": "$importfrom_3", "member_tags": ["experience.symbolic_tensor.tensor_util.make_tensor", "make_tensor"]}
+{"line": 109, "relation_tag": "aliases", "owner_tag": "$importfrom_3", "member_tags": ["mt"]}
+{"line": 110, "relation_tag": "calls", "owner_tag": "$call_52", "member_tags": ["print"]}
+{"line": 110, "relation_tag": "call_pos_arg", "owner_tag": "$call_52", "member_tags": ["'Running tests for slice_view...\\n'"]}
+{"line": 110, "relation_tag": "expr_stmt", "owner_tag": "$expr_9", "member_tags": ["$call_52"]}
+{"line": 111, "relation_tag": "defines", "owner_tag": "$functiondef_4", "member_tags": ["run_test"]}
+{"line": 111, "relation_tag": "param", "owner_tag": "$functiondef_4", "member_tags": ["name", "condition", "expected", "actual"]}
+{"line": 111, "relation_tag": "param_annotation", "owner_tag": "$functiondef_4", "member_tags": ["name", "str", "condition", "bool"]}
+{"line": 111, "relation_tag": "param_default", "owner_tag": "$functiondef_4", "member_tags": ["expected", "None", "actual", "None"]}
+{"line": 112, "relation_tag": "if_test", "owner_tag": "$if_11", "member_tags": ["condition"]}
+{"line": 113, "relation_tag": "calls", "owner_tag": "$call_53", "member_tags": ["print"]}
+{"line": 113, "relation_tag": "fstring_elem", "owner_tag": "$fstring_3", "member_tags": ["lit:  ✓ ", "val:name"]}
+{"line": 113, "relation_tag": "call_pos_arg", "owner_tag": "$call_53", "member_tags": ["$fstring_3"]}
+{"line": 113, "relation_tag": "expr_stmt", "owner_tag": "$expr_10", "member_tags": ["$call_53"]}
+{"line": 112, "relation_tag": "if_body", "owner_tag": "$if_11", "member_tags": ["$expr_10"]}
+{"line": 115, "relation_tag": "calls", "owner_tag": "$call_54", "member_tags": ["print"]}
+{"line": 115, "relation_tag": "fstring_elem", "owner_tag": "$fstring_4", "member_tags": ["lit:  ✗ ", "val:name"]}
+{"line": 115, "relation_tag": "call_pos_arg", "owner_tag": "$call_54", "member_tags": ["$fstring_4"]}
+{"line": 115, "relation_tag": "expr_stmt", "owner_tag": "$expr_11", "member_tags": ["$call_54"]}
+{"line": 112, "relation_tag": "else_body", "owner_tag": "$if_11", "member_tags": ["$expr_11", "$if_12"]}
+{"line": 116, "relation_tag": "bool_op", "owner_tag": "$boolop_0", "member_tags": ["and"]}
+{"line": 116, "relation_tag": "compare_left", "owner_tag": "$compare_6", "member_tags": ["expected"]}
+{"line": 116, "relation_tag": "compare_op", "owner_tag": "$compare_6", "member_tags": ["is_not"]}
+{"line": 116, "relation_tag": "compare_right", "owner_tag": "$compare_6", "member_tags": ["None"]}
+{"line": 116, "relation_tag": "bool_op_operand", "owner_tag": "$boolop_0", "member_tags": ["$compare_6", "$compare_7"]}
+{"line": 116, "relation_tag": "compare_left", "owner_tag": "$compare_7", "member_tags": ["actual"]}
+{"line": 116, "relation_tag": "compare_op", "owner_tag": "$compare_7", "member_tags": ["is_not"]}
+{"line": 116, "relation_tag": "compare_right", "owner_tag": "$compare_7", "member_tags": ["None"]}
+{"line": 116, "relation_tag": "if_test", "owner_tag": "$if_12", "member_tags": ["$boolop_0"]}
+{"line": 117, "relation_tag": "calls", "owner_tag": "$call_55", "member_tags": ["print"]}
+{"line": 117, "relation_tag": "fstring_elem", "owner_tag": "$fstring_5", "member_tags": ["lit:    expected: ", "val:expected"]}
+{"line": 117, "relation_tag": "call_pos_arg", "owner_tag": "$call_55", "member_tags": ["$fstring_5"]}
+{"line": 117, "relation_tag": "expr_stmt", "owner_tag": "$expr_12", "member_tags": ["$call_55"]}
+{"line": 116, "relation_tag": "if_body", "owner_tag": "$if_12", "member_tags": ["$expr_12", "$expr_13"]}
+{"line": 118, "relation_tag": "calls", "owner_tag": "$call_56", "member_tags": ["print"]}
+{"line": 118, "relation_tag": "fstring_elem", "owner_tag": "$fstring_6", "member_tags": ["lit:    actual:   ", "val:actual"]}
+{"line": 118, "relation_tag": "call_pos_arg", "owner_tag": "$call_56", "member_tags": ["$fstring_6"]}
+{"line": 118, "relation_tag": "expr_stmt", "owner_tag": "$expr_13", "member_tags": ["$call_56"]}
+{"line": 111, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_4", "member_tags": ["0:$if_11"]}
+{"line": 111, "relation_tag": "contains", "owner_tag": "$functiondef_4", "member_tags": ["$if_11"]}
+{"line": 119, "relation_tag": "calls", "owner_tag": "$call_57", "member_tags": ["print"]}
+{"line": 119, "relation_tag": "call_pos_arg", "owner_tag": "$call_57", "member_tags": ["'Test 1: 1D Tensor indexing'"]}
+{"line": 119, "relation_tag": "expr_stmt", "owner_tag": "$expr_14", "member_tags": ["$call_57"]}
+{"line": 120, "relation_tag": "attr_value", "owner_tag": "tempfile.TemporaryDirectory", "member_tags": ["tempfile", "tempfile", "tempfile", "tempfile", "tempfile", "tempfile", "tempfile", "tempfile", "tempfile", "tempfile"]}
+{"line": 120, "relation_tag": "attr_name", "owner_tag": "tempfile.TemporaryDirectory", "member_tags": ["TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory", "TemporaryDirectory"]}
+{"line": 120, "relation_tag": "calls", "owner_tag": "$call_58", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 120, "relation_tag": "with_context", "owner_tag": "$with_0", "member_tags": ["$call_58"]}
+{"line": 120, "relation_tag": "with_as", "owner_tag": "$call_58", "member_tags": ["tmpdir"]}
+{"line": 121, "relation_tag": "list_literal", "owner_tag": "$list_7", "member_tags": ["List"]}
+{"line": 121, "relation_tag": "collection_element", "owner_tag": "$list_7", "member_tags": ["'a'", "'b'", "'c'", "'d'"]}
+{"line": 121, "relation_tag": "assigns", "owner_tag": "$assign_21", "member_tags": ["data", "$list_7"]}
+{"line": 120, "relation_tag": "with_body", "owner_tag": "$with_0", "member_tags": ["$assign_21", "$assign_22", "$assign_23", "$assign_24", "$expr_15", "$assign_25", "$with_1", "$with_2", "$expr_18"]}
+{"line": 122, "relation_tag": "calls", "owner_tag": "$call_59", "member_tags": ["mt"]}
+{"line": 122, "relation_tag": "call_pos_arg", "owner_tag": "$call_59", "member_tags": ["data", "tmpdir"]}
+{"line": 122, "relation_tag": "assigns", "owner_tag": "$assign_22", "member_tags": ["t", "$call_59"]}
+{"line": 123, "relation_tag": "list_literal", "owner_tag": "$list_8", "member_tags": ["List"]}
+{"line": 123, "relation_tag": "attr_value", "owner_tag": "torch.tensor", "member_tags": ["torch", "torch", "torch", "torch", "torch", "torch", "torch", "torch"]}
+{"line": 123, "relation_tag": "attr_name", "owner_tag": "torch.tensor", "member_tags": ["tensor", "tensor", "tensor", "tensor", "tensor", "tensor", "tensor", "tensor"]}
+{"line": 123, "relation_tag": "calls", "owner_tag": "$call_60", "member_tags": ["torch.tensor"]}
+{"line": 123, "relation_tag": "list_literal", "owner_tag": "$list_9", "member_tags": ["List"]}
+{"line": 123, "relation_tag": "collection_element", "owner_tag": "$list_9", "member_tags": ["0", "2"]}
+{"line": 123, "relation_tag": "call_pos_arg", "owner_tag": "$call_60", "member_tags": ["$list_9"]}
+{"line": 123, "relation_tag": "attr_value", "owner_tag": "torch.long", "member_tags": ["torch", "torch", "torch", "torch"]}
+{"line": 123, "relation_tag": "attr_name", "owner_tag": "torch.long", "member_tags": ["long", "long", "long", "long"]}
+{"line": 123, "relation_tag": "keyword_arg", "owner_tag": "$call_60", "member_tags": ["dtype", "torch.long"]}
+{"line": 123, "relation_tag": "collection_element", "owner_tag": "$list_8", "member_tags": ["$call_60"]}
+{"line": 123, "relation_tag": "assigns", "owner_tag": "$assign_23", "member_tags": ["idx", "$list_8"]}
+{"line": 124, "relation_tag": "calls", "owner_tag": "$call_61", "member_tags": ["slice_view"]}
+{"line": 124, "relation_tag": "call_pos_arg", "owner_tag": "$call_61", "member_tags": ["t", "idx"]}
+{"line": 124, "relation_tag": "assigns", "owner_tag": "$assign_24", "member_tags": ["result", "$call_61"]}
+{"line": 125, "relation_tag": "calls", "owner_tag": "$call_62", "member_tags": ["run_test"]}
+{"line": 125, "relation_tag": "call_pos_arg", "owner_tag": "$call_62", "member_tags": ["'Shape is [2]'", "$compare_8"]}
+{"line": 125, "relation_tag": "calls", "owner_tag": "$call_63", "member_tags": ["list"]}
+{"line": 125, "relation_tag": "attr_value", "owner_tag": "result.shape", "member_tags": ["result", "result", "result", "result", "result", "result", "result", "result"]}
+{"line": 125, "relation_tag": "attr_name", "owner_tag": "result.shape", "member_tags": ["shape", "shape", "shape", "shape", "shape", "shape", "shape", "shape"]}
+{"line": 125, "relation_tag": "call_pos_arg", "owner_tag": "$call_63", "member_tags": ["result.shape"]}
+{"line": 125, "relation_tag": "compare_left", "owner_tag": "$compare_8", "member_tags": ["$call_63"]}
+{"line": 125, "relation_tag": "list_literal", "owner_tag": "$list_10", "member_tags": ["List"]}
+{"line": 125, "relation_tag": "collection_element", "owner_tag": "$list_10", "member_tags": ["2"]}
+{"line": 125, "relation_tag": "compare_op", "owner_tag": "$compare_8", "member_tags": ["=="]}
+{"line": 125, "relation_tag": "compare_right", "owner_tag": "$compare_8", "member_tags": ["$list_10"]}
+{"line": 125, "relation_tag": "expr_stmt", "owner_tag": "$expr_15", "member_tags": ["$call_62"]}
+{"line": 126, "relation_tag": "calls", "owner_tag": "$call_64", "member_tags": ["os.path.join"]}
+{"line": 126, "relation_tag": "call_pos_arg", "owner_tag": "$call_64", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'"]}
+{"line": 126, "relation_tag": "attr_value", "owner_tag": "result.st_tensor_uid", "member_tags": ["result", "result", "result", "result", "result", "result", "result"]}
+{"line": 126, "relation_tag": "attr_name", "owner_tag": "result.st_tensor_uid", "member_tags": ["st_tensor_uid", "st_tensor_uid", "st_tensor_uid", "st_tensor_uid", "st_tensor_uid", "st_tensor_uid", "st_tensor_uid"]}
+{"line": 126, "relation_tag": "assigns", "owner_tag": "$assign_25", "member_tags": ["root", "$call_64"]}
+{"line": 127, "relation_tag": "calls", "owner_tag": "$call_65", "member_tags": ["open"]}
+{"line": 127, "relation_tag": "calls", "owner_tag": "$call_66", "member_tags": ["os.path.join"]}
+{"line": 127, "relation_tag": "call_pos_arg", "owner_tag": "$call_66", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 127, "relation_tag": "call_pos_arg", "owner_tag": "$call_65", "member_tags": ["$call_66"]}
+{"line": 127, "relation_tag": "with_context", "owner_tag": "$with_1", "member_tags": ["$call_65"]}
+{"line": 127, "relation_tag": "with_as", "owner_tag": "$call_65", "member_tags": ["f"]}
+{"line": 128, "relation_tag": "calls", "owner_tag": "$call_67", "member_tags": ["run_test"]}
+{"line": 128, "relation_tag": "call_pos_arg", "owner_tag": "$call_67", "member_tags": ["\"Element 0 -> 'a'\"", "$compare_9"]}
+{"line": 128, "relation_tag": "attr_value", "owner_tag": "f.read", "member_tags": ["f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"]}
+{"line": 128, "relation_tag": "attr_name", "owner_tag": "f.read", "member_tags": ["read", "read", "read", "read", "read", "read", "read", "read", "read", "read", "read", "read", "read", "read", "read"]}
+{"line": 128, "relation_tag": "calls", "owner_tag": "$call_68", "member_tags": ["f.read"]}
+{"line": 128, "relation_tag": "compare_left", "owner_tag": "$compare_9", "member_tags": ["$call_68"]}
+{"line": 128, "relation_tag": "compare_op", "owner_tag": "$compare_9", "member_tags": ["=="]}
+{"line": 128, "relation_tag": "compare_right", "owner_tag": "$compare_9", "member_tags": ["'a'"]}
+{"line": 128, "relation_tag": "expr_stmt", "owner_tag": "$expr_16", "member_tags": ["$call_67"]}
+{"line": 127, "relation_tag": "with_body", "owner_tag": "$with_1", "member_tags": ["$expr_16"]}
+{"line": 129, "relation_tag": "calls", "owner_tag": "$call_69", "member_tags": ["open"]}
+{"line": 129, "relation_tag": "calls", "owner_tag": "$call_70", "member_tags": ["os.path.join"]}
+{"line": 129, "relation_tag": "call_pos_arg", "owner_tag": "$call_70", "member_tags": ["root", "'1'", "'data'"]}
+{"line": 129, "relation_tag": "call_pos_arg", "owner_tag": "$call_69", "member_tags": ["$call_70"]}
+{"line": 129, "relation_tag": "with_context", "owner_tag": "$with_2", "member_tags": ["$call_69"]}
+{"line": 129, "relation_tag": "with_as", "owner_tag": "$call_69", "member_tags": ["f"]}
+{"line": 130, "relation_tag": "calls", "owner_tag": "$call_71", "member_tags": ["run_test"]}
+{"line": 130, "relation_tag": "call_pos_arg", "owner_tag": "$call_71", "member_tags": ["\"Element 1 -> 'c'\"", "$compare_10"]}
+{"line": 130, "relation_tag": "calls", "owner_tag": "$call_72", "member_tags": ["f.read"]}
+{"line": 130, "relation_tag": "compare_left", "owner_tag": "$compare_10", "member_tags": ["$call_72"]}
+{"line": 130, "relation_tag": "compare_op", "owner_tag": "$compare_10", "member_tags": ["=="]}
+{"line": 130, "relation_tag": "compare_right", "owner_tag": "$compare_10", "member_tags": ["'c'"]}
+{"line": 130, "relation_tag": "expr_stmt", "owner_tag": "$expr_17", "member_tags": ["$call_71"]}
+{"line": 129, "relation_tag": "with_body", "owner_tag": "$with_2", "member_tags": ["$expr_17"]}
+{"line": 131, "relation_tag": "calls", "owner_tag": "$call_73", "member_tags": ["run_test"]}
+{"line": 131, "relation_tag": "call_pos_arg", "owner_tag": "$call_73", "member_tags": ["'Is symlink'", "$call_74"]}
+{"line": 131, "relation_tag": "attr_value", "owner_tag": "os.path.islink", "member_tags": ["os.path", "os.path", "os.path"]}
+{"line": 131, "relation_tag": "attr_name", "owner_tag": "os.path.islink", "member_tags": ["islink", "islink", "islink"]}
+{"line": 131, "relation_tag": "calls", "owner_tag": "$call_74", "member_tags": ["os.path.islink"]}
+{"line": 131, "relation_tag": "calls", "owner_tag": "$call_75", "member_tags": ["os.path.join"]}
+{"line": 131, "relation_tag": "call_pos_arg", "owner_tag": "$call_75", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 131, "relation_tag": "call_pos_arg", "owner_tag": "$call_74", "member_tags": ["$call_75"]}
+{"line": 131, "relation_tag": "expr_stmt", "owner_tag": "$expr_18", "member_tags": ["$call_73"]}
+{"line": 132, "relation_tag": "calls", "owner_tag": "$call_76", "member_tags": ["print"]}
+{"line": 132, "relation_tag": "call_pos_arg", "owner_tag": "$call_76", "member_tags": ["'Test 2: 2D Tensor indexing'"]}
+{"line": 132, "relation_tag": "expr_stmt", "owner_tag": "$expr_19", "member_tags": ["$call_76"]}
+{"line": 133, "relation_tag": "calls", "owner_tag": "$call_77", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 133, "relation_tag": "with_context", "owner_tag": "$with_3", "member_tags": ["$call_77"]}
+{"line": 133, "relation_tag": "with_as", "owner_tag": "$call_77", "member_tags": ["tmpdir"]}
+{"line": 134, "relation_tag": "list_literal", "owner_tag": "$list_11", "member_tags": ["List"]}
+{"line": 134, "relation_tag": "list_literal", "owner_tag": "$list_12", "member_tags": ["List"]}
+{"line": 134, "relation_tag": "collection_element", "owner_tag": "$list_12", "member_tags": ["'a'", "'b'", "'c'"]}
+{"line": 134, "relation_tag": "collection_element", "owner_tag": "$list_11", "member_tags": ["$list_12", "$list_13"]}
+{"line": 134, "relation_tag": "list_literal", "owner_tag": "$list_13", "member_tags": ["List"]}
+{"line": 134, "relation_tag": "collection_element", "owner_tag": "$list_13", "member_tags": ["'d'", "'e'", "'f'"]}
+{"line": 134, "relation_tag": "assigns", "owner_tag": "$assign_26", "member_tags": ["data", "$list_11"]}
+{"line": 133, "relation_tag": "with_body", "owner_tag": "$with_3", "member_tags": ["$assign_26", "$assign_27", "$assign_28", "$assign_29", "$expr_20", "$assign_30", "$with_4", "$with_5", "$with_6", "$with_7"]}
+{"line": 135, "relation_tag": "calls", "owner_tag": "$call_78", "member_tags": ["mt"]}
+{"line": 135, "relation_tag": "call_pos_arg", "owner_tag": "$call_78", "member_tags": ["data", "tmpdir"]}
+{"line": 135, "relation_tag": "assigns", "owner_tag": "$assign_27", "member_tags": ["t", "$call_78"]}
+{"line": 136, "relation_tag": "list_literal", "owner_tag": "$list_14", "member_tags": ["List"]}
+{"line": 136, "relation_tag": "calls", "owner_tag": "$call_79", "member_tags": ["torch.tensor"]}
+{"line": 136, "relation_tag": "list_literal", "owner_tag": "$list_15", "member_tags": ["List"]}
+{"line": 136, "relation_tag": "collection_element", "owner_tag": "$list_15", "member_tags": ["0", "1"]}
+{"line": 136, "relation_tag": "call_pos_arg", "owner_tag": "$call_79", "member_tags": ["$list_15"]}
+{"line": 136, "relation_tag": "keyword_arg", "owner_tag": "$call_79", "member_tags": ["dtype", "torch.long"]}
+{"line": 136, "relation_tag": "collection_element", "owner_tag": "$list_14", "member_tags": ["$call_79", "$call_80"]}
+{"line": 137, "relation_tag": "calls", "owner_tag": "$call_80", "member_tags": ["torch.tensor"]}
+{"line": 137, "relation_tag": "list_literal", "owner_tag": "$list_16", "member_tags": ["List"]}
+{"line": 137, "relation_tag": "collection_element", "owner_tag": "$list_16", "member_tags": ["1", "2"]}
+{"line": 137, "relation_tag": "call_pos_arg", "owner_tag": "$call_80", "member_tags": ["$list_16"]}
+{"line": 137, "relation_tag": "keyword_arg", "owner_tag": "$call_80", "member_tags": ["dtype", "torch.long"]}
+{"line": 136, "relation_tag": "assigns", "owner_tag": "$assign_28", "member_tags": ["idx", "$list_14"]}
+{"line": 138, "relation_tag": "calls", "owner_tag": "$call_81", "member_tags": ["slice_view"]}
+{"line": 138, "relation_tag": "call_pos_arg", "owner_tag": "$call_81", "member_tags": ["t", "idx"]}
+{"line": 138, "relation_tag": "assigns", "owner_tag": "$assign_29", "member_tags": ["result", "$call_81"]}
+{"line": 139, "relation_tag": "calls", "owner_tag": "$call_82", "member_tags": ["run_test"]}
+{"line": 139, "relation_tag": "call_pos_arg", "owner_tag": "$call_82", "member_tags": ["'Shape is [2, 2]'", "$compare_11"]}
+{"line": 139, "relation_tag": "calls", "owner_tag": "$call_83", "member_tags": ["list"]}
+{"line": 139, "relation_tag": "call_pos_arg", "owner_tag": "$call_83", "member_tags": ["result.shape"]}
+{"line": 139, "relation_tag": "compare_left", "owner_tag": "$compare_11", "member_tags": ["$call_83"]}
+{"line": 139, "relation_tag": "list_literal", "owner_tag": "$list_17", "member_tags": ["List"]}
+{"line": 139, "relation_tag": "collection_element", "owner_tag": "$list_17", "member_tags": ["2", "2"]}
+{"line": 139, "relation_tag": "compare_op", "owner_tag": "$compare_11", "member_tags": ["=="]}
+{"line": 139, "relation_tag": "compare_right", "owner_tag": "$compare_11", "member_tags": ["$list_17"]}
+{"line": 139, "relation_tag": "expr_stmt", "owner_tag": "$expr_20", "member_tags": ["$call_82"]}
+{"line": 140, "relation_tag": "calls", "owner_tag": "$call_84", "member_tags": ["os.path.join"]}
+{"line": 140, "relation_tag": "call_pos_arg", "owner_tag": "$call_84", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'"]}
+{"line": 140, "relation_tag": "assigns", "owner_tag": "$assign_30", "member_tags": ["root", "$call_84"]}
+{"line": 141, "relation_tag": "calls", "owner_tag": "$call_85", "member_tags": ["open"]}
+{"line": 141, "relation_tag": "calls", "owner_tag": "$call_86", "member_tags": ["os.path.join"]}
+{"line": 141, "relation_tag": "call_pos_arg", "owner_tag": "$call_86", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 141, "relation_tag": "call_pos_arg", "owner_tag": "$call_85", "member_tags": ["$call_86"]}
+{"line": 141, "relation_tag": "with_context", "owner_tag": "$with_4", "member_tags": ["$call_85"]}
+{"line": 141, "relation_tag": "with_as", "owner_tag": "$call_85", "member_tags": ["f"]}
+{"line": 142, "relation_tag": "calls", "owner_tag": "$call_87", "member_tags": ["run_test"]}
+{"line": 142, "relation_tag": "call_pos_arg", "owner_tag": "$call_87", "member_tags": ["\"(0,1) -> 'b'\"", "$compare_12"]}
+{"line": 142, "relation_tag": "calls", "owner_tag": "$call_88", "member_tags": ["f.read"]}
+{"line": 142, "relation_tag": "compare_left", "owner_tag": "$compare_12", "member_tags": ["$call_88"]}
+{"line": 142, "relation_tag": "compare_op", "owner_tag": "$compare_12", "member_tags": ["=="]}
+{"line": 142, "relation_tag": "compare_right", "owner_tag": "$compare_12", "member_tags": ["'b'"]}
+{"line": 142, "relation_tag": "expr_stmt", "owner_tag": "$expr_21", "member_tags": ["$call_87"]}
+{"line": 141, "relation_tag": "with_body", "owner_tag": "$with_4", "member_tags": ["$expr_21"]}
+{"line": 143, "relation_tag": "calls", "owner_tag": "$call_89", "member_tags": ["open"]}
+{"line": 143, "relation_tag": "calls", "owner_tag": "$call_90", "member_tags": ["os.path.join"]}
+{"line": 143, "relation_tag": "call_pos_arg", "owner_tag": "$call_90", "member_tags": ["root", "'1'", "'data'"]}
+{"line": 143, "relation_tag": "call_pos_arg", "owner_tag": "$call_89", "member_tags": ["$call_90"]}
+{"line": 143, "relation_tag": "with_context", "owner_tag": "$with_5", "member_tags": ["$call_89"]}
+{"line": 143, "relation_tag": "with_as", "owner_tag": "$call_89", "member_tags": ["f"]}
+{"line": 144, "relation_tag": "calls", "owner_tag": "$call_91", "member_tags": ["run_test"]}
+{"line": 144, "relation_tag": "call_pos_arg", "owner_tag": "$call_91", "member_tags": ["\"(0,2) -> 'c'\"", "$compare_13"]}
+{"line": 144, "relation_tag": "calls", "owner_tag": "$call_92", "member_tags": ["f.read"]}
+{"line": 144, "relation_tag": "compare_left", "owner_tag": "$compare_13", "member_tags": ["$call_92"]}
+{"line": 144, "relation_tag": "compare_op", "owner_tag": "$compare_13", "member_tags": ["=="]}
+{"line": 144, "relation_tag": "compare_right", "owner_tag": "$compare_13", "member_tags": ["'c'"]}
+{"line": 144, "relation_tag": "expr_stmt", "owner_tag": "$expr_22", "member_tags": ["$call_91"]}
+{"line": 143, "relation_tag": "with_body", "owner_tag": "$with_5", "member_tags": ["$expr_22"]}
+{"line": 145, "relation_tag": "calls", "owner_tag": "$call_93", "member_tags": ["open"]}
+{"line": 145, "relation_tag": "calls", "owner_tag": "$call_94", "member_tags": ["os.path.join"]}
+{"line": 145, "relation_tag": "call_pos_arg", "owner_tag": "$call_94", "member_tags": ["root", "'2'", "'data'"]}
+{"line": 145, "relation_tag": "call_pos_arg", "owner_tag": "$call_93", "member_tags": ["$call_94"]}
+{"line": 145, "relation_tag": "with_context", "owner_tag": "$with_6", "member_tags": ["$call_93"]}
+{"line": 145, "relation_tag": "with_as", "owner_tag": "$call_93", "member_tags": ["f"]}
+{"line": 146, "relation_tag": "calls", "owner_tag": "$call_95", "member_tags": ["run_test"]}
+{"line": 146, "relation_tag": "call_pos_arg", "owner_tag": "$call_95", "member_tags": ["\"(1,1) -> 'e'\"", "$compare_14"]}
+{"line": 146, "relation_tag": "calls", "owner_tag": "$call_96", "member_tags": ["f.read"]}
+{"line": 146, "relation_tag": "compare_left", "owner_tag": "$compare_14", "member_tags": ["$call_96"]}
+{"line": 146, "relation_tag": "compare_op", "owner_tag": "$compare_14", "member_tags": ["=="]}
+{"line": 146, "relation_tag": "compare_right", "owner_tag": "$compare_14", "member_tags": ["'e'"]}
+{"line": 146, "relation_tag": "expr_stmt", "owner_tag": "$expr_23", "member_tags": ["$call_95"]}
+{"line": 145, "relation_tag": "with_body", "owner_tag": "$with_6", "member_tags": ["$expr_23"]}
+{"line": 147, "relation_tag": "calls", "owner_tag": "$call_97", "member_tags": ["open"]}
+{"line": 147, "relation_tag": "calls", "owner_tag": "$call_98", "member_tags": ["os.path.join"]}
+{"line": 147, "relation_tag": "call_pos_arg", "owner_tag": "$call_98", "member_tags": ["root", "'3'", "'data'"]}
+{"line": 147, "relation_tag": "call_pos_arg", "owner_tag": "$call_97", "member_tags": ["$call_98"]}
+{"line": 147, "relation_tag": "with_context", "owner_tag": "$with_7", "member_tags": ["$call_97"]}
+{"line": 147, "relation_tag": "with_as", "owner_tag": "$call_97", "member_tags": ["f"]}
+{"line": 148, "relation_tag": "calls", "owner_tag": "$call_99", "member_tags": ["run_test"]}
+{"line": 148, "relation_tag": "call_pos_arg", "owner_tag": "$call_99", "member_tags": ["\"(1,2) -> 'f'\"", "$compare_15"]}
+{"line": 148, "relation_tag": "calls", "owner_tag": "$call_100", "member_tags": ["f.read"]}
+{"line": 148, "relation_tag": "compare_left", "owner_tag": "$compare_15", "member_tags": ["$call_100"]}
+{"line": 148, "relation_tag": "compare_op", "owner_tag": "$compare_15", "member_tags": ["=="]}
+{"line": 148, "relation_tag": "compare_right", "owner_tag": "$compare_15", "member_tags": ["'f'"]}
+{"line": 148, "relation_tag": "expr_stmt", "owner_tag": "$expr_24", "member_tags": ["$call_99"]}
+{"line": 147, "relation_tag": "with_body", "owner_tag": "$with_7", "member_tags": ["$expr_24"]}
+{"line": 149, "relation_tag": "calls", "owner_tag": "$call_101", "member_tags": ["print"]}
+{"line": 149, "relation_tag": "call_pos_arg", "owner_tag": "$call_101", "member_tags": ["'Test 3: int indexing collapses dim'"]}
+{"line": 149, "relation_tag": "expr_stmt", "owner_tag": "$expr_25", "member_tags": ["$call_101"]}
+{"line": 150, "relation_tag": "calls", "owner_tag": "$call_102", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 150, "relation_tag": "with_context", "owner_tag": "$with_8", "member_tags": ["$call_102"]}
+{"line": 150, "relation_tag": "with_as", "owner_tag": "$call_102", "member_tags": ["tmpdir"]}
+{"line": 151, "relation_tag": "list_literal", "owner_tag": "$list_18", "member_tags": ["List"]}
+{"line": 151, "relation_tag": "list_literal", "owner_tag": "$list_19", "member_tags": ["List"]}
+{"line": 151, "relation_tag": "collection_element", "owner_tag": "$list_19", "member_tags": ["'a'", "'b'", "'c'"]}
+{"line": 151, "relation_tag": "collection_element", "owner_tag": "$list_18", "member_tags": ["$list_19", "$list_20"]}
+{"line": 151, "relation_tag": "list_literal", "owner_tag": "$list_20", "member_tags": ["List"]}
+{"line": 151, "relation_tag": "collection_element", "owner_tag": "$list_20", "member_tags": ["'d'", "'e'", "'f'"]}
+{"line": 151, "relation_tag": "assigns", "owner_tag": "$assign_31", "member_tags": ["data", "$list_18"]}
+{"line": 150, "relation_tag": "with_body", "owner_tag": "$with_8", "member_tags": ["$assign_31", "$assign_32", "$assign_33", "$expr_26", "$assign_34", "$with_9", "$with_10"]}
+{"line": 152, "relation_tag": "calls", "owner_tag": "$call_103", "member_tags": ["mt"]}
+{"line": 152, "relation_tag": "call_pos_arg", "owner_tag": "$call_103", "member_tags": ["data", "tmpdir"]}
+{"line": 152, "relation_tag": "assigns", "owner_tag": "$assign_32", "member_tags": ["t", "$call_103"]}
+{"line": 153, "relation_tag": "calls", "owner_tag": "$call_104", "member_tags": ["slice_view"]}
+{"line": 153, "relation_tag": "call_pos_arg", "owner_tag": "$call_104", "member_tags": ["t", "$list_21"]}
+{"line": 153, "relation_tag": "list_literal", "owner_tag": "$list_21", "member_tags": ["List"]}
+{"line": 153, "relation_tag": "collection_element", "owner_tag": "$list_21", "member_tags": ["1", "$call_105"]}
+{"line": 153, "relation_tag": "calls", "owner_tag": "$call_105", "member_tags": ["slice"]}
+{"line": 153, "relation_tag": "call_pos_arg", "owner_tag": "$call_105", "member_tags": ["0", "3"]}
+{"line": 153, "relation_tag": "assigns", "owner_tag": "$assign_33", "member_tags": ["result", "$call_104"]}
+{"line": 154, "relation_tag": "calls", "owner_tag": "$call_106", "member_tags": ["run_test"]}
+{"line": 154, "relation_tag": "call_pos_arg", "owner_tag": "$call_106", "member_tags": ["'Shape is [3] (dim 0 collapsed)'", "$compare_16"]}
+{"line": 154, "relation_tag": "calls", "owner_tag": "$call_107", "member_tags": ["list"]}
+{"line": 154, "relation_tag": "call_pos_arg", "owner_tag": "$call_107", "member_tags": ["result.shape"]}
+{"line": 154, "relation_tag": "compare_left", "owner_tag": "$compare_16", "member_tags": ["$call_107"]}
+{"line": 154, "relation_tag": "list_literal", "owner_tag": "$list_22", "member_tags": ["List"]}
+{"line": 154, "relation_tag": "collection_element", "owner_tag": "$list_22", "member_tags": ["3"]}
+{"line": 154, "relation_tag": "compare_op", "owner_tag": "$compare_16", "member_tags": ["=="]}
+{"line": 154, "relation_tag": "compare_right", "owner_tag": "$compare_16", "member_tags": ["$list_22"]}
+{"line": 154, "relation_tag": "expr_stmt", "owner_tag": "$expr_26", "member_tags": ["$call_106"]}
+{"line": 155, "relation_tag": "calls", "owner_tag": "$call_108", "member_tags": ["os.path.join"]}
+{"line": 155, "relation_tag": "call_pos_arg", "owner_tag": "$call_108", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'"]}
+{"line": 155, "relation_tag": "assigns", "owner_tag": "$assign_34", "member_tags": ["root", "$call_108"]}
+{"line": 156, "relation_tag": "calls", "owner_tag": "$call_109", "member_tags": ["open"]}
+{"line": 156, "relation_tag": "calls", "owner_tag": "$call_110", "member_tags": ["os.path.join"]}
+{"line": 156, "relation_tag": "call_pos_arg", "owner_tag": "$call_110", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 156, "relation_tag": "call_pos_arg", "owner_tag": "$call_109", "member_tags": ["$call_110"]}
+{"line": 156, "relation_tag": "with_context", "owner_tag": "$with_9", "member_tags": ["$call_109"]}
+{"line": 156, "relation_tag": "with_as", "owner_tag": "$call_109", "member_tags": ["f"]}
+{"line": 157, "relation_tag": "calls", "owner_tag": "$call_111", "member_tags": ["run_test"]}
+{"line": 157, "relation_tag": "call_pos_arg", "owner_tag": "$call_111", "member_tags": ["\"Row 1, col 0 -> 'd'\"", "$compare_17"]}
+{"line": 157, "relation_tag": "calls", "owner_tag": "$call_112", "member_tags": ["f.read"]}
+{"line": 157, "relation_tag": "compare_left", "owner_tag": "$compare_17", "member_tags": ["$call_112"]}
+{"line": 157, "relation_tag": "compare_op", "owner_tag": "$compare_17", "member_tags": ["=="]}
+{"line": 157, "relation_tag": "compare_right", "owner_tag": "$compare_17", "member_tags": ["'d'"]}
+{"line": 157, "relation_tag": "expr_stmt", "owner_tag": "$expr_27", "member_tags": ["$call_111"]}
+{"line": 156, "relation_tag": "with_body", "owner_tag": "$with_9", "member_tags": ["$expr_27"]}
+{"line": 158, "relation_tag": "calls", "owner_tag": "$call_113", "member_tags": ["open"]}
+{"line": 158, "relation_tag": "calls", "owner_tag": "$call_114", "member_tags": ["os.path.join"]}
+{"line": 158, "relation_tag": "call_pos_arg", "owner_tag": "$call_114", "member_tags": ["root", "'2'", "'data'"]}
+{"line": 158, "relation_tag": "call_pos_arg", "owner_tag": "$call_113", "member_tags": ["$call_114"]}
+{"line": 158, "relation_tag": "with_context", "owner_tag": "$with_10", "member_tags": ["$call_113"]}
+{"line": 158, "relation_tag": "with_as", "owner_tag": "$call_113", "member_tags": ["f"]}
+{"line": 159, "relation_tag": "calls", "owner_tag": "$call_115", "member_tags": ["run_test"]}
+{"line": 159, "relation_tag": "call_pos_arg", "owner_tag": "$call_115", "member_tags": ["\"Row 1, col 2 -> 'f'\"", "$compare_18"]}
+{"line": 159, "relation_tag": "calls", "owner_tag": "$call_116", "member_tags": ["f.read"]}
+{"line": 159, "relation_tag": "compare_left", "owner_tag": "$compare_18", "member_tags": ["$call_116"]}
+{"line": 159, "relation_tag": "compare_op", "owner_tag": "$compare_18", "member_tags": ["=="]}
+{"line": 159, "relation_tag": "compare_right", "owner_tag": "$compare_18", "member_tags": ["'f'"]}
+{"line": 159, "relation_tag": "expr_stmt", "owner_tag": "$expr_28", "member_tags": ["$call_115"]}
+{"line": 158, "relation_tag": "with_body", "owner_tag": "$with_10", "member_tags": ["$expr_28"]}
+{"line": 160, "relation_tag": "calls", "owner_tag": "$call_117", "member_tags": ["print"]}
+{"line": 160, "relation_tag": "call_pos_arg", "owner_tag": "$call_117", "member_tags": ["'Test 4: slice indexing'"]}
+{"line": 160, "relation_tag": "expr_stmt", "owner_tag": "$expr_29", "member_tags": ["$call_117"]}
+{"line": 161, "relation_tag": "calls", "owner_tag": "$call_118", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 161, "relation_tag": "with_context", "owner_tag": "$with_11", "member_tags": ["$call_118"]}
+{"line": 161, "relation_tag": "with_as", "owner_tag": "$call_118", "member_tags": ["tmpdir"]}
+{"line": 162, "relation_tag": "list_literal", "owner_tag": "$list_23", "member_tags": ["List"]}
+{"line": 162, "relation_tag": "collection_element", "owner_tag": "$list_23", "member_tags": ["'a'", "'b'", "'c'", "'d'", "'e'"]}
+{"line": 162, "relation_tag": "assigns", "owner_tag": "$assign_35", "member_tags": ["data", "$list_23"]}
+{"line": 161, "relation_tag": "with_body", "owner_tag": "$with_11", "member_tags": ["$assign_35", "$assign_36", "$assign_37", "$expr_30", "$assign_38", "$with_12", "$with_13"]}
+{"line": 163, "relation_tag": "calls", "owner_tag": "$call_119", "member_tags": ["mt"]}
+{"line": 163, "relation_tag": "call_pos_arg", "owner_tag": "$call_119", "member_tags": ["data", "tmpdir"]}
+{"line": 163, "relation_tag": "assigns", "owner_tag": "$assign_36", "member_tags": ["t", "$call_119"]}
+{"line": 164, "relation_tag": "calls", "owner_tag": "$call_120", "member_tags": ["slice_view"]}
+{"line": 164, "relation_tag": "call_pos_arg", "owner_tag": "$call_120", "member_tags": ["t", "$list_24"]}
+{"line": 164, "relation_tag": "list_literal", "owner_tag": "$list_24", "member_tags": ["List"]}
+{"line": 164, "relation_tag": "calls", "owner_tag": "$call_121", "member_tags": ["slice"]}
+{"line": 164, "relation_tag": "call_pos_arg", "owner_tag": "$call_121", "member_tags": ["1", "4"]}
+{"line": 164, "relation_tag": "collection_element", "owner_tag": "$list_24", "member_tags": ["$call_121"]}
+{"line": 164, "relation_tag": "assigns", "owner_tag": "$assign_37", "member_tags": ["result", "$call_120"]}
+{"line": 165, "relation_tag": "calls", "owner_tag": "$call_122", "member_tags": ["run_test"]}
+{"line": 165, "relation_tag": "call_pos_arg", "owner_tag": "$call_122", "member_tags": ["'Shape is [3]'", "$compare_19"]}
+{"line": 165, "relation_tag": "calls", "owner_tag": "$call_123", "member_tags": ["list"]}
+{"line": 165, "relation_tag": "call_pos_arg", "owner_tag": "$call_123", "member_tags": ["result.shape"]}
+{"line": 165, "relation_tag": "compare_left", "owner_tag": "$compare_19", "member_tags": ["$call_123"]}
+{"line": 165, "relation_tag": "list_literal", "owner_tag": "$list_25", "member_tags": ["List"]}
+{"line": 165, "relation_tag": "collection_element", "owner_tag": "$list_25", "member_tags": ["3"]}
+{"line": 165, "relation_tag": "compare_op", "owner_tag": "$compare_19", "member_tags": ["=="]}
+{"line": 165, "relation_tag": "compare_right", "owner_tag": "$compare_19", "member_tags": ["$list_25"]}
+{"line": 165, "relation_tag": "expr_stmt", "owner_tag": "$expr_30", "member_tags": ["$call_122"]}
+{"line": 166, "relation_tag": "calls", "owner_tag": "$call_124", "member_tags": ["os.path.join"]}
+{"line": 166, "relation_tag": "call_pos_arg", "owner_tag": "$call_124", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'"]}
+{"line": 166, "relation_tag": "assigns", "owner_tag": "$assign_38", "member_tags": ["root", "$call_124"]}
+{"line": 167, "relation_tag": "calls", "owner_tag": "$call_125", "member_tags": ["open"]}
+{"line": 167, "relation_tag": "calls", "owner_tag": "$call_126", "member_tags": ["os.path.join"]}
+{"line": 167, "relation_tag": "call_pos_arg", "owner_tag": "$call_126", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 167, "relation_tag": "call_pos_arg", "owner_tag": "$call_125", "member_tags": ["$call_126"]}
+{"line": 167, "relation_tag": "with_context", "owner_tag": "$with_12", "member_tags": ["$call_125"]}
+{"line": 167, "relation_tag": "with_as", "owner_tag": "$call_125", "member_tags": ["f"]}
+{"line": 168, "relation_tag": "calls", "owner_tag": "$call_127", "member_tags": ["run_test"]}
+{"line": 168, "relation_tag": "call_pos_arg", "owner_tag": "$call_127", "member_tags": ["\"slice[1] -> 'b'\"", "$compare_20"]}
+{"line": 168, "relation_tag": "calls", "owner_tag": "$call_128", "member_tags": ["f.read"]}
+{"line": 168, "relation_tag": "compare_left", "owner_tag": "$compare_20", "member_tags": ["$call_128"]}
+{"line": 168, "relation_tag": "compare_op", "owner_tag": "$compare_20", "member_tags": ["=="]}
+{"line": 168, "relation_tag": "compare_right", "owner_tag": "$compare_20", "member_tags": ["'b'"]}
+{"line": 168, "relation_tag": "expr_stmt", "owner_tag": "$expr_31", "member_tags": ["$call_127"]}
+{"line": 167, "relation_tag": "with_body", "owner_tag": "$with_12", "member_tags": ["$expr_31"]}
+{"line": 169, "relation_tag": "calls", "owner_tag": "$call_129", "member_tags": ["open"]}
+{"line": 169, "relation_tag": "calls", "owner_tag": "$call_130", "member_tags": ["os.path.join"]}
+{"line": 169, "relation_tag": "call_pos_arg", "owner_tag": "$call_130", "member_tags": ["root", "'2'", "'data'"]}
+{"line": 169, "relation_tag": "call_pos_arg", "owner_tag": "$call_129", "member_tags": ["$call_130"]}
+{"line": 169, "relation_tag": "with_context", "owner_tag": "$with_13", "member_tags": ["$call_129"]}
+{"line": 169, "relation_tag": "with_as", "owner_tag": "$call_129", "member_tags": ["f"]}
+{"line": 170, "relation_tag": "calls", "owner_tag": "$call_131", "member_tags": ["run_test"]}
+{"line": 170, "relation_tag": "call_pos_arg", "owner_tag": "$call_131", "member_tags": ["\"slice[3] -> 'd'\"", "$compare_21"]}
+{"line": 170, "relation_tag": "calls", "owner_tag": "$call_132", "member_tags": ["f.read"]}
+{"line": 170, "relation_tag": "compare_left", "owner_tag": "$compare_21", "member_tags": ["$call_132"]}
+{"line": 170, "relation_tag": "compare_op", "owner_tag": "$compare_21", "member_tags": ["=="]}
+{"line": 170, "relation_tag": "compare_right", "owner_tag": "$compare_21", "member_tags": ["'d'"]}
+{"line": 170, "relation_tag": "expr_stmt", "owner_tag": "$expr_32", "member_tags": ["$call_131"]}
+{"line": 169, "relation_tag": "with_body", "owner_tag": "$with_13", "member_tags": ["$expr_32"]}
+{"line": 171, "relation_tag": "calls", "owner_tag": "$call_133", "member_tags": ["print"]}
+{"line": 171, "relation_tag": "call_pos_arg", "owner_tag": "$call_133", "member_tags": ["'Test 5: 0-rank tensor collapses dim'"]}
+{"line": 171, "relation_tag": "expr_stmt", "owner_tag": "$expr_33", "member_tags": ["$call_133"]}
+{"line": 172, "relation_tag": "calls", "owner_tag": "$call_134", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 172, "relation_tag": "with_context", "owner_tag": "$with_14", "member_tags": ["$call_134"]}
+{"line": 172, "relation_tag": "with_as", "owner_tag": "$call_134", "member_tags": ["tmpdir"]}
+{"line": 173, "relation_tag": "list_literal", "owner_tag": "$list_26", "member_tags": ["List"]}
+{"line": 173, "relation_tag": "list_literal", "owner_tag": "$list_27", "member_tags": ["List"]}
+{"line": 173, "relation_tag": "collection_element", "owner_tag": "$list_27", "member_tags": ["'x'", "'y'"]}
+{"line": 173, "relation_tag": "collection_element", "owner_tag": "$list_26", "member_tags": ["$list_27", "$list_28"]}
+{"line": 173, "relation_tag": "list_literal", "owner_tag": "$list_28", "member_tags": ["List"]}
+{"line": 173, "relation_tag": "collection_element", "owner_tag": "$list_28", "member_tags": ["'z'", "'w'"]}
+{"line": 173, "relation_tag": "assigns", "owner_tag": "$assign_39", "member_tags": ["data", "$list_26"]}
+{"line": 172, "relation_tag": "with_body", "owner_tag": "$with_14", "member_tags": ["$assign_39", "$assign_40", "$assign_41", "$expr_34", "$assign_42", "$with_15", "$with_16"]}
+{"line": 174, "relation_tag": "calls", "owner_tag": "$call_135", "member_tags": ["mt"]}
+{"line": 174, "relation_tag": "call_pos_arg", "owner_tag": "$call_135", "member_tags": ["data", "tmpdir"]}
+{"line": 174, "relation_tag": "assigns", "owner_tag": "$assign_40", "member_tags": ["t", "$call_135"]}
+{"line": 175, "relation_tag": "calls", "owner_tag": "$call_136", "member_tags": ["slice_view"]}
+{"line": 175, "relation_tag": "call_pos_arg", "owner_tag": "$call_136", "member_tags": ["t", "$list_29"]}
+{"line": 175, "relation_tag": "list_literal", "owner_tag": "$list_29", "member_tags": ["List"]}
+{"line": 175, "relation_tag": "calls", "owner_tag": "$call_137", "member_tags": ["torch.tensor"]}
+{"line": 175, "relation_tag": "call_pos_arg", "owner_tag": "$call_137", "member_tags": ["0"]}
+{"line": 175, "relation_tag": "collection_element", "owner_tag": "$list_29", "member_tags": ["$call_137", "$call_138"]}
+{"line": 175, "relation_tag": "calls", "owner_tag": "$call_138", "member_tags": ["slice"]}
+{"line": 175, "relation_tag": "call_pos_arg", "owner_tag": "$call_138", "member_tags": ["None"]}
+{"line": 175, "relation_tag": "assigns", "owner_tag": "$assign_41", "member_tags": ["result", "$call_136"]}
+{"line": 176, "relation_tag": "calls", "owner_tag": "$call_139", "member_tags": ["run_test"]}
+{"line": 176, "relation_tag": "call_pos_arg", "owner_tag": "$call_139", "member_tags": ["'Shape is [2] (dim 0 collapsed)'", "$compare_22"]}
+{"line": 176, "relation_tag": "calls", "owner_tag": "$call_140", "member_tags": ["list"]}
+{"line": 176, "relation_tag": "call_pos_arg", "owner_tag": "$call_140", "member_tags": ["result.shape"]}
+{"line": 176, "relation_tag": "compare_left", "owner_tag": "$compare_22", "member_tags": ["$call_140"]}
+{"line": 176, "relation_tag": "list_literal", "owner_tag": "$list_30", "member_tags": ["List"]}
+{"line": 176, "relation_tag": "collection_element", "owner_tag": "$list_30", "member_tags": ["2"]}
+{"line": 176, "relation_tag": "compare_op", "owner_tag": "$compare_22", "member_tags": ["=="]}
+{"line": 176, "relation_tag": "compare_right", "owner_tag": "$compare_22", "member_tags": ["$list_30"]}
+{"line": 176, "relation_tag": "expr_stmt", "owner_tag": "$expr_34", "member_tags": ["$call_139"]}
+{"line": 177, "relation_tag": "calls", "owner_tag": "$call_141", "member_tags": ["os.path.join"]}
+{"line": 177, "relation_tag": "call_pos_arg", "owner_tag": "$call_141", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'"]}
+{"line": 177, "relation_tag": "assigns", "owner_tag": "$assign_42", "member_tags": ["root", "$call_141"]}
+{"line": 178, "relation_tag": "calls", "owner_tag": "$call_142", "member_tags": ["open"]}
+{"line": 178, "relation_tag": "calls", "owner_tag": "$call_143", "member_tags": ["os.path.join"]}
+{"line": 178, "relation_tag": "call_pos_arg", "owner_tag": "$call_143", "member_tags": ["root", "'0'", "'data'"]}
+{"line": 178, "relation_tag": "call_pos_arg", "owner_tag": "$call_142", "member_tags": ["$call_143"]}
+{"line": 178, "relation_tag": "with_context", "owner_tag": "$with_15", "member_tags": ["$call_142"]}
+{"line": 178, "relation_tag": "with_as", "owner_tag": "$call_142", "member_tags": ["f"]}
+{"line": 179, "relation_tag": "calls", "owner_tag": "$call_144", "member_tags": ["run_test"]}
+{"line": 179, "relation_tag": "call_pos_arg", "owner_tag": "$call_144", "member_tags": ["\"(0,0) -> 'x'\"", "$compare_23"]}
+{"line": 179, "relation_tag": "calls", "owner_tag": "$call_145", "member_tags": ["f.read"]}
+{"line": 179, "relation_tag": "compare_left", "owner_tag": "$compare_23", "member_tags": ["$call_145"]}
+{"line": 179, "relation_tag": "compare_op", "owner_tag": "$compare_23", "member_tags": ["=="]}
+{"line": 179, "relation_tag": "compare_right", "owner_tag": "$compare_23", "member_tags": ["'x'"]}
+{"line": 179, "relation_tag": "expr_stmt", "owner_tag": "$expr_35", "member_tags": ["$call_144"]}
+{"line": 178, "relation_tag": "with_body", "owner_tag": "$with_15", "member_tags": ["$expr_35"]}
+{"line": 180, "relation_tag": "calls", "owner_tag": "$call_146", "member_tags": ["open"]}
+{"line": 180, "relation_tag": "calls", "owner_tag": "$call_147", "member_tags": ["os.path.join"]}
+{"line": 180, "relation_tag": "call_pos_arg", "owner_tag": "$call_147", "member_tags": ["root", "'1'", "'data'"]}
+{"line": 180, "relation_tag": "call_pos_arg", "owner_tag": "$call_146", "member_tags": ["$call_147"]}
+{"line": 180, "relation_tag": "with_context", "owner_tag": "$with_16", "member_tags": ["$call_146"]}
+{"line": 180, "relation_tag": "with_as", "owner_tag": "$call_146", "member_tags": ["f"]}
+{"line": 181, "relation_tag": "calls", "owner_tag": "$call_148", "member_tags": ["run_test"]}
+{"line": 181, "relation_tag": "call_pos_arg", "owner_tag": "$call_148", "member_tags": ["\"(0,1) -> 'y'\"", "$compare_24"]}
+{"line": 181, "relation_tag": "calls", "owner_tag": "$call_149", "member_tags": ["f.read"]}
+{"line": 181, "relation_tag": "compare_left", "owner_tag": "$compare_24", "member_tags": ["$call_149"]}
+{"line": 181, "relation_tag": "compare_op", "owner_tag": "$compare_24", "member_tags": ["=="]}
+{"line": 181, "relation_tag": "compare_right", "owner_tag": "$compare_24", "member_tags": ["'y'"]}
+{"line": 181, "relation_tag": "expr_stmt", "owner_tag": "$expr_36", "member_tags": ["$call_148"]}
+{"line": 180, "relation_tag": "with_body", "owner_tag": "$with_16", "member_tags": ["$expr_36"]}
+{"line": 182, "relation_tag": "calls", "owner_tag": "$call_150", "member_tags": ["print"]}
+{"line": 182, "relation_tag": "call_pos_arg", "owner_tag": "$call_150", "member_tags": ["'Test 6: All dims collapsed -> scalar'"]}
+{"line": 182, "relation_tag": "expr_stmt", "owner_tag": "$expr_37", "member_tags": ["$call_150"]}
+{"line": 183, "relation_tag": "calls", "owner_tag": "$call_151", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 183, "relation_tag": "with_context", "owner_tag": "$with_17", "member_tags": ["$call_151"]}
+{"line": 183, "relation_tag": "with_as", "owner_tag": "$call_151", "member_tags": ["tmpdir"]}
+{"line": 184, "relation_tag": "list_literal", "owner_tag": "$list_31", "member_tags": ["List"]}
+{"line": 184, "relation_tag": "list_literal", "owner_tag": "$list_32", "member_tags": ["List"]}
+{"line": 184, "relation_tag": "collection_element", "owner_tag": "$list_32", "member_tags": ["'a'", "'b'"]}
+{"line": 184, "relation_tag": "collection_element", "owner_tag": "$list_31", "member_tags": ["$list_32", "$list_33"]}
+{"line": 184, "relation_tag": "list_literal", "owner_tag": "$list_33", "member_tags": ["List"]}
+{"line": 184, "relation_tag": "collection_element", "owner_tag": "$list_33", "member_tags": ["'c'", "'d'"]}
+{"line": 184, "relation_tag": "assigns", "owner_tag": "$assign_43", "member_tags": ["data", "$list_31"]}
+{"line": 183, "relation_tag": "with_body", "owner_tag": "$with_17", "member_tags": ["$assign_43", "$assign_44", "$assign_45", "$expr_38", "$expr_39", "$assign_46", "$expr_40", "$expr_41", "$with_18", "$assign_47", "$expr_43"]}
+{"line": 185, "relation_tag": "calls", "owner_tag": "$call_152", "member_tags": ["mt"]}
+{"line": 185, "relation_tag": "call_pos_arg", "owner_tag": "$call_152", "member_tags": ["data", "tmpdir"]}
+{"line": 185, "relation_tag": "assigns", "owner_tag": "$assign_44", "member_tags": ["t", "$call_152"]}
+{"line": 186, "relation_tag": "calls", "owner_tag": "$call_153", "member_tags": ["slice_view"]}
+{"line": 186, "relation_tag": "call_pos_arg", "owner_tag": "$call_153", "member_tags": ["t", "$list_34"]}
+{"line": 186, "relation_tag": "list_literal", "owner_tag": "$list_34", "member_tags": ["List"]}
+{"line": 186, "relation_tag": "collection_element", "owner_tag": "$list_34", "member_tags": ["1", "0"]}
+{"line": 186, "relation_tag": "assigns", "owner_tag": "$assign_45", "member_tags": ["result", "$call_153"]}
+{"line": 187, "relation_tag": "calls", "owner_tag": "$call_154", "member_tags": ["run_test"]}
+{"line": 187, "relation_tag": "call_pos_arg", "owner_tag": "$call_154", "member_tags": ["'Shape is [] (0-dim)'", "$compare_25"]}
+{"line": 187, "relation_tag": "calls", "owner_tag": "$call_155", "member_tags": ["list"]}
+{"line": 187, "relation_tag": "call_pos_arg", "owner_tag": "$call_155", "member_tags": ["result.shape"]}
+{"line": 187, "relation_tag": "compare_left", "owner_tag": "$compare_25", "member_tags": ["$call_155"]}
+{"line": 187, "relation_tag": "list_literal", "owner_tag": "$list_35", "member_tags": ["List"]}
+{"line": 187, "relation_tag": "compare_op", "owner_tag": "$compare_25", "member_tags": ["=="]}
+{"line": 187, "relation_tag": "compare_right", "owner_tag": "$compare_25", "member_tags": ["$list_35"]}
+{"line": 187, "relation_tag": "expr_stmt", "owner_tag": "$expr_38", "member_tags": ["$call_154"]}
+{"line": 188, "relation_tag": "calls", "owner_tag": "$call_156", "member_tags": ["run_test"]}
+{"line": 188, "relation_tag": "call_pos_arg", "owner_tag": "$call_156", "member_tags": ["'numel is 1'", "$compare_26"]}
+{"line": 188, "relation_tag": "attr_value", "owner_tag": "result.numel", "member_tags": ["result", "result"]}
+{"line": 188, "relation_tag": "attr_name", "owner_tag": "result.numel", "member_tags": ["numel", "numel"]}
+{"line": 188, "relation_tag": "calls", "owner_tag": "$call_157", "member_tags": ["result.numel"]}
+{"line": 188, "relation_tag": "compare_left", "owner_tag": "$compare_26", "member_tags": ["$call_157"]}
+{"line": 188, "relation_tag": "compare_op", "owner_tag": "$compare_26", "member_tags": ["=="]}
+{"line": 188, "relation_tag": "compare_right", "owner_tag": "$compare_26", "member_tags": ["1"]}
+{"line": 188, "relation_tag": "expr_stmt", "owner_tag": "$expr_39", "member_tags": ["$call_156"]}
+{"line": 189, "relation_tag": "calls", "owner_tag": "$call_158", "member_tags": ["os.path.join"]}
+{"line": 189, "relation_tag": "call_pos_arg", "owner_tag": "$call_158", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'", "'0'", "'data'"]}
+{"line": 189, "relation_tag": "assigns", "owner_tag": "$assign_46", "member_tags": ["stored", "$call_158"]}
+{"line": 190, "relation_tag": "calls", "owner_tag": "$call_159", "member_tags": ["run_test"]}
+{"line": 190, "relation_tag": "call_pos_arg", "owner_tag": "$call_159", "member_tags": ["'Storage file exists'", "$call_160"]}
+{"line": 190, "relation_tag": "attr_value", "owner_tag": "os.path.isfile", "member_tags": ["os.path", "os.path"]}
+{"line": 190, "relation_tag": "attr_name", "owner_tag": "os.path.isfile", "member_tags": ["isfile", "isfile"]}
+{"line": 190, "relation_tag": "calls", "owner_tag": "$call_160", "member_tags": ["os.path.isfile"]}
+{"line": 190, "relation_tag": "call_pos_arg", "owner_tag": "$call_160", "member_tags": ["stored"]}
+{"line": 190, "relation_tag": "expr_stmt", "owner_tag": "$expr_40", "member_tags": ["$call_159"]}
+{"line": 191, "relation_tag": "calls", "owner_tag": "$call_161", "member_tags": ["run_test"]}
+{"line": 191, "relation_tag": "call_pos_arg", "owner_tag": "$call_161", "member_tags": ["'Is symlink'", "$call_162"]}
+{"line": 191, "relation_tag": "calls", "owner_tag": "$call_162", "member_tags": ["os.path.islink"]}
+{"line": 191, "relation_tag": "call_pos_arg", "owner_tag": "$call_162", "member_tags": ["stored"]}
+{"line": 191, "relation_tag": "expr_stmt", "owner_tag": "$expr_41", "member_tags": ["$call_161"]}
+{"line": 192, "relation_tag": "calls", "owner_tag": "$call_163", "member_tags": ["open"]}
+{"line": 192, "relation_tag": "call_pos_arg", "owner_tag": "$call_163", "member_tags": ["stored"]}
+{"line": 192, "relation_tag": "with_context", "owner_tag": "$with_18", "member_tags": ["$call_163"]}
+{"line": 192, "relation_tag": "with_as", "owner_tag": "$call_163", "member_tags": ["f"]}
+{"line": 193, "relation_tag": "calls", "owner_tag": "$call_164", "member_tags": ["run_test"]}
+{"line": 193, "relation_tag": "call_pos_arg", "owner_tag": "$call_164", "member_tags": ["\"(1,0) -> 'c'\"", "$compare_27"]}
+{"line": 193, "relation_tag": "calls", "owner_tag": "$call_165", "member_tags": ["f.read"]}
+{"line": 193, "relation_tag": "compare_left", "owner_tag": "$compare_27", "member_tags": ["$call_165"]}
+{"line": 193, "relation_tag": "compare_op", "owner_tag": "$compare_27", "member_tags": ["=="]}
+{"line": 193, "relation_tag": "compare_right", "owner_tag": "$compare_27", "member_tags": ["'c'"]}
+{"line": 193, "relation_tag": "expr_stmt", "owner_tag": "$expr_42", "member_tags": ["$call_164"]}
+{"line": 192, "relation_tag": "with_body", "owner_tag": "$with_18", "member_tags": ["$expr_42"]}
+{"line": 195, "relation_tag": "attr_value", "owner_tag": "os.path.realpath", "member_tags": ["os.path", "os.path"]}
+{"line": 195, "relation_tag": "attr_name", "owner_tag": "os.path.realpath", "member_tags": ["realpath", "realpath"]}
+{"line": 195, "relation_tag": "calls", "owner_tag": "$call_166", "member_tags": ["os.path.realpath"]}
+{"line": 195, "relation_tag": "call_pos_arg", "owner_tag": "$call_166", "member_tags": ["stored"]}
+{"line": 195, "relation_tag": "assigns", "owner_tag": "$assign_47", "member_tags": ["real", "$call_166"]}
+{"line": 196, "relation_tag": "calls", "owner_tag": "$call_167", "member_tags": ["run_test"]}
+{"line": 196, "relation_tag": "call_pos_arg", "owner_tag": "$call_167", "member_tags": ["'Resolves to input storage'", "$compare_28"]}
+{"line": 196, "relation_tag": "attr_value", "owner_tag": "t.st_tensor_uid", "member_tags": ["t"]}
+{"line": 196, "relation_tag": "attr_name", "owner_tag": "t.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 196, "relation_tag": "compare_left", "owner_tag": "$compare_28", "member_tags": ["t.st_tensor_uid"]}
+{"line": 196, "relation_tag": "compare_op", "owner_tag": "$compare_28", "member_tags": ["in"]}
+{"line": 196, "relation_tag": "compare_right", "owner_tag": "$compare_28", "member_tags": ["real"]}
+{"line": 196, "relation_tag": "expr_stmt", "owner_tag": "$expr_43", "member_tags": ["$call_167"]}
+{"line": 197, "relation_tag": "calls", "owner_tag": "$call_168", "member_tags": ["print"]}
+{"line": 197, "relation_tag": "call_pos_arg", "owner_tag": "$call_168", "member_tags": ["'Test 7: Dimension mismatch'"]}
+{"line": 197, "relation_tag": "expr_stmt", "owner_tag": "$expr_44", "member_tags": ["$call_168"]}
+{"line": 198, "relation_tag": "calls", "owner_tag": "$call_169", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 198, "relation_tag": "with_context", "owner_tag": "$with_19", "member_tags": ["$call_169"]}
+{"line": 198, "relation_tag": "with_as", "owner_tag": "$call_169", "member_tags": ["tmpdir"]}
+{"line": 199, "relation_tag": "list_literal", "owner_tag": "$list_36", "member_tags": ["List"]}
+{"line": 199, "relation_tag": "list_literal", "owner_tag": "$list_37", "member_tags": ["List"]}
+{"line": 199, "relation_tag": "collection_element", "owner_tag": "$list_37", "member_tags": ["'a'", "'b'"]}
+{"line": 199, "relation_tag": "collection_element", "owner_tag": "$list_36", "member_tags": ["$list_37", "$list_38"]}
+{"line": 199, "relation_tag": "list_literal", "owner_tag": "$list_38", "member_tags": ["List"]}
+{"line": 199, "relation_tag": "collection_element", "owner_tag": "$list_38", "member_tags": ["'c'", "'d'"]}
+{"line": 199, "relation_tag": "assigns", "owner_tag": "$assign_48", "member_tags": ["data", "$list_36"]}
+{"line": 198, "relation_tag": "with_body", "owner_tag": "$with_19", "member_tags": ["$assign_48", "$assign_49", "$try_0"]}
+{"line": 200, "relation_tag": "calls", "owner_tag": "$call_170", "member_tags": ["mt"]}
+{"line": 200, "relation_tag": "call_pos_arg", "owner_tag": "$call_170", "member_tags": ["data", "tmpdir"]}
+{"line": 200, "relation_tag": "assigns", "owner_tag": "$assign_49", "member_tags": ["t", "$call_170"]}
+{"line": 201, "relation_tag": "try_start", "owner_tag": "$try_0", "member_tags": ["try"]}
+{"line": 202, "relation_tag": "calls", "owner_tag": "$call_171", "member_tags": ["slice_view"]}
+{"line": 202, "relation_tag": "call_pos_arg", "owner_tag": "$call_171", "member_tags": ["t", "$list_39"]}
+{"line": 202, "relation_tag": "list_literal", "owner_tag": "$list_39", "member_tags": ["List"]}
+{"line": 202, "relation_tag": "calls", "owner_tag": "$call_172", "member_tags": ["torch.tensor"]}
+{"line": 202, "relation_tag": "list_literal", "owner_tag": "$list_40", "member_tags": ["List"]}
+{"line": 202, "relation_tag": "collection_element", "owner_tag": "$list_40", "member_tags": ["0"]}
+{"line": 202, "relation_tag": "call_pos_arg", "owner_tag": "$call_172", "member_tags": ["$list_40"]}
+{"line": 202, "relation_tag": "collection_element", "owner_tag": "$list_39", "member_tags": ["$call_172"]}
+{"line": 202, "relation_tag": "expr_stmt", "owner_tag": "$expr_45", "member_tags": ["$call_171"]}
+{"line": 201, "relation_tag": "try_body", "owner_tag": "$try_0", "member_tags": ["$expr_45", "$expr_46"]}
+{"line": 203, "relation_tag": "calls", "owner_tag": "$call_173", "member_tags": ["run_test"]}
+{"line": 203, "relation_tag": "call_pos_arg", "owner_tag": "$call_173", "member_tags": ["'Should have raised'", "False"]}
+{"line": 203, "relation_tag": "expr_stmt", "owner_tag": "$expr_46", "member_tags": ["$call_173"]}
+{"line": 201, "relation_tag": "handles", "owner_tag": "$try_0", "member_tags": ["AssertionError"]}
+{"line": 205, "relation_tag": "calls", "owner_tag": "$call_174", "member_tags": ["run_test"]}
+{"line": 205, "relation_tag": "call_pos_arg", "owner_tag": "$call_174", "member_tags": ["'AssertionError raised'", "True"]}
+{"line": 205, "relation_tag": "expr_stmt", "owner_tag": "$expr_47", "member_tags": ["$call_174"]}
+{"line": 201, "relation_tag": "except_body", "owner_tag": "$try_0", "member_tags": ["$expr_47"]}
+{"line": 206, "relation_tag": "calls", "owner_tag": "$call_175", "member_tags": ["print"]}
+{"line": 206, "relation_tag": "call_pos_arg", "owner_tag": "$call_175", "member_tags": ["'Test 8: Relative symlinks'"]}
+{"line": 206, "relation_tag": "expr_stmt", "owner_tag": "$expr_48", "member_tags": ["$call_175"]}
+{"line": 207, "relation_tag": "calls", "owner_tag": "$call_176", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 207, "relation_tag": "with_context", "owner_tag": "$with_20", "member_tags": ["$call_176"]}
+{"line": 207, "relation_tag": "with_as", "owner_tag": "$call_176", "member_tags": ["tmpdir"]}
+{"line": 208, "relation_tag": "list_literal", "owner_tag": "$list_41", "member_tags": ["List"]}
+{"line": 208, "relation_tag": "collection_element", "owner_tag": "$list_41", "member_tags": ["'hello'"]}
+{"line": 208, "relation_tag": "assigns", "owner_tag": "$assign_50", "member_tags": ["data", "$list_41"]}
+{"line": 207, "relation_tag": "with_body", "owner_tag": "$with_20", "member_tags": ["$assign_50", "$assign_51", "$assign_52", "$assign_53", "$assign_54", "$expr_49"]}
+{"line": 209, "relation_tag": "calls", "owner_tag": "$call_177", "member_tags": ["mt"]}
+{"line": 209, "relation_tag": "call_pos_arg", "owner_tag": "$call_177", "member_tags": ["data", "tmpdir"]}
+{"line": 209, "relation_tag": "assigns", "owner_tag": "$assign_51", "member_tags": ["t", "$call_177"]}
+{"line": 210, "relation_tag": "calls", "owner_tag": "$call_178", "member_tags": ["slice_view"]}
+{"line": 210, "relation_tag": "call_pos_arg", "owner_tag": "$call_178", "member_tags": ["t", "$list_42"]}
+{"line": 210, "relation_tag": "list_literal", "owner_tag": "$list_42", "member_tags": ["List"]}
+{"line": 210, "relation_tag": "calls", "owner_tag": "$call_179", "member_tags": ["torch.tensor"]}
+{"line": 210, "relation_tag": "list_literal", "owner_tag": "$list_43", "member_tags": ["List"]}
+{"line": 210, "relation_tag": "collection_element", "owner_tag": "$list_43", "member_tags": ["0"]}
+{"line": 210, "relation_tag": "call_pos_arg", "owner_tag": "$call_179", "member_tags": ["$list_43"]}
+{"line": 210, "relation_tag": "collection_element", "owner_tag": "$list_42", "member_tags": ["$call_179"]}
+{"line": 210, "relation_tag": "assigns", "owner_tag": "$assign_52", "member_tags": ["result", "$call_178"]}
+{"line": 211, "relation_tag": "calls", "owner_tag": "$call_180", "member_tags": ["os.path.join"]}
+{"line": 211, "relation_tag": "call_pos_arg", "owner_tag": "$call_180", "member_tags": ["tmpdir", "result.st_tensor_uid", "'storage'", "'0'", "'data'"]}
+{"line": 211, "relation_tag": "assigns", "owner_tag": "$assign_53", "member_tags": ["link", "$call_180"]}
+{"line": 212, "relation_tag": "attr_value", "owner_tag": "os.readlink", "member_tags": ["os"]}
+{"line": 212, "relation_tag": "attr_name", "owner_tag": "os.readlink", "member_tags": ["readlink"]}
+{"line": 212, "relation_tag": "calls", "owner_tag": "$call_181", "member_tags": ["os.readlink"]}
+{"line": 212, "relation_tag": "call_pos_arg", "owner_tag": "$call_181", "member_tags": ["link"]}
+{"line": 212, "relation_tag": "assigns", "owner_tag": "$assign_54", "member_tags": ["target", "$call_181"]}
+{"line": 213, "relation_tag": "calls", "owner_tag": "$call_182", "member_tags": ["run_test"]}
+{"line": 213, "relation_tag": "call_pos_arg", "owner_tag": "$call_182", "member_tags": ["'Symlink is relative'", "$unaryop_3"]}
+{"line": 213, "relation_tag": "attr_value", "owner_tag": "os.path.isabs", "member_tags": ["os.path"]}
+{"line": 213, "relation_tag": "attr_name", "owner_tag": "os.path.isabs", "member_tags": ["isabs"]}
+{"line": 213, "relation_tag": "calls", "owner_tag": "$call_183", "member_tags": ["os.path.isabs"]}
+{"line": 213, "relation_tag": "call_pos_arg", "owner_tag": "$call_183", "member_tags": ["target"]}
+{"line": 213, "relation_tag": "unary_op", "owner_tag": "$unaryop_3", "member_tags": ["not"]}
+{"line": 213, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_3", "member_tags": ["$call_183"]}
+{"line": 213, "relation_tag": "expr_stmt", "owner_tag": "$expr_49", "member_tags": ["$call_182"]}
+{"line": 214, "relation_tag": "calls", "owner_tag": "$call_184", "member_tags": ["print"]}
+{"line": 214, "relation_tag": "call_pos_arg", "owner_tag": "$call_184", "member_tags": ["'Test 9: Empty tensor index'"]}
+{"line": 214, "relation_tag": "expr_stmt", "owner_tag": "$expr_50", "member_tags": ["$call_184"]}
+{"line": 215, "relation_tag": "calls", "owner_tag": "$call_185", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 215, "relation_tag": "with_context", "owner_tag": "$with_21", "member_tags": ["$call_185"]}
+{"line": 215, "relation_tag": "with_as", "owner_tag": "$call_185", "member_tags": ["tmpdir"]}
+{"line": 216, "relation_tag": "list_literal", "owner_tag": "$list_44", "member_tags": ["List"]}
+{"line": 216, "relation_tag": "list_literal", "owner_tag": "$list_45", "member_tags": ["List"]}
+{"line": 216, "relation_tag": "collection_element", "owner_tag": "$list_45", "member_tags": ["'a'", "'b'"]}
+{"line": 216, "relation_tag": "collection_element", "owner_tag": "$list_44", "member_tags": ["$list_45", "$list_46"]}
+{"line": 216, "relation_tag": "list_literal", "owner_tag": "$list_46", "member_tags": ["List"]}
+{"line": 216, "relation_tag": "collection_element", "owner_tag": "$list_46", "member_tags": ["'c'", "'d'"]}
+{"line": 216, "relation_tag": "assigns", "owner_tag": "$assign_55", "member_tags": ["data", "$list_44"]}
+{"line": 215, "relation_tag": "with_body", "owner_tag": "$with_21", "member_tags": ["$assign_55", "$assign_56", "$assign_57", "$expr_51", "$expr_52"]}
+{"line": 217, "relation_tag": "calls", "owner_tag": "$call_186", "member_tags": ["mt"]}
+{"line": 217, "relation_tag": "call_pos_arg", "owner_tag": "$call_186", "member_tags": ["data", "tmpdir"]}
+{"line": 217, "relation_tag": "assigns", "owner_tag": "$assign_56", "member_tags": ["t", "$call_186"]}
+{"line": 218, "relation_tag": "calls", "owner_tag": "$call_187", "member_tags": ["slice_view"]}
+{"line": 218, "relation_tag": "call_pos_arg", "owner_tag": "$call_187", "member_tags": ["t", "$list_47"]}
+{"line": 218, "relation_tag": "list_literal", "owner_tag": "$list_47", "member_tags": ["List"]}
+{"line": 218, "relation_tag": "calls", "owner_tag": "$call_188", "member_tags": ["torch.tensor"]}
+{"line": 218, "relation_tag": "list_literal", "owner_tag": "$list_48", "member_tags": ["List"]}
+{"line": 218, "relation_tag": "call_pos_arg", "owner_tag": "$call_188", "member_tags": ["$list_48"]}
+{"line": 218, "relation_tag": "keyword_arg", "owner_tag": "$call_188", "member_tags": ["dtype", "torch.long"]}
+{"line": 218, "relation_tag": "collection_element", "owner_tag": "$list_47", "member_tags": ["$call_188", "$call_189"]}
+{"line": 218, "relation_tag": "calls", "owner_tag": "$call_189", "member_tags": ["slice"]}
+{"line": 218, "relation_tag": "call_pos_arg", "owner_tag": "$call_189", "member_tags": ["None"]}
+{"line": 218, "relation_tag": "assigns", "owner_tag": "$assign_57", "member_tags": ["result", "$call_187"]}
+{"line": 219, "relation_tag": "calls", "owner_tag": "$call_190", "member_tags": ["run_test"]}
+{"line": 219, "relation_tag": "call_pos_arg", "owner_tag": "$call_190", "member_tags": ["'Shape is [0, 2]'", "$compare_29", "$list_50", "$call_192"]}
+{"line": 219, "relation_tag": "calls", "owner_tag": "$call_191", "member_tags": ["list"]}
+{"line": 219, "relation_tag": "call_pos_arg", "owner_tag": "$call_191", "member_tags": ["result.shape"]}
+{"line": 219, "relation_tag": "compare_left", "owner_tag": "$compare_29", "member_tags": ["$call_191"]}
+{"line": 219, "relation_tag": "list_literal", "owner_tag": "$list_49", "member_tags": ["List"]}
+{"line": 219, "relation_tag": "collection_element", "owner_tag": "$list_49", "member_tags": ["0", "2"]}
+{"line": 219, "relation_tag": "compare_op", "owner_tag": "$compare_29", "member_tags": ["=="]}
+{"line": 219, "relation_tag": "compare_right", "owner_tag": "$compare_29", "member_tags": ["$list_49"]}
+{"line": 219, "relation_tag": "list_literal", "owner_tag": "$list_50", "member_tags": ["List"]}
+{"line": 219, "relation_tag": "collection_element", "owner_tag": "$list_50", "member_tags": ["0", "2"]}
+{"line": 219, "relation_tag": "calls", "owner_tag": "$call_192", "member_tags": ["list"]}
+{"line": 219, "relation_tag": "call_pos_arg", "owner_tag": "$call_192", "member_tags": ["result.shape"]}
+{"line": 219, "relation_tag": "expr_stmt", "owner_tag": "$expr_51", "member_tags": ["$call_190"]}
+{"line": 220, "relation_tag": "calls", "owner_tag": "$call_193", "member_tags": ["run_test"]}
+{"line": 220, "relation_tag": "call_pos_arg", "owner_tag": "$call_193", "member_tags": ["'numel is 0'", "$compare_30"]}
+{"line": 220, "relation_tag": "calls", "owner_tag": "$call_194", "member_tags": ["result.numel"]}
+{"line": 220, "relation_tag": "compare_left", "owner_tag": "$compare_30", "member_tags": ["$call_194"]}
+{"line": 220, "relation_tag": "compare_op", "owner_tag": "$compare_30", "member_tags": ["=="]}
+{"line": 220, "relation_tag": "compare_right", "owner_tag": "$compare_30", "member_tags": ["0"]}
+{"line": 220, "relation_tag": "expr_stmt", "owner_tag": "$expr_52", "member_tags": ["$call_193"]}
+{"line": 221, "relation_tag": "calls", "owner_tag": "$call_195", "member_tags": ["print"]}
+{"line": 221, "relation_tag": "call_pos_arg", "owner_tag": "$call_195", "member_tags": ["'Test 10: slice_view(make_none_tensor) + assign_tensor'"]}
+{"line": 221, "relation_tag": "expr_stmt", "owner_tag": "$expr_53", "member_tags": ["$call_195"]}
+{"line": 222, "relation_tag": "calls", "owner_tag": "$call_196", "member_tags": ["tempfile.TemporaryDirectory"]}
+{"line": 222, "relation_tag": "with_context", "owner_tag": "$with_22", "member_tags": ["$call_196"]}
+{"line": 222, "relation_tag": "with_as", "owner_tag": "$call_196", "member_tags": ["tmpdir"]}
+{"line": 223, "relation_tag": "imports", "owner_tag": "$importfrom_4", "member_tags": ["experience.symbolic_tensor.tensor_util.make_none_tensor", "make_none_tensor"]}
+{"line": 222, "relation_tag": "with_body", "owner_tag": "$with_22", "member_tags": ["$importfrom_4", "$importfrom_5", "$assign_58", "$assign_59", "$expr_54", "$assign_60", "$assign_61", "$expr_55", "$assign_62", "$expr_56", "$expr_57", "$assign_63", "$expr_58", "$assign_64", "$with_23", "$with_24"]}
+{"line": 224, "relation_tag": "imports", "owner_tag": "$importfrom_5", "member_tags": ["experience.symbolic_tensor.tensor_util.assign_tensor", "assign_tensor"]}
+{"line": 225, "relation_tag": "calls", "owner_tag": "$call_197", "member_tags": ["make_none_tensor"]}
+{"line": 225, "relation_tag": "list_literal", "owner_tag": "$list_51", "member_tags": ["List"]}
+{"line": 225, "relation_tag": "collection_element", "owner_tag": "$list_51", "member_tags": ["2", "3"]}
+{"line": 225, "relation_tag": "call_pos_arg", "owner_tag": "$call_197", "member_tags": ["$list_51", "tmpdir"]}
+{"line": 225, "relation_tag": "assigns", "owner_tag": "$assign_58", "member_tags": ["none_t", "$call_197"]}
+{"line": 226, "relation_tag": "calls", "owner_tag": "$call_198", "member_tags": ["slice_view"]}
+{"line": 226, "relation_tag": "call_pos_arg", "owner_tag": "$call_198", "member_tags": ["none_t", "$list_52"]}
+{"line": 226, "relation_tag": "list_literal", "owner_tag": "$list_52", "member_tags": ["List"]}
+{"line": 226, "relation_tag": "collection_element", "owner_tag": "$list_52", "member_tags": ["0", "$call_199"]}
+{"line": 226, "relation_tag": "calls", "owner_tag": "$call_199", "member_tags": ["torch.tensor"]}
+{"line": 226, "relation_tag": "list_literal", "owner_tag": "$list_53", "member_tags": ["List"]}
+{"line": 226, "relation_tag": "collection_element", "owner_tag": "$list_53", "member_tags": ["1", "2"]}
+{"line": 226, "relation_tag": "call_pos_arg", "owner_tag": "$call_199", "member_tags": ["$list_53"]}
+{"line": 226, "relation_tag": "assigns", "owner_tag": "$assign_59", "member_tags": ["view", "$call_198"]}
+{"line": 227, "relation_tag": "calls", "owner_tag": "$call_200", "member_tags": ["run_test"]}
+{"line": 227, "relation_tag": "call_pos_arg", "owner_tag": "$call_200", "member_tags": ["'View shape is [2]'", "$compare_31"]}
+{"line": 227, "relation_tag": "calls", "owner_tag": "$call_201", "member_tags": ["list"]}
+{"line": 227, "relation_tag": "attr_value", "owner_tag": "view.shape", "member_tags": ["view"]}
+{"line": 227, "relation_tag": "attr_name", "owner_tag": "view.shape", "member_tags": ["shape"]}
+{"line": 227, "relation_tag": "call_pos_arg", "owner_tag": "$call_201", "member_tags": ["view.shape"]}
+{"line": 227, "relation_tag": "compare_left", "owner_tag": "$compare_31", "member_tags": ["$call_201"]}
+{"line": 227, "relation_tag": "list_literal", "owner_tag": "$list_54", "member_tags": ["List"]}
+{"line": 227, "relation_tag": "collection_element", "owner_tag": "$list_54", "member_tags": ["2"]}
+{"line": 227, "relation_tag": "compare_op", "owner_tag": "$compare_31", "member_tags": ["=="]}
+{"line": 227, "relation_tag": "compare_right", "owner_tag": "$compare_31", "member_tags": ["$list_54"]}
+{"line": 227, "relation_tag": "expr_stmt", "owner_tag": "$expr_54", "member_tags": ["$call_200"]}
+{"line": 228, "relation_tag": "calls", "owner_tag": "$call_202", "member_tags": ["os.path.join"]}
+{"line": 228, "relation_tag": "call_pos_arg", "owner_tag": "$call_202", "member_tags": ["tmpdir", "view.st_tensor_uid", "'storage'"]}
+{"line": 228, "relation_tag": "attr_value", "owner_tag": "view.st_tensor_uid", "member_tags": ["view"]}
+{"line": 228, "relation_tag": "attr_name", "owner_tag": "view.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 228, "relation_tag": "assigns", "owner_tag": "$assign_60", "member_tags": ["view_root", "$call_202"]}
+{"line": 229, "relation_tag": "calls", "owner_tag": "$call_203", "member_tags": ["os.path.join"]}
+{"line": 229, "relation_tag": "call_pos_arg", "owner_tag": "$call_203", "member_tags": ["view_root", "'0'", "'data'"]}
+{"line": 229, "relation_tag": "assigns", "owner_tag": "$assign_61", "member_tags": ["link0", "$call_203"]}
+{"line": 230, "relation_tag": "calls", "owner_tag": "$call_204", "member_tags": ["run_test"]}
+{"line": 230, "relation_tag": "call_pos_arg", "owner_tag": "$call_204", "member_tags": ["'View symlink exists'", "$call_205"]}
+{"line": 230, "relation_tag": "calls", "owner_tag": "$call_205", "member_tags": ["os.path.islink"]}
+{"line": 230, "relation_tag": "call_pos_arg", "owner_tag": "$call_205", "member_tags": ["link0"]}
+{"line": 230, "relation_tag": "expr_stmt", "owner_tag": "$expr_55", "member_tags": ["$call_204"]}
+{"line": 231, "relation_tag": "calls", "owner_tag": "$call_206", "member_tags": ["os.path.realpath"]}
+{"line": 231, "relation_tag": "call_pos_arg", "owner_tag": "$call_206", "member_tags": ["link0"]}
+{"line": 231, "relation_tag": "assigns", "owner_tag": "$assign_62", "member_tags": ["target_real", "$call_206"]}
+{"line": 232, "relation_tag": "calls", "owner_tag": "$call_207", "member_tags": ["run_test"]}
+{"line": 232, "relation_tag": "call_pos_arg", "owner_tag": "$call_207", "member_tags": ["'Target parent dir exists'", "$call_208"]}
+{"line": 232, "relation_tag": "attr_value", "owner_tag": "os.path.isdir", "member_tags": ["os.path"]}
+{"line": 232, "relation_tag": "attr_name", "owner_tag": "os.path.isdir", "member_tags": ["isdir"]}
+{"line": 232, "relation_tag": "calls", "owner_tag": "$call_208", "member_tags": ["os.path.isdir"]}
+{"line": 232, "relation_tag": "attr_value", "owner_tag": "os.path.dirname", "member_tags": ["os.path"]}
+{"line": 232, "relation_tag": "attr_name", "owner_tag": "os.path.dirname", "member_tags": ["dirname"]}
+{"line": 232, "relation_tag": "calls", "owner_tag": "$call_209", "member_tags": ["os.path.dirname"]}
+{"line": 232, "relation_tag": "call_pos_arg", "owner_tag": "$call_209", "member_tags": ["target_real"]}
+{"line": 232, "relation_tag": "call_pos_arg", "owner_tag": "$call_208", "member_tags": ["$call_209"]}
+{"line": 232, "relation_tag": "expr_stmt", "owner_tag": "$expr_56", "member_tags": ["$call_207"]}
+{"line": 233, "relation_tag": "calls", "owner_tag": "$call_210", "member_tags": ["run_test"]}
+{"line": 233, "relation_tag": "call_pos_arg", "owner_tag": "$call_210", "member_tags": ["'Target file not touched (dangling)'", "$unaryop_4"]}
+{"line": 233, "relation_tag": "calls", "owner_tag": "$call_211", "member_tags": ["os.path.isfile"]}
+{"line": 233, "relation_tag": "call_pos_arg", "owner_tag": "$call_211", "member_tags": ["target_real"]}
+{"line": 233, "relation_tag": "unary_op", "owner_tag": "$unaryop_4", "member_tags": ["not"]}
+{"line": 233, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_4", "member_tags": ["$call_211"]}
+{"line": 233, "relation_tag": "expr_stmt", "owner_tag": "$expr_57", "member_tags": ["$call_210"]}
+{"line": 234, "relation_tag": "calls", "owner_tag": "$call_212", "member_tags": ["mt"]}
+{"line": 234, "relation_tag": "list_literal", "owner_tag": "$list_55", "member_tags": ["List"]}
+{"line": 234, "relation_tag": "collection_element", "owner_tag": "$list_55", "member_tags": ["'hello'", "'world'"]}
+{"line": 234, "relation_tag": "call_pos_arg", "owner_tag": "$call_212", "member_tags": ["$list_55", "tmpdir"]}
+{"line": 234, "relation_tag": "assigns", "owner_tag": "$assign_63", "member_tags": ["src", "$call_212"]}
+{"line": 235, "relation_tag": "calls", "owner_tag": "$call_213", "member_tags": ["assign_tensor"]}
+{"line": 235, "relation_tag": "call_pos_arg", "owner_tag": "$call_213", "member_tags": ["view", "src"]}
+{"line": 235, "relation_tag": "expr_stmt", "owner_tag": "$expr_58", "member_tags": ["$call_213"]}
+{"line": 236, "relation_tag": "calls", "owner_tag": "$call_214", "member_tags": ["os.path.join"]}
+{"line": 236, "relation_tag": "call_pos_arg", "owner_tag": "$call_214", "member_tags": ["tmpdir", "none_t.st_tensor_uid", "'storage'"]}
+{"line": 236, "relation_tag": "attr_value", "owner_tag": "none_t.st_tensor_uid", "member_tags": ["none_t"]}
+{"line": 236, "relation_tag": "attr_name", "owner_tag": "none_t.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 236, "relation_tag": "assigns", "owner_tag": "$assign_64", "member_tags": ["orig_root", "$call_214"]}
+{"line": 237, "relation_tag": "calls", "owner_tag": "$call_215", "member_tags": ["open"]}
+{"line": 237, "relation_tag": "calls", "owner_tag": "$call_216", "member_tags": ["os.path.join"]}
+{"line": 237, "relation_tag": "call_pos_arg", "owner_tag": "$call_216", "member_tags": ["orig_root", "'1'", "'data'"]}
+{"line": 237, "relation_tag": "call_pos_arg", "owner_tag": "$call_215", "member_tags": ["$call_216"]}
+{"line": 237, "relation_tag": "with_context", "owner_tag": "$with_23", "member_tags": ["$call_215"]}
+{"line": 237, "relation_tag": "with_as", "owner_tag": "$call_215", "member_tags": ["f"]}
+{"line": 238, "relation_tag": "calls", "owner_tag": "$call_217", "member_tags": ["run_test"]}
+{"line": 238, "relation_tag": "call_pos_arg", "owner_tag": "$call_217", "member_tags": ["\"Original [0,1] = 'hello'\"", "$compare_32"]}
+{"line": 238, "relation_tag": "calls", "owner_tag": "$call_218", "member_tags": ["f.read"]}
+{"line": 238, "relation_tag": "compare_left", "owner_tag": "$compare_32", "member_tags": ["$call_218"]}
+{"line": 238, "relation_tag": "compare_op", "owner_tag": "$compare_32", "member_tags": ["=="]}
+{"line": 238, "relation_tag": "compare_right", "owner_tag": "$compare_32", "member_tags": ["'hello'"]}
+{"line": 238, "relation_tag": "expr_stmt", "owner_tag": "$expr_59", "member_tags": ["$call_217"]}
+{"line": 237, "relation_tag": "with_body", "owner_tag": "$with_23", "member_tags": ["$expr_59"]}
+{"line": 239, "relation_tag": "calls", "owner_tag": "$call_219", "member_tags": ["open"]}
+{"line": 239, "relation_tag": "calls", "owner_tag": "$call_220", "member_tags": ["os.path.join"]}
+{"line": 239, "relation_tag": "call_pos_arg", "owner_tag": "$call_220", "member_tags": ["orig_root", "'2'", "'data'"]}
+{"line": 239, "relation_tag": "call_pos_arg", "owner_tag": "$call_219", "member_tags": ["$call_220"]}
+{"line": 239, "relation_tag": "with_context", "owner_tag": "$with_24", "member_tags": ["$call_219"]}
+{"line": 239, "relation_tag": "with_as", "owner_tag": "$call_219", "member_tags": ["f"]}
+{"line": 240, "relation_tag": "calls", "owner_tag": "$call_221", "member_tags": ["run_test"]}
+{"line": 240, "relation_tag": "call_pos_arg", "owner_tag": "$call_221", "member_tags": ["\"Original [0,2] = 'world'\"", "$compare_33"]}
+{"line": 240, "relation_tag": "calls", "owner_tag": "$call_222", "member_tags": ["f.read"]}
+{"line": 240, "relation_tag": "compare_left", "owner_tag": "$compare_33", "member_tags": ["$call_222"]}
+{"line": 240, "relation_tag": "compare_op", "owner_tag": "$compare_33", "member_tags": ["=="]}
+{"line": 240, "relation_tag": "compare_right", "owner_tag": "$compare_33", "member_tags": ["'world'"]}
+{"line": 240, "relation_tag": "expr_stmt", "owner_tag": "$expr_60", "member_tags": ["$call_221"]}
+{"line": 239, "relation_tag": "with_body", "owner_tag": "$with_24", "member_tags": ["$expr_60"]}
+{"line": 241, "relation_tag": "calls", "owner_tag": "$call_223", "member_tags": ["print"]}
+{"line": 241, "relation_tag": "call_pos_arg", "owner_tag": "$call_223", "member_tags": ["'\\nAll tests completed.'"]}
+{"line": 241, "relation_tag": "expr_stmt", "owner_tag": "$expr_61", "member_tags": ["$call_223"]}

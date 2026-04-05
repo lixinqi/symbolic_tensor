@@ -1,0 +1,40 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["os"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$import_1", "$import_2", "$import_3", "$importfrom_0", "$importfrom_1", "$importfrom_2", "$importfrom_3", "$functiondef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$import_1", "member_tags": ["subprocess"]}
+{"line": 3, "relation_tag": "imports", "owner_tag": "$import_2", "member_tags": ["tempfile"]}
+{"line": 4, "relation_tag": "imports", "owner_tag": "$import_3", "member_tags": ["torch"]}
+{"line": 5, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["experience.symbolic_tensor.tensor_util.make_tensor", "make_tensor"]}
+{"line": 6, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["experience.symbolic_tensor.optimizer.st_sgd", "StSGD"]}
+{"line": 7, "relation_tag": "imports", "owner_tag": "$importfrom_2", "member_tags": ["experience.symbolic_tensor.function.st_moe_forward", "st_moe_forward"]}
+{"line": 8, "relation_tag": "imports", "owner_tag": "$importfrom_3", "member_tags": ["experience.symbolic_tensor.function.st_moe_backward", "st_moe_backward"]}
+{"line": 9, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["read_storage"]}
+{"line": 9, "relation_tag": "param", "owner_tag": "$functiondef_0", "member_tags": ["tensor", "flat_index"]}
+{"line": 10, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["list"]}
+{"line": 10, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["str"]}
+{"line": 10, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["flat_index"]}
+{"line": 10, "relation_tag": "call_pos_arg", "owner_tag": "$call_0", "member_tags": ["$call_1"]}
+{"line": 10, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["digits", "$call_0"]}
+{"line": 9, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$assign_0", "1:$assign_1", "2:$with_0"]}
+{"line": 9, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$assign_0", "$assign_1", "$with_0"]}
+{"line": 11, "relation_tag": "attr_value", "owner_tag": "os.path", "member_tags": ["os", "os"]}
+{"line": 11, "relation_tag": "attr_name", "owner_tag": "os.path", "member_tags": ["path", "path"]}
+{"line": 11, "relation_tag": "attr_value", "owner_tag": "os.path.join", "member_tags": ["os.path", "os.path"]}
+{"line": 11, "relation_tag": "attr_name", "owner_tag": "os.path.join", "member_tags": ["join", "join"]}
+{"line": 11, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["os.path.join"]}
+{"line": 12, "relation_tag": "attr_value", "owner_tag": "tensor.st_relative_to", "member_tags": ["tensor"]}
+{"line": 12, "relation_tag": "attr_name", "owner_tag": "tensor.st_relative_to", "member_tags": ["st_relative_to"]}
+{"line": 11, "relation_tag": "call_pos_arg", "owner_tag": "$call_2", "member_tags": ["tensor.st_relative_to", "tensor.st_tensor_uid", "'storage'", "$call_3", "'data'"]}
+{"line": 13, "relation_tag": "attr_value", "owner_tag": "tensor.st_tensor_uid", "member_tags": ["tensor"]}
+{"line": 13, "relation_tag": "attr_name", "owner_tag": "tensor.st_tensor_uid", "member_tags": ["st_tensor_uid"]}
+{"line": 15, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["os.path.join"]}
+{"line": 15, "relation_tag": "call_pos_arg", "owner_tag": "$call_3", "member_tags": ["*digits"]}
+{"line": 11, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["path", "$call_2"]}
+{"line": 18, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["open"]}
+{"line": 18, "relation_tag": "call_pos_arg", "owner_tag": "$call_4", "member_tags": ["path"]}
+{"line": 18, "relation_tag": "with_context", "owner_tag": "$with_0", "member_tags": ["$call_4"]}
+{"line": 18, "relation_tag": "with_as", "owner_tag": "$call_4", "member_tags": ["f"]}
+{"line": 19, "relation_tag": "attr_value", "owner_tag": "f.read", "member_tags": ["f"]}
+{"line": 19, "relation_tag": "attr_name", "owner_tag": "f.read", "member_tags": ["read"]}
+{"line": 19, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["f.read"]}
+{"line": 19, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["$call_5"]}
+{"line": 18, "relation_tag": "with_body", "owner_tag": "$with_0", "member_tags": ["$return_0"]}

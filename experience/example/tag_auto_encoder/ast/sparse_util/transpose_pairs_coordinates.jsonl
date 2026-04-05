@@ -1,0 +1,169 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["torch"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$importfrom_0", "$importfrom_1", "$assign_0", "$functiondef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$importfrom_0", "member_tags": ["typing", "Any", "List", "Tuple"]}
+{"line": 3, "relation_tag": "imports", "owner_tag": "$importfrom_1", "member_tags": ["collections", "defaultdict"]}
+{"line": 4, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 4, "relation_tag": "attr_value", "owner_tag": "torch.Tensor", "member_tags": ["torch", "torch"]}
+{"line": 4, "relation_tag": "attr_name", "owner_tag": "torch.Tensor", "member_tags": ["Tensor", "Tensor"]}
+{"line": 4, "relation_tag": "subscript_value", "owner_tag": "$subscript_1", "member_tags": ["List"]}
+{"line": 4, "relation_tag": "subscript", "owner_tag": "$subscript_1", "member_tags": ["torch.Tensor"]}
+{"line": 4, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["$subscript_1", "$subscript_2"]}
+{"line": 4, "relation_tag": "subscript_value", "owner_tag": "$subscript_2", "member_tags": ["List"]}
+{"line": 4, "relation_tag": "subscript", "owner_tag": "$subscript_2", "member_tags": ["torch.Tensor"]}
+{"line": 4, "relation_tag": "subscript_value", "owner_tag": "$subscript_0", "member_tags": ["Tuple"]}
+{"line": 4, "relation_tag": "subscript", "owner_tag": "$subscript_0", "member_tags": ["$tuple_0"]}
+{"line": 4, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["Pair", "$subscript_0"]}
+{"line": 5, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["transpose_pairs_coordinates"]}
+{"line": 5, "relation_tag": "param", "owner_tag": "$functiondef_0", "member_tags": ["pairs"]}
+{"line": 6, "relation_tag": "subscript_value", "owner_tag": "$subscript_3", "member_tags": ["List"]}
+{"line": 6, "relation_tag": "subscript", "owner_tag": "$subscript_3", "member_tags": ["Pair"]}
+{"line": 5, "relation_tag": "param_annotation", "owner_tag": "$functiondef_0", "member_tags": ["pairs", "$subscript_3"]}
+{"line": 7, "relation_tag": "subscript_value", "owner_tag": "$subscript_4", "member_tags": ["List"]}
+{"line": 7, "relation_tag": "subscript", "owner_tag": "$subscript_4", "member_tags": ["Pair"]}
+{"line": 5, "relation_tag": "returns", "owner_tag": "$functiondef_0", "member_tags": ["$subscript_4"]}
+{"line": 5, "relation_tag": "docstring", "owner_tag": "$functiondef_0", "member_tags": ["$docstring_0"]}
+{"line": 5, "relation_tag": "text_content", "owner_tag": "$docstring_0", "member_tags": ["\n    Transpose coordinate pairs: swap keys and values.\n    Each input pair is (key, value) where key is a list of scalar index tensors\n    (coordinates) and value is a list of multi-element index tensors. This function\n    expands each pair into element-level (source_coord, target_coord) pairs, groups\n    by target coordinate, and returns (target_coord, collected_source_indices) pairs.\n    Args:\n        pairs: List of (key, value) pairs.\n            - key: list of scalar torch.Tensor (source coordinates)\n            - value: list of torch.Tensor (target index tensors, possibly multi-element)\n    Returns:\n        List of (output_key, output_value) pairs where:\n        - output_key: list of scalar torch.Tensor — target coordinate\n        - output_value: list of torch.Tensor — collected source indices\n    "]}
+{"line": 8, "relation_tag": "docstring", "owner_tag": "$expr_0", "member_tags": ["$docstring_1"]}
+{"line": 8, "relation_tag": "text_content", "owner_tag": "$docstring_1", "member_tags": ["\n    Transpose coordinate pairs: swap keys and values.\n    Each input pair is (key, value) where key is a list of scalar index tensors\n    (coordinates) and value is a list of multi-element index tensors. This function\n    expands each pair into element-level (source_coord, target_coord) pairs, groups\n    by target coordinate, and returns (target_coord, collected_source_indices) pairs.\n    Args:\n        pairs: List of (key, value) pairs.\n            - key: list of scalar torch.Tensor (source coordinates)\n            - value: list of torch.Tensor (target index tensors, possibly multi-element)\n    Returns:\n        List of (output_key, output_value) pairs where:\n        - output_key: list of scalar torch.Tensor — target coordinate\n        - output_value: list of torch.Tensor — collected source indices\n    "]}
+{"line": 5, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$expr_0", "1:$assign_1", "2:$for_0", "3:$assign_5", "4:$for_3", "5:$assign_6", "6:$for_4", "7:$return_0"]}
+{"line": 5, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$expr_0", "$assign_1", "$for_0", "$assign_5", "$for_3", "$assign_6", "$for_4", "$return_0"]}
+{"line": 23, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 23, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["all_pairs", "$list_0"]}
+{"line": 24, "relation_tag": "tuple_literal", "owner_tag": "$tuple_1", "member_tags": ["Tuple"]}
+{"line": 24, "relation_tag": "collection_element", "owner_tag": "$tuple_1", "member_tags": ["key_tensors", "value_tensors"]}
+{"line": 24, "relation_tag": "for_target", "owner_tag": "$for_0", "member_tags": ["$tuple_1"]}
+{"line": 24, "relation_tag": "for_iter", "owner_tag": "$for_0", "member_tags": ["pairs"]}
+{"line": 25, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["tuple"]}
+{"line": 25, "relation_tag": "tuple_literal", "owner_tag": "$comp_0", "member_tags": ["GeneratorExp"]}
+{"line": 25, "relation_tag": "attr_value", "owner_tag": "t.item", "member_tags": ["t", "t"]}
+{"line": 25, "relation_tag": "attr_name", "owner_tag": "t.item", "member_tags": ["item", "item"]}
+{"line": 25, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["t.item"]}
+{"line": 25, "relation_tag": "comprehension_body", "owner_tag": "$comp_0", "member_tags": ["$call_1"]}
+{"line": 25, "relation_tag": "comprehension_target", "owner_tag": "$comp_0", "member_tags": ["t"]}
+{"line": 25, "relation_tag": "comprehension_iter", "owner_tag": "$comp_0", "member_tags": ["key_tensors"]}
+{"line": 25, "relation_tag": "call_pos_arg", "owner_tag": "$call_0", "member_tags": ["$comp_0"]}
+{"line": 25, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["key_tuple", "$call_0"]}
+{"line": 24, "relation_tag": "for_body", "owner_tag": "$for_0", "member_tags": ["$assign_2", "$if_0", "$assign_3", "$for_1", "$assign_4", "$for_2"]}
+{"line": 26, "relation_tag": "unary_op", "owner_tag": "$unaryop_0", "member_tags": ["not"]}
+{"line": 26, "relation_tag": "unary_op_operand", "owner_tag": "$unaryop_0", "member_tags": ["value_tensors"]}
+{"line": 26, "relation_tag": "if_test", "owner_tag": "$if_0", "member_tags": ["$unaryop_0"]}
+{"line": 27, "relation_tag": "continue_stmt", "owner_tag": "$continue_0", "member_tags": ["continue"]}
+{"line": 26, "relation_tag": "if_body", "owner_tag": "$if_0", "member_tags": ["$continue_0"]}
+{"line": 28, "relation_tag": "list_literal", "owner_tag": "$list_1", "member_tags": ["List"]}
+{"line": 28, "relation_tag": "assigns", "owner_tag": "$assign_3", "member_tags": ["int_lists", "$list_1"]}
+{"line": 29, "relation_tag": "for_target", "owner_tag": "$for_1", "member_tags": ["t"]}
+{"line": 29, "relation_tag": "for_iter", "owner_tag": "$for_1", "member_tags": ["value_tensors"]}
+{"line": 30, "relation_tag": "attr_value", "owner_tag": "t.dim", "member_tags": ["t"]}
+{"line": 30, "relation_tag": "attr_name", "owner_tag": "t.dim", "member_tags": ["dim"]}
+{"line": 30, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["t.dim"]}
+{"line": 30, "relation_tag": "compare_left", "owner_tag": "$compare_0", "member_tags": ["$call_2"]}
+{"line": 30, "relation_tag": "compare_op", "owner_tag": "$compare_0", "member_tags": ["=="]}
+{"line": 30, "relation_tag": "compare_right", "owner_tag": "$compare_0", "member_tags": ["0"]}
+{"line": 30, "relation_tag": "if_test", "owner_tag": "$if_1", "member_tags": ["$compare_0"]}
+{"line": 31, "relation_tag": "attr_value", "owner_tag": "int_lists.append", "member_tags": ["int_lists", "int_lists"]}
+{"line": 31, "relation_tag": "attr_name", "owner_tag": "int_lists.append", "member_tags": ["append", "append"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["int_lists.append"]}
+{"line": 31, "relation_tag": "list_literal", "owner_tag": "$list_2", "member_tags": ["List"]}
+{"line": 31, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["t.item"]}
+{"line": 31, "relation_tag": "collection_element", "owner_tag": "$list_2", "member_tags": ["$call_4"]}
+{"line": 31, "relation_tag": "call_pos_arg", "owner_tag": "$call_3", "member_tags": ["$list_2"]}
+{"line": 31, "relation_tag": "expr_stmt", "owner_tag": "$expr_1", "member_tags": ["$call_3"]}
+{"line": 30, "relation_tag": "if_body", "owner_tag": "$if_1", "member_tags": ["$expr_1"]}
+{"line": 33, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["int_lists.append"]}
+{"line": 33, "relation_tag": "attr_value", "owner_tag": "t.tolist", "member_tags": ["t"]}
+{"line": 33, "relation_tag": "attr_name", "owner_tag": "t.tolist", "member_tags": ["tolist"]}
+{"line": 33, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["t.tolist"]}
+{"line": 33, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["$call_6"]}
+{"line": 33, "relation_tag": "expr_stmt", "owner_tag": "$expr_2", "member_tags": ["$call_5"]}
+{"line": 30, "relation_tag": "else_body", "owner_tag": "$if_1", "member_tags": ["$expr_2"]}
+{"line": 29, "relation_tag": "for_body", "owner_tag": "$for_1", "member_tags": ["$if_1"]}
+{"line": 34, "relation_tag": "calls", "owner_tag": "$call_7", "member_tags": ["list"]}
+{"line": 34, "relation_tag": "calls", "owner_tag": "$call_8", "member_tags": ["zip"]}
+{"line": 34, "relation_tag": "call_pos_arg", "owner_tag": "$call_8", "member_tags": ["*int_lists"]}
+{"line": 34, "relation_tag": "call_pos_arg", "owner_tag": "$call_7", "member_tags": ["$call_8"]}
+{"line": 34, "relation_tag": "assigns", "owner_tag": "$assign_4", "member_tags": ["value_coords", "$call_7"]}
+{"line": 35, "relation_tag": "for_target", "owner_tag": "$for_2", "member_tags": ["vc"]}
+{"line": 35, "relation_tag": "for_iter", "owner_tag": "$for_2", "member_tags": ["value_coords"]}
+{"line": 36, "relation_tag": "attr_value", "owner_tag": "all_pairs.append", "member_tags": ["all_pairs"]}
+{"line": 36, "relation_tag": "attr_name", "owner_tag": "all_pairs.append", "member_tags": ["append"]}
+{"line": 36, "relation_tag": "calls", "owner_tag": "$call_9", "member_tags": ["all_pairs.append"]}
+{"line": 36, "relation_tag": "tuple_literal", "owner_tag": "$tuple_2", "member_tags": ["Tuple"]}
+{"line": 36, "relation_tag": "collection_element", "owner_tag": "$tuple_2", "member_tags": ["key_tuple", "vc"]}
+{"line": 36, "relation_tag": "call_pos_arg", "owner_tag": "$call_9", "member_tags": ["$tuple_2"]}
+{"line": 36, "relation_tag": "expr_stmt", "owner_tag": "$expr_3", "member_tags": ["$call_9"]}
+{"line": 35, "relation_tag": "for_body", "owner_tag": "$for_2", "member_tags": ["$expr_3"]}
+{"line": 37, "relation_tag": "calls", "owner_tag": "$call_10", "member_tags": ["defaultdict"]}
+{"line": 37, "relation_tag": "call_pos_arg", "owner_tag": "$call_10", "member_tags": ["list"]}
+{"line": 37, "relation_tag": "assigns", "owner_tag": "$assign_5", "member_tags": ["groups", "$call_10"]}
+{"line": 38, "relation_tag": "tuple_literal", "owner_tag": "$tuple_3", "member_tags": ["Tuple"]}
+{"line": 38, "relation_tag": "collection_element", "owner_tag": "$tuple_3", "member_tags": ["key_tuple", "value_tuple"]}
+{"line": 38, "relation_tag": "for_target", "owner_tag": "$for_3", "member_tags": ["$tuple_3"]}
+{"line": 38, "relation_tag": "for_iter", "owner_tag": "$for_3", "member_tags": ["all_pairs"]}
+{"line": 39, "relation_tag": "subscript_value", "owner_tag": "$subscript_5", "member_tags": ["groups"]}
+{"line": 39, "relation_tag": "subscript", "owner_tag": "$subscript_5", "member_tags": ["value_tuple"]}
+{"line": 39, "relation_tag": "attr_value", "owner_tag": "$attr_0", "member_tags": ["$subscript_5"]}
+{"line": 39, "relation_tag": "attr_name", "owner_tag": "$attr_0", "member_tags": ["append"]}
+{"line": 39, "relation_tag": "calls", "owner_tag": "$call_11", "member_tags": ["$attr_0"]}
+{"line": 39, "relation_tag": "call_pos_arg", "owner_tag": "$call_11", "member_tags": ["key_tuple"]}
+{"line": 39, "relation_tag": "expr_stmt", "owner_tag": "$expr_4", "member_tags": ["$call_11"]}
+{"line": 38, "relation_tag": "for_body", "owner_tag": "$for_3", "member_tags": ["$expr_4"]}
+{"line": 40, "relation_tag": "list_literal", "owner_tag": "$list_3", "member_tags": ["List"]}
+{"line": 40, "relation_tag": "assigns", "owner_tag": "$assign_6", "member_tags": ["result", "$list_3"]}
+{"line": 41, "relation_tag": "tuple_literal", "owner_tag": "$tuple_4", "member_tags": ["Tuple"]}
+{"line": 41, "relation_tag": "collection_element", "owner_tag": "$tuple_4", "member_tags": ["target_coord", "source_coords"]}
+{"line": 41, "relation_tag": "attr_value", "owner_tag": "groups.items", "member_tags": ["groups"]}
+{"line": 41, "relation_tag": "attr_name", "owner_tag": "groups.items", "member_tags": ["items"]}
+{"line": 41, "relation_tag": "calls", "owner_tag": "$call_12", "member_tags": ["groups.items"]}
+{"line": 41, "relation_tag": "for_target", "owner_tag": "$for_4", "member_tags": ["$tuple_4"]}
+{"line": 41, "relation_tag": "for_iter", "owner_tag": "$for_4", "member_tags": ["$call_12"]}
+{"line": 42, "relation_tag": "list_literal", "owner_tag": "$comp_1", "member_tags": ["ListComp"]}
+{"line": 42, "relation_tag": "attr_value", "owner_tag": "torch.tensor", "member_tags": ["torch", "torch"]}
+{"line": 42, "relation_tag": "attr_name", "owner_tag": "torch.tensor", "member_tags": ["tensor", "tensor"]}
+{"line": 42, "relation_tag": "calls", "owner_tag": "$call_13", "member_tags": ["torch.tensor"]}
+{"line": 42, "relation_tag": "call_pos_arg", "owner_tag": "$call_13", "member_tags": ["c"]}
+{"line": 42, "relation_tag": "attr_value", "owner_tag": "torch.long", "member_tags": ["torch", "torch"]}
+{"line": 42, "relation_tag": "attr_name", "owner_tag": "torch.long", "member_tags": ["long", "long"]}
+{"line": 42, "relation_tag": "keyword_arg", "owner_tag": "$call_13", "member_tags": ["dtype", "torch.long"]}
+{"line": 42, "relation_tag": "comprehension_body", "owner_tag": "$comp_1", "member_tags": ["$call_13"]}
+{"line": 42, "relation_tag": "comprehension_target", "owner_tag": "$comp_1", "member_tags": ["c"]}
+{"line": 42, "relation_tag": "comprehension_iter", "owner_tag": "$comp_1", "member_tags": ["target_coord"]}
+{"line": 42, "relation_tag": "assigns", "owner_tag": "$assign_7", "member_tags": ["out_key", "$comp_1"]}
+{"line": 41, "relation_tag": "for_body", "owner_tag": "$for_4", "member_tags": ["$assign_7", "$if_2", "$expr_5"]}
+{"line": 43, "relation_tag": "bool_op", "owner_tag": "$boolop_0", "member_tags": ["and"]}
+{"line": 43, "relation_tag": "bool_op_operand", "owner_tag": "$boolop_0", "member_tags": ["source_coords", "$subscript_6"]}
+{"line": 43, "relation_tag": "subscript_value", "owner_tag": "$subscript_6", "member_tags": ["source_coords"]}
+{"line": 43, "relation_tag": "subscript", "owner_tag": "$subscript_6", "member_tags": ["0"]}
+{"line": 43, "relation_tag": "if_test", "owner_tag": "$if_2", "member_tags": ["$boolop_0"]}
+{"line": 44, "relation_tag": "calls", "owner_tag": "$call_14", "member_tags": ["len"]}
+{"line": 44, "relation_tag": "subscript_value", "owner_tag": "$subscript_7", "member_tags": ["source_coords"]}
+{"line": 44, "relation_tag": "subscript", "owner_tag": "$subscript_7", "member_tags": ["0"]}
+{"line": 44, "relation_tag": "call_pos_arg", "owner_tag": "$call_14", "member_tags": ["$subscript_7"]}
+{"line": 44, "relation_tag": "assigns", "owner_tag": "$assign_8", "member_tags": ["n_dims", "$call_14"]}
+{"line": 43, "relation_tag": "if_body", "owner_tag": "$if_2", "member_tags": ["$assign_8", "$assign_9"]}
+{"line": 45, "relation_tag": "list_literal", "owner_tag": "$comp_2", "member_tags": ["ListComp"]}
+{"line": 46, "relation_tag": "calls", "owner_tag": "$call_15", "member_tags": ["torch.tensor"]}
+{"line": 46, "relation_tag": "list_literal", "owner_tag": "$comp_3", "member_tags": ["ListComp"]}
+{"line": 46, "relation_tag": "subscript_value", "owner_tag": "$subscript_8", "member_tags": ["sc"]}
+{"line": 46, "relation_tag": "subscript", "owner_tag": "$subscript_8", "member_tags": ["d"]}
+{"line": 46, "relation_tag": "comprehension_body", "owner_tag": "$comp_3", "member_tags": ["$subscript_8"]}
+{"line": 46, "relation_tag": "comprehension_target", "owner_tag": "$comp_3", "member_tags": ["sc"]}
+{"line": 46, "relation_tag": "comprehension_iter", "owner_tag": "$comp_3", "member_tags": ["source_coords"]}
+{"line": 46, "relation_tag": "call_pos_arg", "owner_tag": "$call_15", "member_tags": ["$comp_3"]}
+{"line": 46, "relation_tag": "keyword_arg", "owner_tag": "$call_15", "member_tags": ["dtype", "torch.long"]}
+{"line": 45, "relation_tag": "comprehension_body", "owner_tag": "$comp_2", "member_tags": ["$call_15"]}
+{"line": 47, "relation_tag": "calls", "owner_tag": "$call_16", "member_tags": ["range"]}
+{"line": 47, "relation_tag": "call_pos_arg", "owner_tag": "$call_16", "member_tags": ["n_dims"]}
+{"line": 45, "relation_tag": "comprehension_target", "owner_tag": "$comp_2", "member_tags": ["d"]}
+{"line": 45, "relation_tag": "comprehension_iter", "owner_tag": "$comp_2", "member_tags": ["$call_16"]}
+{"line": 45, "relation_tag": "assigns", "owner_tag": "$assign_9", "member_tags": ["out_value", "$comp_2"]}
+{"line": 50, "relation_tag": "list_literal", "owner_tag": "$list_4", "member_tags": ["List"]}
+{"line": 50, "relation_tag": "assigns", "owner_tag": "$assign_10", "member_tags": ["out_value", "$list_4"]}
+{"line": 43, "relation_tag": "else_body", "owner_tag": "$if_2", "member_tags": ["$assign_10"]}
+{"line": 51, "relation_tag": "attr_value", "owner_tag": "result.append", "member_tags": ["result"]}
+{"line": 51, "relation_tag": "attr_name", "owner_tag": "result.append", "member_tags": ["append"]}
+{"line": 51, "relation_tag": "calls", "owner_tag": "$call_17", "member_tags": ["result.append"]}
+{"line": 51, "relation_tag": "tuple_literal", "owner_tag": "$tuple_5", "member_tags": ["Tuple"]}
+{"line": 51, "relation_tag": "collection_element", "owner_tag": "$tuple_5", "member_tags": ["out_key", "out_value"]}
+{"line": 51, "relation_tag": "call_pos_arg", "owner_tag": "$call_17", "member_tags": ["$tuple_5"]}
+{"line": 51, "relation_tag": "expr_stmt", "owner_tag": "$expr_5", "member_tags": ["$call_17"]}
+{"line": 52, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["result"]}

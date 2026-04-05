@@ -1,0 +1,79 @@
+{"line": 1, "relation_tag": "imports", "owner_tag": "$import_0", "member_tags": ["os"]}
+{"line": 0, "relation_tag": "contains", "owner_tag": "<module>", "member_tags": ["$import_0", "$import_1", "$functiondef_0"]}
+{"line": 2, "relation_tag": "imports", "owner_tag": "$import_1", "member_tags": ["seedir"]}
+{"line": 3, "relation_tag": "defines", "owner_tag": "$functiondef_0", "member_tags": ["pack_dir"]}
+{"line": 3, "relation_tag": "param", "owner_tag": "$functiondef_0", "member_tags": ["root_dir"]}
+{"line": 3, "relation_tag": "param_annotation", "owner_tag": "$functiondef_0", "member_tags": ["root_dir", "str"]}
+{"line": 3, "relation_tag": "returns", "owner_tag": "$functiondef_0", "member_tags": ["str"]}
+{"line": 4, "relation_tag": "attr_value", "owner_tag": "seedir.seedir", "member_tags": ["seedir"]}
+{"line": 4, "relation_tag": "attr_name", "owner_tag": "seedir.seedir", "member_tags": ["seedir"]}
+{"line": 4, "relation_tag": "calls", "owner_tag": "$call_0", "member_tags": ["seedir.seedir"]}
+{"line": 4, "relation_tag": "call_pos_arg", "owner_tag": "$call_0", "member_tags": ["root_dir"]}
+{"line": 4, "relation_tag": "keyword_arg", "owner_tag": "$call_0", "member_tags": ["printout", "False"]}
+{"line": 4, "relation_tag": "assigns", "owner_tag": "$assign_0", "member_tags": ["dir_struct", "$call_0"]}
+{"line": 3, "relation_tag": "stmt_seq", "owner_tag": "$functiondef_0", "member_tags": ["0:$assign_0", "1:$assign_1", "2:$for_0", "3:$assign_6", "4:$return_0"]}
+{"line": 3, "relation_tag": "contains", "owner_tag": "$functiondef_0", "member_tags": ["$assign_0", "$assign_1", "$for_0", "$assign_6", "$return_0"]}
+{"line": 5, "relation_tag": "list_literal", "owner_tag": "$list_0", "member_tags": ["List"]}
+{"line": 5, "relation_tag": "assigns", "owner_tag": "$assign_1", "member_tags": ["file_sections", "$list_0"]}
+{"line": 6, "relation_tag": "tuple_literal", "owner_tag": "$tuple_0", "member_tags": ["Tuple"]}
+{"line": 6, "relation_tag": "collection_element", "owner_tag": "$tuple_0", "member_tags": ["dirpath", "dirnames", "filenames"]}
+{"line": 6, "relation_tag": "attr_value", "owner_tag": "os.walk", "member_tags": ["os"]}
+{"line": 6, "relation_tag": "attr_name", "owner_tag": "os.walk", "member_tags": ["walk"]}
+{"line": 6, "relation_tag": "calls", "owner_tag": "$call_1", "member_tags": ["os.walk"]}
+{"line": 6, "relation_tag": "call_pos_arg", "owner_tag": "$call_1", "member_tags": ["root_dir"]}
+{"line": 6, "relation_tag": "for_target", "owner_tag": "$for_0", "member_tags": ["$tuple_0"]}
+{"line": 6, "relation_tag": "for_iter", "owner_tag": "$for_0", "member_tags": ["$call_1"]}
+{"line": 7, "relation_tag": "for_target", "owner_tag": "$for_1", "member_tags": ["filename"]}
+{"line": 7, "relation_tag": "for_iter", "owner_tag": "$for_1", "member_tags": ["filenames"]}
+{"line": 8, "relation_tag": "attr_value", "owner_tag": "os.path", "member_tags": ["os", "os", "os"]}
+{"line": 8, "relation_tag": "attr_name", "owner_tag": "os.path", "member_tags": ["path", "path", "path"]}
+{"line": 8, "relation_tag": "attr_value", "owner_tag": "os.path.join", "member_tags": ["os.path"]}
+{"line": 8, "relation_tag": "attr_name", "owner_tag": "os.path.join", "member_tags": ["join"]}
+{"line": 8, "relation_tag": "calls", "owner_tag": "$call_2", "member_tags": ["os.path.join"]}
+{"line": 8, "relation_tag": "call_pos_arg", "owner_tag": "$call_2", "member_tags": ["dirpath", "filename"]}
+{"line": 8, "relation_tag": "assigns", "owner_tag": "$assign_2", "member_tags": ["file_path", "$call_2"]}
+{"line": 7, "relation_tag": "for_body", "owner_tag": "$for_1", "member_tags": ["$assign_2", "$assign_3", "$assign_4", "$try_0", "$expr_0"]}
+{"line": 9, "relation_tag": "attr_value", "owner_tag": "os.path.realpath", "member_tags": ["os.path"]}
+{"line": 9, "relation_tag": "attr_name", "owner_tag": "os.path.realpath", "member_tags": ["realpath"]}
+{"line": 9, "relation_tag": "calls", "owner_tag": "$call_3", "member_tags": ["os.path.realpath"]}
+{"line": 9, "relation_tag": "call_pos_arg", "owner_tag": "$call_3", "member_tags": ["file_path"]}
+{"line": 9, "relation_tag": "assigns", "owner_tag": "$assign_3", "member_tags": ["real_path", "$call_3"]}
+{"line": 10, "relation_tag": "attr_value", "owner_tag": "os.path.relpath", "member_tags": ["os.path"]}
+{"line": 10, "relation_tag": "attr_name", "owner_tag": "os.path.relpath", "member_tags": ["relpath"]}
+{"line": 10, "relation_tag": "calls", "owner_tag": "$call_4", "member_tags": ["os.path.relpath"]}
+{"line": 10, "relation_tag": "call_pos_arg", "owner_tag": "$call_4", "member_tags": ["file_path", "root_dir"]}
+{"line": 10, "relation_tag": "assigns", "owner_tag": "$assign_4", "member_tags": ["relative_file_path", "$call_4"]}
+{"line": 11, "relation_tag": "try_start", "owner_tag": "$try_0", "member_tags": ["try"]}
+{"line": 12, "relation_tag": "calls", "owner_tag": "$call_5", "member_tags": ["open"]}
+{"line": 12, "relation_tag": "call_pos_arg", "owner_tag": "$call_5", "member_tags": ["real_path", "'r'"]}
+{"line": 12, "relation_tag": "keyword_arg", "owner_tag": "$call_5", "member_tags": ["encoding", "'utf-8'"]}
+{"line": 12, "relation_tag": "with_context", "owner_tag": "$with_0", "member_tags": ["$call_5"]}
+{"line": 12, "relation_tag": "with_as", "owner_tag": "$call_5", "member_tags": ["f"]}
+{"line": 13, "relation_tag": "attr_value", "owner_tag": "f.read", "member_tags": ["f"]}
+{"line": 13, "relation_tag": "attr_name", "owner_tag": "f.read", "member_tags": ["read"]}
+{"line": 13, "relation_tag": "calls", "owner_tag": "$call_6", "member_tags": ["f.read"]}
+{"line": 13, "relation_tag": "assigns", "owner_tag": "$assign_5", "member_tags": ["file_content", "$call_6"]}
+{"line": 12, "relation_tag": "with_body", "owner_tag": "$with_0", "member_tags": ["$assign_5"]}
+{"line": 11, "relation_tag": "try_body", "owner_tag": "$try_0", "member_tags": ["$with_0"]}
+{"line": 14, "relation_tag": "tuple_literal", "owner_tag": "$tuple_1", "member_tags": ["Tuple"]}
+{"line": 14, "relation_tag": "collection_element", "owner_tag": "$tuple_1", "member_tags": ["UnicodeDecodeError", "OSError"]}
+{"line": 11, "relation_tag": "handles", "owner_tag": "$try_0", "member_tags": ["$tuple_1"]}
+{"line": 15, "relation_tag": "continue_stmt", "owner_tag": "$continue_0", "member_tags": ["continue"]}
+{"line": 11, "relation_tag": "except_body", "owner_tag": "$try_0", "member_tags": ["$continue_0"]}
+{"line": 16, "relation_tag": "attr_value", "owner_tag": "file_sections.append", "member_tags": ["file_sections"]}
+{"line": 16, "relation_tag": "attr_name", "owner_tag": "file_sections.append", "member_tags": ["append"]}
+{"line": 16, "relation_tag": "calls", "owner_tag": "$call_7", "member_tags": ["file_sections.append"]}
+{"line": 17, "relation_tag": "fstring_elem", "owner_tag": "$fstring_0", "member_tags": ["lit:## File: ", "val:relative_file_path", "lit:\n```\n", "val:file_content", "lit:\n```"]}
+{"line": 16, "relation_tag": "call_pos_arg", "owner_tag": "$call_7", "member_tags": ["$fstring_0"]}
+{"line": 16, "relation_tag": "expr_stmt", "owner_tag": "$expr_0", "member_tags": ["$call_7"]}
+{"line": 6, "relation_tag": "for_body", "owner_tag": "$for_0", "member_tags": ["$for_1"]}
+{"line": 23, "relation_tag": "fstring_elem", "owner_tag": "$fstring_1", "member_tags": ["lit:# Directories structure\n```\n", "val:dir_struct", "lit:\n```\n\n# Files\n\n"]}
+{"line": 28, "relation_tag": "attr_value", "owner_tag": "$attr_0", "member_tags": ["'\\n\\n'"]}
+{"line": 28, "relation_tag": "attr_name", "owner_tag": "$attr_0", "member_tags": ["join"]}
+{"line": 28, "relation_tag": "calls", "owner_tag": "$call_8", "member_tags": ["$attr_0"]}
+{"line": 28, "relation_tag": "call_pos_arg", "owner_tag": "$call_8", "member_tags": ["file_sections"]}
+{"line": 23, "relation_tag": "bin_op", "owner_tag": "$binop_0", "member_tags": ["+"]}
+{"line": 23, "relation_tag": "bin_op_left", "owner_tag": "$binop_0", "member_tags": ["$fstring_1"]}
+{"line": 23, "relation_tag": "bin_op_right", "owner_tag": "$binop_0", "member_tags": ["$call_8"]}
+{"line": 22, "relation_tag": "assigns", "owner_tag": "$assign_6", "member_tags": ["ret", "$binop_0"]}
+{"line": 30, "relation_tag": "returns", "owner_tag": "$return_0", "member_tags": ["ret"]}
