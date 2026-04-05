@@ -4,3 +4,10 @@ convert_python_to_ast_tag_jsonl[ProgrammingLanguage] :=
     # inline
     <- Import[./ast_tag_relation_group.viba]
     <- { Assert that the $ast_tag_rel_group meets the AstTagRelationGroup schema }
+    <- {
+        all Symbol[ProgrammingLanguage]
+        instances are used to generally connect semantics across lines and       
+        files. any line numbers or column numbers are not allowed to be encoded
+        into Symbol[ProgrammingLanguage] instances. the underlying trouble is how to express ast tree structure.
+        the solution is create a tmp_var symbol as owner_tag to flatten the tree structure.
+    }
