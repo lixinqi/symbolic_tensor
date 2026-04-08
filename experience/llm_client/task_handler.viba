@@ -31,4 +31,4 @@ GenerateOutput["tmux_cc"] :=
     <- $auto_confirm bool # default True
     <- $tmux_session str # default None
     # inline
-    <- Import[experience/llm_client/ducc_task_handler.viba]
+    <- Import[experience/llm_client/tmux_cc_task_handler.viba]

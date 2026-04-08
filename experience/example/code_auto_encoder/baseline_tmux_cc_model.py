@@ -1,6 +1,6 @@
-"""Baseline ducc model for auto-encoder experiment.
+"""Baseline tmux_cc model for auto-encoder experiment.
 
-Uses the ducc CLI tool (similar to Claude Code) to process tasks,
+Uses the tmux_cc CLI tool (similar to Claude Code) to process tasks,
 allowing visual observation of the agent's behavior in the terminal.
 
 Pipeline:
@@ -9,8 +9,8 @@ Pipeline:
   3. coding_agent(llm_method="tmux_cc") -> (batch,)
 
 Modes:
-  - interactive=False (default): Run ducc via subprocess, non-interactive
-  - interactive=True: Run ducc in tmux session for visual observation
+  - interactive=False (default): Run tmux_cc via subprocess, non-interactive
+  - interactive=True: Run tmux_cc in tmux session for visual observation
 """
 
 import os
@@ -28,8 +28,8 @@ from experience.symbolic_tensor.function.coding_agent import coding_agent
 from experience.example.code_auto_encoder.prepare_dataset import kMaskedHint
 
 
-class BaselineDuccModel(nn.Module):
-    """BaselineDuccModel -- uses ducc CLI for visual agent execution.
+class BaselineTmuxCcModel(nn.Module):
+    """BaselineTmuxCcModel -- uses tmux_cc CLI for visual agent execution.
 
     Pipeline:
       1. Stack (path, content) -> (batch, num_files, 2)
@@ -37,7 +37,7 @@ class BaselineDuccModel(nn.Module):
       3. coding_agent(llm_method="tmux_cc") -> (batch,)
 
     Args:
-        interactive: If True, run ducc in tmux for visual observation.
+        interactive: If True, run tmux_cc in tmux for visual observation.
         auto_confirm: If True (and interactive), auto-confirm prompts in tmux.
         tmux_session: Custom tmux session name (interactive mode only).
     """
@@ -58,7 +58,7 @@ class BaselineDuccModel(nn.Module):
         masked_path_tensor: torch.Tensor,
         masked_content_tensor: torch.Tensor,
     ) -> torch.Tensor:
-        """Forward pass implementing the pipeline via ducc."""
+        """Forward pass implementing the pipeline via tmux_cc."""
         batch_size, num_files = masked_path_tensor.shape
 
         # Step 1: st_stack(path, content, dim=-1) -> (batch, num_files, 2)
@@ -69,7 +69,7 @@ class BaselineDuccModel(nn.Module):
         # Step 2: merge(axis=-1) -> (batch, num_files)
         path_and_contents = merge_forward(stacked_tensor, axis=-1)
 
-        # Step 3: coding_agent via ducc
+        # Step 3: coding_agent via tmux_cc
         task_prompt = (
             f"Get back the original content that was masked in {kMaskedHint}\n"
             "Output ONLY the missing source code lines. No explanations."
@@ -87,4 +87,4 @@ class BaselineDuccModel(nn.Module):
 
 
 if __name__ == "__main__":
-    print("BaselineDuccModel module loaded successfully.")
+    print("BaselineTmuxCcModel module loaded successfully.")

@@ -12,7 +12,7 @@ Viba DSL specification:
     # Dispatch based on llm_method:
     #   - raw_llm_api → BaselineRawLlmApiModel
     #   - coding_agent → BaselineCodingAgentModel
-    #   - tmux_cc → BaselineDuccModel (supports interactive mode)
+    #   - tmux_cc → BaselineTmuxCcModel (supports interactive mode)
 """
 
 import os
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
 from experience.example.code_auto_encoder.baseline_raw_llm_api_model import BaselineRawLlmApiModel
 from experience.example.code_auto_encoder.baseline_coding_agent_model import BaselineCodingAgentModel
-from experience.example.code_auto_encoder.baseline_ducc_model import BaselineDuccModel
+from experience.example.code_auto_encoder.baseline_tmux_cc_model import BaselineTmuxCcModel
 
 
 class BaselineAgentModel(nn.Module):
@@ -35,7 +35,7 @@ class BaselineAgentModel(nn.Module):
     Dispatches to the appropriate model based on llm_method:
       - "raw_llm_api" → BaselineRawLlmApiModel
       - "coding_agent" → BaselineCodingAgentModel
-      - "tmux_cc" → BaselineDuccModel (supports interactive tmux mode)
+      - "tmux_cc" → BaselineTmuxCcModel (supports interactive tmux mode)
 
     Args:
         llm_method: One of "raw_llm_api", "coding_agent", or "tmux_cc".
@@ -63,7 +63,7 @@ class BaselineAgentModel(nn.Module):
         elif llm_method == "coding_agent":
             self._model = BaselineCodingAgentModel(llm_method="coding_agent")
         elif llm_method == "tmux_cc":
-            self._model = BaselineDuccModel(
+            self._model = BaselineTmuxCcModel(
                 interactive=interactive,
                 auto_confirm=auto_confirm,
                 tmux_session=tmux_session,

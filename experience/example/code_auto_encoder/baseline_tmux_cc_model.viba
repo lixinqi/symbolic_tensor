@@ -1,5 +1,5 @@
 
-BaselineDuccModel[torch.nn.Module] :=
+BaselineTmuxCcModel[torch.nn.Module] :=
     # forward
     $baseline_output SymbolicTensor[($total_batch_size,)]
     <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
