@@ -70,6 +70,9 @@ def _node_to_symbol(node: Any, tmp_gen: _TempVarGen) -> str:
         return 'None'
     if not isinstance(node, dict):
         return str(node)
+    # Use pre-annotated symbol if available (from path_map roundtrip)
+    if '_symbol' in node:
+        return node['_symbol']
     t = node.get('_type', '')
     if t == 'Name':
         return node.get('id', '')
