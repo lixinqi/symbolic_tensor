@@ -1,0 +1,40 @@
+
+BaselineDuccModel[torch.nn.Module] :=
+    # forward
+    $baseline_output SymbolicTensor[($total_batch_size,)]
+    <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $masked_file_content_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    # __init__
+    <- $interactive bool # default False
+    <- $auto_confirm bool # default True
+    <- $tmux_session str # default None
+    #inline
+    <- (
+        $stacked_tensor Symbolic[Tensor[($total_batch_size, $num_files, 2)]]
+        <- Import[function/st_stack]
+        <- [$masked_file_path_tensor, $masked_file_content_tensor]
+        <- $dim -1
+    )
+    <- (
+        $path_and_contents Symbolic[Tensor[($total_batch_size, $num_files)]]
+        <- Import[function/merge]
+        <- $stacked_tensor
+        <- $axis -1
+    )
+    <- (
+        $merged_path_and_contents Symbolic[Tensor[($total_batch_size,)]]
+        <- Import[function/merge]
+        <- $path_and_contents
+        <- $axis -1
+    )
+    <- ($prompt <- { Get back the original content that was masked in f"{kMaskedHint}" })
+    <- (
+        $baseline_output
+        <- Import[function/coding_agent.viba]
+        <- $merged_path_and_contents
+        <- $prompt
+        <- $llm_method "tmux_cc"
+        <- $interactive
+        <- $auto_confirm
+        <- $tmux_session
+    )

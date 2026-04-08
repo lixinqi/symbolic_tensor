@@ -1,17 +1,44 @@
 from experience.llm_client.agent_task import AgentTask
 from experience.llm_client.coding_agent_task_handler import CodingAgentTaskHandler
 from experience.llm_client.raw_llm_task_handler import RawLlmTaskHandler
+from experience.llm_client.ducc_task_handler import DuccTaskHandler
 import time
 import sys
 from typing import Dict, Optional
 
 class TaskHandler:
-    def __call__(self, all_tasks, llm_method: str, llm_env: Optional[Dict[str, str]] = None) -> None:
+    def __call__(
+        self,
+        all_tasks,
+        llm_method: str,
+        llm_env: Optional[Dict[str, str]] = None,
+        interactive: bool = False,
+        auto_confirm: bool = True,
+        tmux_session: Optional[str] = None,
+    ) -> None:
+        """Execute tasks via the specified LLM method.
+
+        Args:
+            all_tasks: List of AgentTask objects
+            llm_method: One of "coding_agent", "raw_llm_api", "tmux_cc"
+            llm_env: Optional environment variables for LLM
+            interactive: If True and llm_method="tmux_cc", run in tmux for visual interaction
+            auto_confirm: If True (and interactive), auto-confirm prompts in tmux
+            tmux_session: Custom tmux session name (interactive mode only)
+        """
         start = time.time()
         if llm_method == "coding_agent":
             CodingAgentTaskHandler()(all_tasks, llm_env=llm_env)
         elif llm_method == "raw_llm_api":
             RawLlmTaskHandler()(all_tasks, llm_env=llm_env)
+        elif llm_method == "tmux_cc":
+            DuccTaskHandler()(
+                all_tasks,
+                llm_env=llm_env,
+                interactive=interactive,
+                auto_confirm=auto_confirm,
+                tmux_session=tmux_session,
+            )
         else:
             raise ValueError(f"Unknown llm_method: {llm_method}")
         end = time.time()
