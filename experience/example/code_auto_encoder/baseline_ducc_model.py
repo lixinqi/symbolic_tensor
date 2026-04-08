@@ -6,8 +6,7 @@ allowing visual observation of the agent's behavior in the terminal.
 Pipeline:
   1. Stack (path, content) -> (batch, num_files, 2)
   2. merge(axis=-1) -> (batch, num_files) -- path+content merged per file
-  3. merge(axis=-1) -> (batch, 1) -- all files merged into one
-  4. coding_agent(llm_method="tmux_cc") -> (batch,)
+  3. coding_agent(llm_method="tmux_cc") -> (batch,)
 
 Modes:
   - interactive=False (default): Run ducc via subprocess, non-interactive
@@ -35,8 +34,7 @@ class BaselineDuccModel(nn.Module):
     Pipeline:
       1. Stack (path, content) -> (batch, num_files, 2)
       2. merge(axis=-1) -> (batch, num_files) -- path+content merged per file
-      3. merge(axis=-1) -> (batch,) -- all files merged into one
-      4. coding_agent(llm_method="tmux_cc") -> (batch,)
+      3. coding_agent(llm_method="tmux_cc") -> (batch,)
 
     Args:
         interactive: If True, run ducc in tmux for visual observation.
@@ -71,17 +69,14 @@ class BaselineDuccModel(nn.Module):
         # Step 2: merge(axis=-1) -> (batch, num_files)
         path_and_contents = merge_forward(stacked_tensor, axis=-1)
 
-        # Step 3: merge(axis=-1) -> (batch,)
-        merged_path_and_contents = merge_forward(path_and_contents, axis=-1)
-
-        # Step 4: coding_agent via ducc
+        # Step 3: coding_agent via ducc
         task_prompt = (
             f"Get back the original content that was masked in {kMaskedHint}\n"
             "Output ONLY the missing source code lines. No explanations."
         )
 
         output = coding_agent(
-            merged_path_and_contents,
+            path_and_contents,
             task_prompt=task_prompt,
             llm_method="tmux_cc",
             interactive=self.interactive,
