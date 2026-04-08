@@ -10,3 +10,10 @@ convert_ast_tag_jsonl_to_python[ProgrammingLanguage] :=
            (parse Type.field_name to extract field_name, look up ast._fields)
         3. convert AST JSON to Python source via ast.unparse
     }
+
+
+# add 200 robustness tests:
+# 1. use jsonl files in ../example/tag_auto_encoder/dataset/
+# 2. x = random_dropout_tag_relations(conver_to_ast_tag_jsonl(input_file))
+# 3. assert no crush in convert_ast_tag_jsonl_to_python(x).
+# 4. do its best to generate python code even though the inputs are grammatically illegal.
