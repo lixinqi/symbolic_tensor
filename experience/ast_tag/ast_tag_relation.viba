@@ -1,18 +1,10 @@
 AstTagRelation[ProgrammingLanguage] :=
     Object
     * $line int
-    * $relation_in_group RelationInGroup
     * $relation_tag RelationTagEnum[ProgrammingLanguage]
     * $owner_tag Symbol[ProgrammingLanguage]
     * $member_tag Symbol[ProgrammingLanguage]
     * $member_order_value int
-
-RelationInGroup :=
-    Oneof
-    | None
-    | "lhs_owner_vs_rhs_member"
-    | "lhs_member_vs_rhs_owner"
-    | "lhs_member_vs_rhs_member"
 
 Symbol[ProgrammingLanguage] := WithConstraint[
     str | int | float | bool,
