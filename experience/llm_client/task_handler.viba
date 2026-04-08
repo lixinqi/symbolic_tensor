@@ -23,3 +23,12 @@ GenerateOutput["raw_llm_api"] :=
     <- NestList[AgentTask]
     # inline
     <- Import[experience/llm_client/raw_llm_task_handler.viba]
+
+GenerateOutput["tmux_cc"] :=
+    void
+    <- NestList[AgentTask]
+    <- $interactive bool # default False
+    <- $auto_confirm bool # default True
+    <- $tmux_session str # default None
+    # inline
+    <- Import[experience/llm_client/tmux_cc_task_handler.viba]

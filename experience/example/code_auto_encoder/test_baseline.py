@@ -28,8 +28,8 @@ if __name__ == "__main__":
 
 from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio_impl
 
-from experience.example.auto_encoder.prepare_dataset import parepare_dataset
-from experience.example.auto_encoder.baseline_agent_model import BaselineAgentModel
+from experience.example.code_auto_encoder.prepare_dataset import parepare_dataset
+from experience.example.code_auto_encoder.baseline_agent_model import BaselineAgentModel
 
 
 # <- ($dataset_dir <- { ./codebase/ })
@@ -53,6 +53,9 @@ def _run_single_iteration(
     dataset_dir: str,
     tmpdir: str,
     llm_method: str,
+    interactive: bool = False,
+    auto_confirm: bool = True,
+    tmux_session: str = None,
 ) -> List[float]:
     """Run a single iteration of the baseline test."""
     print(f"\n{'='*50}")
@@ -69,8 +72,14 @@ def _run_single_iteration(
         print(f"  [{i}] {info} -> {gt_preview}...")
 
     # <- Import[./baseline_agent_model.viba].BaselineAgentModel <- $llm_method
-    print(f"\nRunning BaselineAgentModel (llm_method={llm_method})...")
-    model = BaselineAgentModel(llm_method=llm_method)
+    mode_str = f"interactive={interactive}" if llm_method == "tmux_cc" else ""
+    print(f"\nRunning BaselineAgentModel (llm_method={llm_method} {mode_str})...")
+    model = BaselineAgentModel(
+        llm_method=llm_method,
+        interactive=interactive,
+        auto_confirm=auto_confirm,
+        tmux_session=tmux_session,
+    )
     output = model(masked_path_tensor, masked_content_tensor)
 
     # <- Import[function/get_edit_distance]
@@ -101,14 +110,21 @@ def test_baseline(
     num_iterations: int = 1,
     llm_method: str = "raw_llm_api",
     workspace_dir: Optional[str] = None,
+    interactive: bool = False,
+    auto_confirm: bool = True,
+    tmux_session: Optional[str] = None,
 ) -> List[List[float]]:
     """test_baseline from test_baseline.viba.
 
     Args:
         total_batch_size: default 16
         num_iterations: default 1
-        llm_method: default "raw_llm_api"
+        llm_method: default "raw_llm_api", also supports "coding_agent" and "tmux_cc"
         workspace_dir: None means temp directory
+        interactive: If True and llm_method="tmux_cc", run in tmux for visual observation.
+            Use `tmux attach -t <session>` to watch ducc in real-time.
+        auto_confirm: If True (and interactive), auto-confirm prompts in tmux.
+        tmux_session: Custom tmux session name (interactive mode only).
 
     Returns:
         List of baseline_loss per iteration
@@ -128,7 +144,10 @@ def test_baseline(
     all_iteration_losses: List[List[float]] = []
     for iteration_idx in range(num_iterations):
         baseline_loss = _run_single_iteration(
-            iteration_idx, total_batch_size, dataset_dir, tmpdir, llm_method
+            iteration_idx, total_batch_size, dataset_dir, tmpdir, llm_method,
+            interactive=interactive,
+            auto_confirm=auto_confirm,
+            tmux_session=tmux_session,
         )
         all_iteration_losses.append(baseline_loss)
 
@@ -146,7 +165,41 @@ def test_baseline(
 
 
 if __name__ == "__main__":
+    import argparse
     import subprocess
+
+    parser = argparse.ArgumentParser(description="Test baseline model for auto-encoder cloze experiment.")
+    parser.add_argument(
+        "--total-batch-size", type=int, default=16,
+        help="Total batch size (default: 16)"
+    )
+    parser.add_argument(
+        "--num-iterations", type=int, default=1,
+        help="Number of iterations (default: 1)"
+    )
+    parser.add_argument(
+        "--llm-method", type=str, default="raw_llm_api",
+        choices=["raw_llm_api", "coding_agent", "tmux_cc"],
+        help="LLM method to use (default: raw_llm_api)"
+    )
+    parser.add_argument(
+        "--workspace-dir", type=str, default=None,
+        help="Workspace directory (default: temp directory)"
+    )
+    parser.add_argument(
+        "--interactive", action="store_true",
+        help="Run in interactive tmux mode for visual observation (only for llm_method=tmux_cc)"
+    )
+    parser.add_argument(
+        "--no-auto-confirm", action="store_true",
+        help="Disable auto-confirm prompts in interactive mode (manual operation required)"
+    )
+    parser.add_argument(
+        "--tmux-session", type=str, default=None,
+        help="Custom tmux session name (only for interactive mode)"
+    )
+
+    args = parser.parse_args()
 
     # Setup environment for LLM API
     result = subprocess.run(
@@ -160,4 +213,12 @@ if __name__ == "__main__":
     os.environ.pop("CLAUDECODE", None)
 
     # Run the test
-    test_baseline(total_batch_size=16, num_iterations=1, llm_method="raw_llm_api")
+    test_baseline(
+        total_batch_size=args.total_batch_size,
+        num_iterations=args.num_iterations,
+        llm_method=args.llm_method,
+        workspace_dir=args.workspace_dir,
+        interactive=args.interactive,
+        auto_confirm=not args.no_auto_confirm,
+        tmux_session=args.tmux_session,
+    )

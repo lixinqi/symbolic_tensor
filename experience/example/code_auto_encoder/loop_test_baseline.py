@@ -19,7 +19,7 @@ import argparse
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
-from experience.example.auto_encoder.test_baseline import test_baseline
+from experience.example.code_auto_encoder.test_baseline import test_baseline
 
 
 def loop_test_baseline(

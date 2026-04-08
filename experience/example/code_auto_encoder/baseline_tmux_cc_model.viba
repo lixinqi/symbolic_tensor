@@ -1,0 +1,30 @@
+
+BaselineTmuxCcModel[torch.nn.Module] :=
+    # forward
+    $baseline_output SymbolicTensor[($total_batch_size,)]
+    <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $masked_file_content_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
+    # __init__
+    <- $interactive bool # default False
+    <- $auto_confirm bool # default True
+    <- $tmux_session str # default None
+    #inline
+    <- (
+        $path_and_contents Symbolic[Tensor[($total_batch_size, $num_files)]]
+        <- Import[function/merge]
+        <- { concat on last axis }
+        <- $masked_file_path_tensor
+        <- $masked_file_content_tensor
+    )
+    <- ($prompt str <- { Get back the original content that was masked in f"{kMaskedHint}" })
+    <- (
+        $baseline_output
+        <- Import[function/coding_agent.viba]
+        <- $path_and_contents
+        <- $prompt
+        <- $llm_method "tmux_cc"
+        <- $interactive
+        <- $auto_confirm
+        <- $tmux_session
+    )

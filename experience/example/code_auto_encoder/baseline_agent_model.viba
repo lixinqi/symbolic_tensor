@@ -7,7 +7,11 @@ BaselineAgentModel[torch.nn.Module] :=
     <- $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
     # __init__
     <- $llm_method str # default  "raw_llm_api"
+    <- $interactive bool # default False (only for tmux_cc)
+    <- $auto_confirm bool # default True (only for tmux_cc)
+    <- $tmux_session str # default None (only for tmux_cc)
     #inline
     <- ({ match llm_method }
         <- { case raw_llm_api } <- Import[./baseline_raw_llm_api_model]
-        <- { case coding_agent } <- Import[./baseline_coding_agent_model])
+        <- { case coding_agent } <- Import[./baseline_coding_agent_model]
+        <- { case tmux_cc } <- Import[./baseline_tmux_cc_model])

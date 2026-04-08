@@ -67,6 +67,9 @@ def coding_agent(
     task_prompt: str = "",
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
+    interactive: bool = False,
+    auto_confirm: bool = True,
+    tmux_session: Optional[str] = None,
 ) -> torch.Tensor:
     """Forward pass of coding agent: input → prompt → LLM → output.
 
@@ -77,8 +80,11 @@ def coding_agent(
         output_prompt: Callable(task_prompt, workspace_dir, const_input_view,
             mutable_output_dir) -> str. None uses default_prompt_for_output.
         task_prompt: High-level task description.
-        llm_method: LLM backend ("coding_agent" or "raw_llm_api").
+        llm_method: LLM backend ("coding_agent", "raw_llm_api", or "tmux_cc").
         llm_env: Optional environment variables for LLM.
+        interactive: If True and llm_method="tmux_cc", run in tmux for visual observation.
+        auto_confirm: If True (and interactive), auto-confirm prompts in tmux.
+        tmux_session: Custom tmux session name (interactive mode only).
 
     Returns:
         output: A symbolic tensor of shape (batch_size,).
@@ -132,7 +138,14 @@ def coding_agent(
         all_copyback_info.append((output_dir, row_output_view))
 
     # <- (void <- Import[task_handler] <- $all_tasks <- $llm_method <- $llm_env)
-    TaskHandler()(all_tasks, llm_method, llm_env=llm_env)
+    TaskHandler()(
+        all_tasks,
+        llm_method,
+        llm_env=llm_env,
+        interactive=interactive,
+        auto_confirm=auto_confirm,
+        tmux_session=tmux_session,
+    )
 
     # <- (void <- copy_back_to_storage_view <- f"{workspace_dir}/mutable_output_dir" <- $row_output_view)
     for output_dir, row_output_view in all_copyback_info:

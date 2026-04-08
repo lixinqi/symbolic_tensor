@@ -22,7 +22,7 @@ from experience.symbolic_tensor.function.st_stack import st_stack_forward
 from experience.symbolic_tensor.function.merge_forward import merge_forward
 from experience.symbolic_tensor.function.coding_agent import coding_agent
 
-from experience.example.auto_encoder.prepare_dataset import kMaskedHint
+from experience.example.code_auto_encoder.prepare_dataset import kMaskedHint
 
 
 class BaselineCodingAgentModel(nn.Module):

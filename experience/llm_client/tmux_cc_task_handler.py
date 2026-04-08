@@ -1,0 +1,631 @@
+import glob
+import os
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from experience.llm_client.agent_task import AgentTask
+from experience.fs_util.pack_dir import pack_dir
+
+
+def _find_tmux_cc_bin() -> str:
+    """Find tmux_cc (ducc) binary in order of priority:
+    1. TMUX_CC_BIN environment variable
+    2. ducc in PATH
+    3. glob pattern matching ~/.comate/extensions/baidu.baidu-cc-*/...
+    """
+    # 1. Check environment variable
+    if env_bin := os.environ.get("TMUX_CC_BIN"):
+        return env_bin
+
+    # 2. Check PATH
+    if path_bin := shutil.which("ducc"):
+        return path_bin
+
+    # 3. Glob pattern for comate extension
+    pattern = os.path.expanduser(
+        "~/.comate/extensions/baidu.baidu-cc-*/resources/native-binary/bin/ducc"
+    )
+    matches = sorted(glob.glob(pattern), reverse=True)  # Sort descending to get latest version
+    if matches:
+        return matches[0]
+
+    # Fallback: raise error with helpful message
+    raise FileNotFoundError(
+        "Cannot find tmux_cc (ducc) binary. Please either:\n"
+        "  1. Set TMUX_CC_BIN environment variable\n"
+        "  2. Add ducc to your PATH\n"
+        "  3. Install baidu-cc extension in ~/.comate/extensions/"
+    )
+
+
+def _get_workspace_root() -> str:
+    """Get the workspace root directory for tmux_cc tasks.
+
+    Priority:
+    1. TMUX_CC_WORKSPACE_ROOT environment variable
+    2. Default: ~/.tmux_cc_tmp/
+    """
+    default_root = os.path.expanduser("~/.tmux_cc_tmp")
+    return os.environ.get("TMUX_CC_WORKSPACE_ROOT", default_root)
+
+
+TMUX_CC_BIN = _find_tmux_cc_bin()
+TMUX_CC_WORKSPACE_ROOT = _get_workspace_root()
+
+# Default configuration for tmux interactive mode
+TMUX_SESSION_PREFIX = "tmux_cc_interactive"
+TMUX_CHECK_INTERVAL = 3  # Check interval in seconds
+TMUX_IDLE_THRESHOLD = 5  # Number of consecutive unchanged checks to consider idle
+TMUX_INITIAL_WAIT = 5    # Initial wait time for tmux_cc to start (seconds)
+
+# Prompt patterns that require auto-confirmation
+AUTO_CONFIRM_PATTERNS = {
+    "Do you want to proceed": "Enter",
+    "Yes, I trust this folder": "Enter",
+    "allow all edits during this session": "Down Enter",
+    "Press Enter to continue": "Enter",
+    "Yes, I accept": "Down Enter",  # Bypass Permissions warning - select "Yes, I accept"
+    "No, exit": "Down Enter",  # Same warning - default is "No, exit", need to go down to "Yes"
+}
+
+
+def _flatten_nested(nested) -> list:
+    """Flatten a nested list structure into a flat list."""
+    if not isinstance(nested, list):
+        return [nested]
+    result = []
+    for item in nested:
+        result.extend(_flatten_nested(item))
+    return result
+
+
+def _grep_by_file_content_hint(root_dir: str, todo_file_content_hint: str) -> List[str]:
+    """Find all files under root_dir whose content contains the hint string."""
+    todo_files = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                if todo_file_content_hint in content:
+                    todo_files.append(file_path)
+            except (UnicodeDecodeError, OSError):
+                continue
+    return todo_files
+
+
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from text."""
+    import re
+    return re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', text)
+
+
+def _tmux_available() -> bool:
+    """Check if tmux command is available on the system."""
+    try:
+        subprocess.run(["tmux", "-V"], capture_output=True, check=True)
+        return True
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return False
+
+
+def _tmux_session_exists(session_name: str) -> bool:
+    """Check if a tmux session exists."""
+    try:
+        result = subprocess.run(
+            ["tmux", "has-session", "-t", session_name],
+            capture_output=True,
+        )
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+def _tmux_create_session(session_name: str, working_dir: str) -> None:
+    """Create a new tmux session."""
+    try:
+        subprocess.run(
+            ["tmux", "new-session", "-d", "-s", session_name, "-c", working_dir],
+            check=True,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError(
+            "tmux is not installed or not found in PATH. "
+            "Please install tmux to use interactive mode."
+        ) from e
+
+
+def _tmux_kill_session(session_name: str) -> None:
+    """Kill a tmux session."""
+    subprocess.run(
+        ["tmux", "kill-session", "-t", session_name],
+        capture_output=True,
+    )
+
+
+def _tmux_send_keys(session_name: str, *keys: str) -> None:
+    """Send keys to a tmux session."""
+    subprocess.run(
+        ["tmux", "send-keys", "-t", session_name] + list(keys),
+        check=True,
+    )
+
+
+def _tmux_capture_pane(session_name: str) -> str:
+    """Capture the content of a tmux pane."""
+    result = subprocess.run(
+        ["tmux", "capture-pane", "-p", "-e", "-S", "-", "-t", session_name],
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
+def _check_and_auto_confirm(session_name: str, patterns: Dict[str, str]) -> bool:
+    """Check for auto-confirm patterns and send keys if matched.
+
+    Returns True if a pattern was matched and keys were sent.
+    """
+    content = _tmux_capture_pane(session_name)
+    clean_content = _strip_ansi(content)
+
+    for pattern, keys in patterns.items():
+        if pattern in clean_content:
+            print(f"[tmux] Detected '{pattern}' -> sending {keys}", file=sys.stderr)
+            for key in keys.split():
+                _tmux_send_keys(session_name, key)
+            return True
+    return False
+
+
+def _wait_for_tmux_cc_idle(
+    session_name: str,
+    check_interval: float = TMUX_CHECK_INTERVAL,
+    idle_threshold: int = TMUX_IDLE_THRESHOLD,
+    auto_confirm: bool = True,
+    timeout: float = 600,  # 10 minutes default timeout
+) -> str:
+    """Wait for tmux_cc to become idle (screen content stops changing).
+
+    Args:
+        session_name: tmux session name
+        check_interval: seconds between checks
+        idle_threshold: consecutive unchanged checks to consider idle
+        auto_confirm: whether to auto-confirm prompts
+        timeout: maximum wait time in seconds
+
+    Returns:
+        The final screen content
+    """
+    last_content = ""
+    idle_count = 0
+    start_time = time.time()
+    command_completed = False
+
+    while True:
+        if time.time() - start_time > timeout:
+            print(f"[tmux] Timeout ({timeout}s), forcing exit", file=sys.stderr)
+            break
+
+        if not _tmux_session_exists(session_name):
+            print(f"[tmux] Session '{session_name}' has been closed", file=sys.stderr)
+            break
+
+        content = _tmux_capture_pane(session_name)
+        clean_content = _strip_ansi(content)
+
+        # Auto-confirm if enabled
+        if auto_confirm:
+            if _check_and_auto_confirm(session_name, AUTO_CONFIRM_PATTERNS):
+                time.sleep(1)  # Wait a bit after auto-confirm
+                idle_count = 0
+                last_content = ""  # Reset to re-check
+                continue
+
+        # Check if command has completed (shell prompt appears after output)
+        # Look for patterns indicating tmux_cc has finished
+        lines = clean_content.strip().split('\n')
+        last_lines = '\n'.join(lines[-5:]) if len(lines) >= 5 else clean_content
+
+        # tmux_cc completed indicators:
+        # 1. TMUX_CC_COMPLETED marker (from our wrapper script)
+        # 2. Shell prompt at the end (ends with % or $ after tmux_cc ran)
+        # 3. "Done." message from tmux_cc
+        # 4. tmux_cc idle state: empty prompt line with ❯ at the end (after processing)
+        if not command_completed:
+            # Check for tmux_cc idle state: line ends with ❯
+            # This indicates tmux_cc has finished processing and is waiting for new input
+            tmux_cc_idle = False
+            if '❯' in last_lines:
+                # tmux_cc shows ❯ when idle, check if it's at the end of a line by itself
+                for line in lines[-3:]:
+                    stripped = line.strip()
+                    # Empty prompt line or line ending with just ❯
+                    if stripped == '❯' or (stripped.endswith('❯') and len(stripped) < 5):
+                        tmux_cc_idle = True
+                        break
+
+            if ('TMUX_CC_COMPLETED' in clean_content or
+                'Done.' in clean_content or
+                tmux_cc_idle or
+                (clean_content.count('%') >= 2 and last_lines.rstrip().endswith('%'))):
+                command_completed = True
+                print(f"[tmux_cc] Command execution completed", file=sys.stderr)
+
+        if command_completed:
+            if content == last_content:
+                idle_count += 1
+                print(f"[tmux] Screen unchanged ({idle_count}/{idle_threshold})", file=sys.stderr)
+                if idle_count >= idle_threshold:
+                    break
+            else:
+                idle_count = 0
+                last_content = content
+        else:
+            print(f"[tmux_cc] Waiting for completion...", file=sys.stderr)
+            last_content = content
+
+        time.sleep(check_interval)
+
+    return content if 'content' in dir() else ""
+
+
+def _create_task_workspace(
+    task_idx: int,
+    file_idx: int,
+    original_workspace_dir: str,
+    prompt: str,
+    packed_workspace: str,
+    todo_file_path: str,
+    todo_file_content_hint: str,
+) -> str:
+    """Create a workspace directory for a single task.
+
+    Structure:
+        ~/.tmux_cc_tmp/task_YYYYMMDD_HHMMSS_idx/
+            input/
+                prompt.txt          # The task prompt
+                packed_workspace.txt # The packed directory content
+                task_info.txt       # Metadata about the task
+            output/
+                (ducc will write output here)
+
+    Returns:
+        The path to the created workspace directory.
+    """
+    # Create unique workspace directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    workspace_name = f"task_{timestamp}_{task_idx}_{file_idx}"
+    workspace_dir = os.path.join(TMUX_CC_WORKSPACE_ROOT, workspace_name)
+
+    # Create directories
+    input_dir = os.path.join(workspace_dir, "input")
+    output_dir = os.path.join(workspace_dir, "output")
+    os.makedirs(input_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Write prompt
+    prompt_file = os.path.join(input_dir, "prompt.txt")
+    with open(prompt_file, "w", encoding="utf-8") as f:
+        f.write(prompt)
+
+    # Write packed workspace
+    packed_file = os.path.join(input_dir, "packed_workspace.txt")
+    with open(packed_file, "w", encoding="utf-8") as f:
+        f.write(packed_workspace)
+
+    # Write task info
+    task_info_file = os.path.join(input_dir, "task_info.txt")
+    with open(task_info_file, "w", encoding="utf-8") as f:
+        f.write(f"original_workspace_dir: {original_workspace_dir}\n")
+        f.write(f"todo_file_path: {todo_file_path}\n")
+        f.write(f"todo_file_content_hint: {todo_file_content_hint}\n")
+        f.write(f"timestamp: {timestamp}\n")
+
+    return workspace_dir
+
+
+def _build_file_based_prompt(workspace_dir: str, todo_file_path: str, todo_file_content_hint: str) -> str:
+    """Build a prompt that instructs ducc to read input from files.
+
+    Args:
+        workspace_dir: The task workspace directory (contains input/ and output/)
+        todo_file_path: The original path to the TODO file
+        todo_file_content_hint: The placeholder string to replace
+
+    Returns:
+        A short prompt that tells ducc where to find the input files.
+    """
+    prompt = f"""Please complete the following task:
+
+1. Read the task description from: ./input/prompt.txt
+2. Read the codebase content from: ./input/packed_workspace.txt
+3. The packed_workspace.txt contains the directory structure in repomix format.
+4. Your output will replace the "{todo_file_content_hint}" placeholder.
+5. Write your output to: ./output/result.txt
+
+IMPORTANT:
+- Output raw text only. Do NOT wrap in markdown code fences (``` or ```lang).
+- Do not generate unrelated content.
+- Only output the code/content that should replace the placeholder.
+
+Original target file: {todo_file_path}
+"""
+    return prompt
+
+
+class TmuxCcTaskHandler:
+    """Handler for running tasks via tmux_cc (ducc) CLI.
+
+    Supports two modes:
+    - interactive=False (default): Run tmux_cc via subprocess, non-interactive
+    - interactive=True: Run tmux_cc in tmux session for visual observation
+
+    Input is passed via files in workspace directory instead of command line
+    to avoid issues with long prompts and special characters.
+
+    Workspace structure:
+        ~/.tmux_cc_tmp/task_YYYYMMDD_HHMMSS_idx/
+            input/
+                prompt.txt          # The task prompt
+                packed_workspace.txt # The packed directory content
+                task_info.txt       # Metadata about the task
+            output/
+                result.txt          # Output from ducc
+    """
+
+    def __call__(
+        self,
+        all_tasks,
+        llm_env: Optional[Dict[str, str]] = None,
+        interactive: bool = False,
+        auto_confirm: bool = True,
+        tmux_session: Optional[str] = None,
+    ) -> None:
+        """Execute tasks via tmux_cc.
+
+        Args:
+            all_tasks: List of AgentTask objects
+            llm_env: Optional environment variables
+            interactive: If True, run in tmux for visual interaction
+            auto_confirm: If True (and interactive), auto-confirm prompts
+            tmux_session: Custom tmux session name (interactive mode only)
+        """
+        # Ensure workspace root exists
+        os.makedirs(TMUX_CC_WORKSPACE_ROOT, exist_ok=True)
+
+        if interactive:
+            self._run_interactive(all_tasks, llm_env, auto_confirm, tmux_session)
+        else:
+            self._run_batch(all_tasks, llm_env)
+
+    def _run_batch(self, all_tasks, llm_env: Optional[Dict[str, str]] = None) -> None:
+        """Batch mode: run tmux_cc via subprocess with file-based input."""
+        flat_tasks = _flatten_nested(all_tasks)
+
+        for task_idx, task in enumerate(flat_tasks):
+            original_workspace_dir = task.workspace_dir
+            prompt = task.prompt
+            output_relative_dir_or_list = task.output_relative_dir
+            todo_file_content_hint = task.todo_file_content_hint
+
+            packed_workspace = pack_dir(original_workspace_dir)
+
+            if isinstance(output_relative_dir_or_list, str):
+                output_relative_dirs = [output_relative_dir_or_list]
+            else:
+                output_relative_dirs = output_relative_dir_or_list
+
+            for output_relative_dir in output_relative_dirs:
+                output_root = os.path.join(original_workspace_dir, output_relative_dir)
+                todo_file_paths = _grep_by_file_content_hint(output_root, todo_file_content_hint)
+
+                for file_idx, todo_file_path in enumerate(todo_file_paths):
+                    # Create workspace with input files
+                    task_workspace = _create_task_workspace(
+                        task_idx=task_idx,
+                        file_idx=file_idx,
+                        original_workspace_dir=original_workspace_dir,
+                        prompt=prompt,
+                        packed_workspace=packed_workspace,
+                        todo_file_path=todo_file_path,
+                        todo_file_content_hint=todo_file_content_hint,
+                    )
+
+                    # Build file-based prompt
+                    ducc_prompt = _build_file_based_prompt(
+                        task_workspace, todo_file_path, todo_file_content_hint
+                    )
+
+                    print(f"\n[tmux_cc] Task {task_idx + 1}/{len(flat_tasks)}: {todo_file_path}", file=sys.stderr)
+                    print(f"[tmux_cc] Workspace: {task_workspace}", file=sys.stderr)
+
+                    cmd = [
+                        TMUX_CC_BIN,
+                        "-p", ducc_prompt,
+                        "--allowedTools", "Read,Edit,Write",
+                        "--permission-mode", "bypassPermissions",
+                    ]
+
+                    result = subprocess.run(
+                        cmd,
+                        cwd=task_workspace,
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    if result.returncode != 0:
+                        print(f"[tmux_cc] stderr: {result.stderr}", file=sys.stderr)
+
+                    # Read output from file
+                    output_file = os.path.join(task_workspace, "output", "result.txt")
+                    if os.path.exists(output_file):
+                        with open(output_file, "r", encoding="utf-8") as f:
+                            output_content = f.read().strip()
+                        if output_content:
+                            with open(todo_file_path, "w", encoding="utf-8") as f:
+                                f.write(output_content)
+                            print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
+                    else:
+                        # Fallback: try stdout if no output file
+                        output_content = result.stdout.strip() if result.stdout else ""
+                        if output_content:
+                            with open(todo_file_path, "w", encoding="utf-8") as f:
+                                f.write(output_content)
+                            print(f"[tmux_cc] Output (from stdout) written to: {todo_file_path}", file=sys.stderr)
+
+    def _run_interactive(
+        self,
+        all_tasks,
+        llm_env: Optional[Dict[str, str]] = None,
+        auto_confirm: bool = True,
+        tmux_session: Optional[str] = None,
+    ) -> None:
+        """Interactive mode: run tmux_cc in tmux session with file-based input.
+
+        This mode:
+        1. Creates a workspace directory with input files
+        2. Starts ducc in tmux with a short prompt pointing to the files
+        3. Waits for completion and reads output from file
+        """
+        flat_tasks = _flatten_nested(all_tasks)
+
+        for task_idx, task in enumerate(flat_tasks):
+            original_workspace_dir = task.workspace_dir
+            prompt = task.prompt
+            output_relative_dir_or_list = task.output_relative_dir
+            todo_file_content_hint = task.todo_file_content_hint
+
+            packed_workspace = pack_dir(original_workspace_dir)
+
+            if isinstance(output_relative_dir_or_list, str):
+                output_relative_dirs = [output_relative_dir_or_list]
+            else:
+                output_relative_dirs = output_relative_dir_or_list
+
+            for output_relative_dir in output_relative_dirs:
+                output_root = os.path.join(original_workspace_dir, output_relative_dir)
+                todo_file_paths = _grep_by_file_content_hint(output_root, todo_file_content_hint)
+
+                for file_idx, todo_file_path in enumerate(todo_file_paths):
+                    # Create workspace with input files
+                    task_workspace = _create_task_workspace(
+                        task_idx=task_idx,
+                        file_idx=file_idx,
+                        original_workspace_dir=original_workspace_dir,
+                        prompt=prompt,
+                        packed_workspace=packed_workspace,
+                        todo_file_path=todo_file_path,
+                        todo_file_content_hint=todo_file_content_hint,
+                    )
+
+                    # Build file-based prompt
+                    ducc_prompt = _build_file_based_prompt(
+                        task_workspace, todo_file_path, todo_file_content_hint
+                    )
+
+                    # Create unique session name
+                    session_name = tmux_session or f"{TMUX_SESSION_PREFIX}_{task_idx}_{file_idx}"
+
+                    print(f"\n[tmux_cc] Task {task_idx + 1}/{len(flat_tasks)}: {todo_file_path}", file=sys.stderr)
+                    print(f"[tmux_cc] Workspace: {task_workspace}", file=sys.stderr)
+                    print(f"[tmux_cc] tmux session: {session_name}", file=sys.stderr)
+                    print(f"[tmux_cc] Use 'tmux attach -t {session_name}' to watch real-time output", file=sys.stderr)
+
+                    # Kill existing session if any
+                    _tmux_kill_session(session_name)
+
+                    # Create new tmux session in task workspace directory
+                    _tmux_create_session(session_name, task_workspace)
+
+                    # Step 1: Start tmux_cc with reduced interactions
+                    # IS_SANDBOX=1 skips some prompts, --permission-mode bypassPermissions skips permission checks
+                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write"'
+                    _tmux_send_keys(session_name, tmux_cc_cmd, "Enter")
+
+                    # Step 2: Wait for tmux_cc to start and show trust prompt
+                    print(f"[tmux_cc] Waiting for tmux_cc to start...", file=sys.stderr)
+                    time.sleep(3)
+
+                    # Step 3: Auto-confirm trust folder if enabled
+                    if auto_confirm:
+                        # Wait for and handle the trust folder prompt
+                        for _ in range(10):  # Try for up to 10 iterations
+                            if _check_and_auto_confirm(session_name, AUTO_CONFIRM_PATTERNS):
+                                time.sleep(1)
+                                break
+                            time.sleep(1)
+
+                    # Step 4: Wait for tmux_cc to be ready for input (show the input prompt)
+                    print(f"[tmux_cc] Waiting for tmux_cc to be ready...", file=sys.stderr)
+                    time.sleep(2)
+
+                    # Step 5: Send the short file-based prompt (much shorter than before!)
+                    _tmux_send_keys(session_name, ducc_prompt, "Enter")
+
+                    # Step 6: Wait for tmux_cc to complete the task
+                    print(f"[tmux_cc] Waiting for tmux_cc to process task...", file=sys.stderr)
+                    _wait_for_tmux_cc_idle(
+                        session_name,
+                        auto_confirm=auto_confirm,
+                    )
+
+                    print(f"[tmux_cc] Task completed, session '{session_name}' preserved for observation", file=sys.stderr)
+
+                    # Read output from file and copy to original location
+                    output_file = os.path.join(task_workspace, "output", "result.txt")
+                    if os.path.exists(output_file):
+                        with open(output_file, "r", encoding="utf-8") as f:
+                            output_content = f.read().strip()
+                        if output_content:
+                            with open(todo_file_path, "w", encoding="utf-8") as f:
+                                f.write(output_content)
+                            print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
+                    else:
+                        print(f"[tmux_cc] Warning: No output file found at {output_file}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    import tempfile
+
+    print("Running TmuxCcTaskHandler tests...\n")
+
+    # Test 1: _flatten_nested
+    nested = [[1, 2], [3, [4, 5]]]
+    assert _flatten_nested(nested) == [1, 2, 3, 4, 5]
+    print("  ok: _flatten_nested works")
+
+    # Test 2: Handler instantiation
+    handler = TmuxCcTaskHandler()
+    assert callable(handler)
+    print("  ok: TmuxCcTaskHandler is callable")
+
+    # Test 3: Workspace creation
+    print("\n  Test 3: Workspace creation")
+    test_workspace = _create_task_workspace(
+        task_idx=0,
+        file_idx=0,
+        original_workspace_dir="/tmp/test",
+        prompt="Test prompt",
+        packed_workspace="Test packed content",
+        todo_file_path="/tmp/test/output/file.txt",
+        todo_file_content_hint="TODO",
+    )
+    assert os.path.exists(test_workspace)
+    assert os.path.exists(os.path.join(test_workspace, "input", "prompt.txt"))
+    assert os.path.exists(os.path.join(test_workspace, "input", "packed_workspace.txt"))
+    assert os.path.exists(os.path.join(test_workspace, "input", "task_info.txt"))
+    assert os.path.exists(os.path.join(test_workspace, "output"))
+    print(f"  ok: Workspace created at {test_workspace}")
+
+    # Cleanup test workspace
+    shutil.rmtree(test_workspace)
+    print("  ok: Test workspace cleaned up")
+
+    print("\nAll tests passed.")
+    print(f"\nWorkspace root: {TMUX_CC_WORKSPACE_ROOT}")
