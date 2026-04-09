@@ -81,7 +81,7 @@ def dynamic_scope_find_all_references(
 if __name__ == "__main__":
     from ast_tag_db import load_jsonl_dataset_into_ast_tag_db
 
-    dataset_dir = os.path.join(os.path.dirname(__file__), "..", "dataset")
+    dataset_dir = os.path.join(os.path.dirname(__file__), "..", "test_dataset")
     db = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     # pick some defined symbols
     rows = db.execute_raw_sql_query(

@@ -34,9 +34,7 @@ _FIELD_DEFAULTS: Dict[str, Any] = {
     'module': '',
     'id': '_',
     'func': ast_mod.Name(id='_'),
-    'args': ast_mod.arguments(posonlyargs=[], args=[], vararg=None,
-                              kwonlyargs=[], kw_defaults=[], kwarg=None,
-                              defaults=[]),
+    'args': [],  # correct for Call.args; FunctionDef overridden below
     'test': ast_mod.Constant(value=True),
     'body': [ast_mod.Pass()],
     'names': [ast_mod.alias(name='_')],
@@ -72,6 +70,20 @@ _FIELD_DEFAULTS: Dict[str, Any] = {
     'is_async': 0,
 }
 
+# Per-type overrides for fields whose default meaning depends on context.
+_EMPTY_ARGUMENTS = ast_mod.arguments(
+    posonlyargs=[], args=[], vararg=None,
+    kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[],
+)
+_TYPE_FIELD_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    'FunctionDef': {'args': _EMPTY_ARGUMENTS},
+    'AsyncFunctionDef': {'args': _EMPTY_ARGUMENTS},
+    'Lambda': {'args': _EMPTY_ARGUMENTS},
+    'ExceptHandler': {'name': None},
+    'Return': {'value': None},
+    'AnnAssign': {'value': None},
+}
+
 
 def _json_dict_to_ast(node: Any) -> Any:
     """Recursively convert JSON dict to ast.AST node.
@@ -89,9 +101,13 @@ def _json_dict_to_ast(node: Any) -> Any:
                 continue
             kwargs[k] = _json_dict_to_ast(v)
         # Fill missing required fields with placeholder defaults
+        type_overrides = _TYPE_FIELD_DEFAULTS.get(node['_type'], {})
         for field in cls._fields:
-            if field not in kwargs and field in _FIELD_DEFAULTS:
-                kwargs[field] = _FIELD_DEFAULTS[field]
+            if field not in kwargs:
+                if field in type_overrides:
+                    kwargs[field] = type_overrides[field]
+                elif field in _FIELD_DEFAULTS:
+                    kwargs[field] = _FIELD_DEFAULTS[field]
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
@@ -288,7 +304,7 @@ if __name__ == "__main__":
     )
     DATASET_DIR = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "..", "example", "tag_auto_encoder", "dataset",
+        "test_dataset",
     )
 
     py_files = []

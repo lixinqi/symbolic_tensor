@@ -13,7 +13,7 @@ convert_ast_tag_jsonl_to_python[ProgrammingLanguage] :=
 
 
 # add 200 robustness tests:
-# 1. use jsonl files in ../example/tag_auto_encoder/dataset/
+# 1. use jsonl files in ./test_dataset/
 # 2. x = random_dropout_tag_relations(conver_to_ast_tag_jsonl(input_file))
 # 3. assert no crush in convert_ast_tag_jsonl_to_python(x).
 # 4. do its best to generate python code even though the inputs are grammatically illegal.

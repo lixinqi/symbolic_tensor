@@ -41,7 +41,7 @@ def lexical_scope_expand_children(
 if __name__ == "__main__":
     from ast_tag_db import load_jsonl_dataset_into_ast_tag_db
 
-    dataset_dir = os.path.join(os.path.dirname(__file__), "..", "dataset")
+    dataset_dir = os.path.join(os.path.dirname(__file__), "..", "test_dataset")
     db = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     file_ids = db.get_all_loaded_file_ids()
     # test on a few owners

@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     DATASET = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "..", "example", "tag_auto_encoder", "dataset",
+        "test_dataset",
     )
     CODEBASE = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),

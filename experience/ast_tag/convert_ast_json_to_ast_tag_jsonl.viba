@@ -9,6 +9,6 @@ convert_ast_json_to_ast_tag_jsonl :=
     }
 
 # add 5 robustness tests:
-# 1. use jsonl files in ../example/tag_auto_encoder/dataset/
+# 1. use jsonl files in ./test_dataset/
 # 2. x = random_dropout_tag_relations(conver_to_ast_tag_jsonl(input_file))
 # 3. assert convert_ast_json_to_ast_tag_jsonl(convert_ast_tag_jsonl_to_ast_json(x)) == x

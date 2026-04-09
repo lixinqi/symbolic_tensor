@@ -18,7 +18,7 @@ from tag_actions.lexical_scope_expand_children import lexical_scope_expand_child
 
 def _db() -> AstTagDB:
     if not hasattr(_db, "_instance"):
-        dataset_dir = os.path.join(os.path.dirname(__file__), "..", "dataset")
+        dataset_dir = os.path.join(os.path.dirname(__file__), "..", "test_dataset")
         _db._instance = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     return _db._instance
 

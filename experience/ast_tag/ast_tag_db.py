@@ -174,7 +174,7 @@ if __name__ == "__main__":
     import sys
 
     dataset_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        os.path.dirname(__file__), "dataset"
+        os.path.dirname(__file__), "test_dataset"
     )
     db = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     file_ids = db.get_all_loaded_file_ids()
