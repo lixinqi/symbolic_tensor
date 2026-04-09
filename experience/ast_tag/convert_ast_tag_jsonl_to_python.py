@@ -19,23 +19,79 @@ from experience.ast_tag.convert_ast_tag_jsonl_to_ast_json import (
 
 
 # ---------------------------------------------------------------------------
-# JSON dict → ast.AST
+# JSON dict → ast.AST  (best-effort for dropout data)
 # ---------------------------------------------------------------------------
+
+# Default values for required AST fields that dropout may remove.
+# Without these, ast.unparse crashes on incomplete nodes.
+_FIELD_DEFAULTS: Dict[str, Any] = {
+    'value': ast_mod.Constant(value=0),
+    'target': ast_mod.Name(id='_'),
+    'targets': [ast_mod.Name(id='_')],
+    'attr': '_',
+    'arg': '_',
+    'name': '_',
+    'module': '',
+    'id': '_',
+    'func': ast_mod.Name(id='_'),
+    'args': ast_mod.arguments(posonlyargs=[], args=[], vararg=None,
+                              kwonlyargs=[], kw_defaults=[], kwarg=None,
+                              defaults=[]),
+    'test': ast_mod.Constant(value=True),
+    'body': [ast_mod.Pass()],
+    'names': [ast_mod.alias(name='_')],
+    'items': [],
+    'keys': [],
+    'values': [],
+    'elts': [],
+    'ops': [ast_mod.Eq()],
+    'comparators': [ast_mod.Constant(value=0)],
+    'left': ast_mod.Constant(value=0),
+    'right': ast_mod.Constant(value=0),
+    'operand': ast_mod.Constant(value=0),
+    'op': ast_mod.Add(),
+    'slice': ast_mod.Constant(value=0),
+    'iter': ast_mod.Name(id='_'),
+    'exc': None,
+    'cause': None,
+    'orelse': [],
+    'finalbody': [],
+    'handlers': [],
+    'decorator_list': [],
+    'bases': [],
+    'keywords': [],
+    'returns': None,
+    'type_comment': None,
+    'type_params': [],
+    'level': 0,
+    'optional_vars': None,
+    'context_expr': ast_mod.Constant(value=None),
+    'dims': [],
+    'generators': [],
+    'ifs': [],
+    'is_async': 0,
+}
+
 
 def _json_dict_to_ast(node: Any) -> Any:
     """Recursively convert JSON dict to ast.AST node.
 
-    Handles incomplete nodes from dropout gracefully — returns None on failure.
+    Best-effort: fills placeholder defaults for missing required fields
+    so that ast.unparse produces partial output instead of crashing.
     """
     if isinstance(node, dict) and '_type' in node:
         cls = getattr(ast_mod, node['_type'], None)
         if cls is None:
             return None
-        kwargs = {}
+        kwargs: Dict[str, Any] = {}
         for k, v in node.items():
             if k.startswith('_'):
                 continue
             kwargs[k] = _json_dict_to_ast(v)
+        # Fill missing required fields with placeholder defaults
+        for field in cls._fields:
+            if field not in kwargs and field in _FIELD_DEFAULTS:
+                kwargs[field] = _FIELD_DEFAULTS[field]
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
@@ -52,6 +108,121 @@ def _json_dict_to_ast(node: Any) -> Any:
         items = [_json_dict_to_ast(x) for x in node]
         return [x for x in items if x is not None]
     return node
+
+
+def _safe_unparse(node: Any) -> str:
+    """Unparse a single AST node, with per-body-statement fallback."""
+    m = ast_mod.Module(body=[node], type_ignores=[])
+    ast_mod.fix_missing_locations(m)
+    try:
+        return ast_mod.unparse(m)
+    except Exception:
+        pass
+    # For compound statements, try unparsing body statements individually
+    body = getattr(node, 'body', None)
+    if not isinstance(body, list) or not body:
+        return ""
+    # Build a stub with each body statement tried independently
+    parts = []
+    # Emit the signature line as a stub if possible
+    stub = _unparse_stub(node)
+    if stub:
+        inner = []
+        for stmt in body:
+            try:
+                sm = ast_mod.Module(body=[stmt], type_ignores=[])
+                ast_mod.fix_missing_locations(sm)
+                inner.append(ast_mod.unparse(sm))
+            except Exception:
+                continue
+        if inner:
+            parts.append(stub)
+            for line in inner:
+                for sub in line.splitlines():
+                    parts.append("    " + sub)
+        else:
+            parts.append(stub)
+            parts.append("    pass")
+    else:
+        for stmt in body:
+            try:
+                sm = ast_mod.Module(body=[stmt], type_ignores=[])
+                ast_mod.fix_missing_locations(sm)
+                parts.append(ast_mod.unparse(sm))
+            except Exception:
+                continue
+    return "\n".join(parts)
+
+
+def _unparse_stub(node: Any) -> str:
+    """Try to produce just the signature/header line for compound statements."""
+    t = type(node).__name__
+    if t == 'FunctionDef' or t == 'AsyncFunctionDef':
+        name = getattr(node, 'name', '_')
+        prefix = 'async def' if t == 'AsyncFunctionDef' else 'def'
+        # Try to unparse args
+        args_node = getattr(node, 'args', None)
+        if args_node:
+            try:
+                args_str = ast_mod.unparse(args_node)
+            except Exception:
+                args_str = ""
+        else:
+            args_str = ""
+        ret = getattr(node, 'returns', None)
+        ret_str = ""
+        if ret is not None:
+            try:
+                ret_str = " -> " + ast_mod.unparse(ret)
+            except Exception:
+                pass
+        decos = []
+        for d in getattr(node, 'decorator_list', []):
+            try:
+                decos.append("@" + ast_mod.unparse(d))
+            except Exception:
+                pass
+        header = f"{prefix} {name}({args_str}){ret_str}:"
+        if decos:
+            return "\n".join(decos) + "\n" + header
+        return header
+    if t == 'ClassDef':
+        name = getattr(node, 'name', '_')
+        return f"class {name}:"
+    if t == 'If':
+        test = getattr(node, 'test', None)
+        if test:
+            try:
+                return "if " + ast_mod.unparse(test) + ":"
+            except Exception:
+                pass
+        return "if True:"
+    if t == 'For' or t == 'AsyncFor':
+        prefix = 'async for' if t == 'AsyncFor' else 'for'
+        target = getattr(node, 'target', None)
+        iter_ = getattr(node, 'iter', None)
+        try:
+            t_str = ast_mod.unparse(target) if target else '_'
+        except Exception:
+            t_str = '_'
+        try:
+            i_str = ast_mod.unparse(iter_) if iter_ else '_'
+        except Exception:
+            i_str = '_'
+        return f"{prefix} {t_str} in {i_str}:"
+    if t == 'While':
+        test = getattr(node, 'test', None)
+        try:
+            t_str = ast_mod.unparse(test) if test else 'True'
+        except Exception:
+            t_str = 'True'
+        return f"while {t_str}:"
+    if t == 'With' or t == 'AsyncWith':
+        prefix = 'async with' if t == 'AsyncWith' else 'with'
+        return f"{prefix} _:"
+    if t == 'Try' or t == 'TryStar':
+        return "try:"
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -78,15 +249,12 @@ def convert_jsonl_to_python(records: List[Dict]) -> str:
     try:
         return ast_mod.unparse(module)
     except Exception:
-        # Per-statement fallback for robustness on dropout data
+        # Per-statement fallback with deep recovery for dropout data
         parts = []
         for node in body:
-            try:
-                m = ast_mod.Module(body=[node], type_ignores=[])
-                ast_mod.fix_missing_locations(m)
-                parts.append(ast_mod.unparse(m))
-            except Exception:
-                pass
+            text = _safe_unparse(node)
+            if text:
+                parts.append(text)
         return "\n".join(parts)
 
 

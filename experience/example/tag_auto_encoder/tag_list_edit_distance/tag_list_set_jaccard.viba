@@ -1,8 +1,0 @@
-tag_list_set_jaccard :=
-    # Jaccard similarity on the SET of tags (ignores order and duplicates)
-    # |intersection| / |union|, 1.0 = identical sets, 0.0 = disjoint
-    float
-    <- $predicted list[str]
-    <- $expected list[str]
-    # inline
-    <- { |set(predicted) & set(expected)| / |set(predicted) | set(expected)| }

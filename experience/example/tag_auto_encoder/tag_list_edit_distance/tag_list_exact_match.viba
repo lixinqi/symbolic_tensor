@@ -1,7 +1,0 @@
-tag_list_exact_match :=
-    # 1.0 if predicted == expected (same tags, same order), else 0.0
-    float
-    <- $predicted list[str]
-    <- $expected list[str]
-    # inline
-    <- { 1.0 if predicted == expected else 0.0 }
