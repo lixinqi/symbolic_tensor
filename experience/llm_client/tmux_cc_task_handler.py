@@ -488,13 +488,17 @@ class TmuxCcTaskHandler:
     ) -> None:
         """Interactive mode: run tmux_cc in tmux session with file-based input.
 
-        This mode:
-        1. Creates a workspace directory with input files
-        2. Starts ducc in tmux with a short prompt pointing to the files
-        3. Waits for completion and reads output from file
+        This mode reuses a single ducc session across all tasks for efficiency:
+        1. Starts ducc once in tmux
+        2. For each task: change to workspace dir, send prompt, wait for completion
+        3. Session is preserved after all tasks complete
+
+        This avoids the overhead of starting/stopping ducc for each task.
         """
         flat_tasks = _flatten_nested(all_tasks)
 
+        # Collect all task info first
+        all_task_info = []
         for task_idx, task in enumerate(flat_tasks):
             original_workspace_dir = task.workspace_dir
             prompt = task.prompt
@@ -513,7 +517,6 @@ class TmuxCcTaskHandler:
                 todo_file_paths = _grep_by_file_content_hint(output_root, todo_file_content_hint)
 
                 for file_idx, todo_file_path in enumerate(todo_file_paths):
-                    # Create workspace with input files
                     task_workspace = _create_task_workspace(
                         task_idx=task_idx,
                         file_idx=file_idx,
@@ -523,71 +526,118 @@ class TmuxCcTaskHandler:
                         todo_file_path=todo_file_path,
                         todo_file_content_hint=todo_file_content_hint,
                     )
-
-                    # Build file-based prompt
                     ducc_prompt = _build_file_based_prompt(
                         task_workspace, todo_file_path, todo_file_content_hint
                     )
+                    all_task_info.append({
+                        "task_idx": task_idx,
+                        "file_idx": file_idx,
+                        "task_workspace": task_workspace,
+                        "ducc_prompt": ducc_prompt,
+                        "todo_file_path": todo_file_path,
+                    })
 
-                    # Create unique session name
-                    session_name = tmux_session or f"{TMUX_SESSION_PREFIX}_{task_idx}_{file_idx}"
+        if not all_task_info:
+            print("[tmux_cc] No tasks to process", file=sys.stderr)
+            return
 
-                    print(f"\n[tmux_cc] Task {task_idx + 1}/{len(flat_tasks)}: {todo_file_path}", file=sys.stderr)
-                    print(f"[tmux_cc] Workspace: {task_workspace}", file=sys.stderr)
-                    print(f"[tmux_cc] tmux session: {session_name}", file=sys.stderr)
-                    print(f"[tmux_cc] Use 'tmux attach -t {session_name}' to watch real-time output", file=sys.stderr)
+        total_tasks = len(all_task_info)
+        session_name = tmux_session or f"{TMUX_SESSION_PREFIX}_batch"
 
-                    # Kill existing session if any
-                    _tmux_kill_session(session_name)
+        print(f"\n[tmux_cc] Starting batch of {total_tasks} tasks", file=sys.stderr)
+        print(f"[tmux_cc] tmux session: {session_name}", file=sys.stderr)
+        print(f"[tmux_cc] Use 'tmux attach -t {session_name}' to watch real-time output", file=sys.stderr)
 
-                    # Create new tmux session in task workspace directory
-                    _tmux_create_session(session_name, task_workspace)
+        # Kill existing session if any
+        _tmux_kill_session(session_name)
 
-                    # Step 1: Start tmux_cc with reduced interactions
-                    # IS_SANDBOX=1 skips some prompts, --permission-mode bypassPermissions skips permission checks
-                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write"'
-                    _tmux_send_keys(session_name, tmux_cc_cmd, "Enter")
+        # Create new tmux session in the first task's workspace
+        first_workspace = all_task_info[0]["task_workspace"]
+        _tmux_create_session(session_name, first_workspace)
 
-                    # Step 2: Wait for tmux_cc to start and show trust prompt
-                    print(f"[tmux_cc] Waiting for tmux_cc to start...", file=sys.stderr)
-                    time.sleep(3)
+        # Start ducc once
+        tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write"'
+        _tmux_send_keys(session_name, tmux_cc_cmd, "Enter")
 
-                    # Step 3: Auto-confirm trust folder if enabled
-                    if auto_confirm:
-                        # Wait for and handle the trust folder prompt
-                        for _ in range(10):  # Try for up to 10 iterations
-                            if _check_and_auto_confirm(session_name, AUTO_CONFIRM_PATTERNS):
-                                time.sleep(1)
-                                break
-                            time.sleep(1)
+        print(f"[tmux_cc] Waiting for ducc to start...", file=sys.stderr)
+        time.sleep(3)
 
-                    # Step 4: Wait for tmux_cc to be ready for input (show the input prompt)
-                    print(f"[tmux_cc] Waiting for tmux_cc to be ready...", file=sys.stderr)
-                    time.sleep(2)
+        # Auto-confirm initial prompts
+        if auto_confirm:
+            for _ in range(10):
+                if _check_and_auto_confirm(session_name, AUTO_CONFIRM_PATTERNS):
+                    time.sleep(1)
+                    break
+                time.sleep(1)
 
-                    # Step 5: Send the short file-based prompt (much shorter than before!)
-                    _tmux_send_keys(session_name, ducc_prompt, "Enter")
+        print(f"[tmux_cc] Waiting for ducc to be ready...", file=sys.stderr)
+        time.sleep(2)
 
-                    # Step 6: Wait for tmux_cc to complete the task
-                    print(f"[tmux_cc] Waiting for tmux_cc to process task...", file=sys.stderr)
-                    _wait_for_tmux_cc_idle(
-                        session_name,
-                        auto_confirm=auto_confirm,
-                    )
+        # Process each task using the same ducc session
+        for i, info in enumerate(all_task_info):
+            task_workspace = info["task_workspace"]
+            ducc_prompt = info["ducc_prompt"]
+            todo_file_path = info["todo_file_path"]
 
-                    print(f"[tmux_cc] Task completed, session '{session_name}' preserved for observation", file=sys.stderr)
+            print(f"\n[tmux_cc] Task {i + 1}/{total_tasks}: {todo_file_path}", file=sys.stderr)
+            print(f"[tmux_cc] Workspace: {task_workspace}", file=sys.stderr)
 
-                    # Read output from file and copy to original location
-                    output_file = os.path.join(task_workspace, "output", "result.txt")
-                    if os.path.exists(output_file):
-                        with open(output_file, "r", encoding="utf-8") as f:
-                            output_content = f.read().strip()
-                        if output_content:
-                            with open(todo_file_path, "w", encoding="utf-8") as f:
-                                f.write(output_content)
-                            print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
-                    else:
-                        print(f"[tmux_cc] Warning: No output file found at {output_file}", file=sys.stderr)
+            # Change to task workspace directory (ducc supports cd command)
+            # Use /cd skill or just reference the workspace in the prompt
+            # Actually, we need to use absolute paths in the prompt instead
+            workspace_prompt = self._build_absolute_prompt(
+                task_workspace, ducc_prompt, todo_file_path, info["task_idx"], info["file_idx"]
+            )
+
+            # Send the prompt
+            _tmux_send_keys(session_name, workspace_prompt, "Enter")
+
+            # Wait for this task to complete
+            print(f"[tmux_cc] Waiting for task to complete...", file=sys.stderr)
+            _wait_for_tmux_cc_idle(
+                session_name,
+                auto_confirm=auto_confirm,
+            )
+
+            # Read output from file and copy to original location
+            output_file = os.path.join(task_workspace, "output", "result.txt")
+            if os.path.exists(output_file):
+                with open(output_file, "r", encoding="utf-8") as f:
+                    output_content = f.read().strip()
+                if output_content:
+                    with open(todo_file_path, "w", encoding="utf-8") as f:
+                        f.write(output_content)
+                    print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
+            else:
+                print(f"[tmux_cc] Warning: No output file found at {output_file}", file=sys.stderr)
+
+        print(f"\n[tmux_cc] All {total_tasks} tasks completed, session '{session_name}' preserved", file=sys.stderr)
+
+    def _build_absolute_prompt(
+        self,
+        task_workspace: str,
+        base_prompt: str,
+        todo_file_path: str,
+        task_idx: int,
+        file_idx: int,
+    ) -> str:
+        """Build a prompt with absolute paths for multi-task session reuse."""
+        input_dir = os.path.join(task_workspace, "input")
+        output_dir = os.path.join(task_workspace, "output")
+
+        return f"""Task {task_idx + 1}.{file_idx + 1}: Please complete the following task:
+
+1. Read the task description from: {input_dir}/prompt.txt
+2. Read the codebase content from: {input_dir}/packed_workspace.txt
+3. The packed_workspace.txt contains the directory structure in repomix format.
+4. Write your output to: {output_dir}/result.txt
+
+IMPORTANT:
+- Output raw text only. Do NOT wrap in markdown code fences.
+- Only output the code/content that should replace the placeholder.
+
+Original target file: {todo_file_path}
+"""
 
 
 if __name__ == "__main__":

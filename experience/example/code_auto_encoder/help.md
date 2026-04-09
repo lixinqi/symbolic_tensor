@@ -143,6 +143,25 @@ python experience/example/code_auto_encoder/test_baseline.py \
 
 ## Interactive Mode Details
 
+### Session Reuse Optimization
+
+**New in latest version:** Interactive mode now reuses a single ducc session across all tasks in a batch, significantly reducing startup overhead.
+
+**Before (old behavior):**
+```
+task1 → [start ducc] → execute → [stop] → task2 → [start ducc] → execute → [stop] ...
+```
+
+**After (new behavior):**
+```
+[start ducc once] → task1 → task2 → task3 ... → [session preserved]
+```
+
+**Benefits:**
+- Eliminates ducc startup time for each task (typically 3-5 seconds per task)
+- Single tmux session to monitor (easier to observe)
+- Faster overall execution for multi-task batches
+
 ### File-Based Input Approach
 
 tmux_cc uses a file-based approach to pass input data to the agent. Instead of sending long prompts through tmux, it:
@@ -213,18 +232,22 @@ tmux attach -t tmux_cc_interactive_0_0
 
 ### Session Naming Convention
 
-Each task creates a separate tmux session:
-- `tmux_cc_interactive_0_0` - 1st batch, 1st task
-- `tmux_cc_interactive_1_0` - 2nd batch, 1st task
+In interactive mode, a single shared session is used for all tasks:
+- Default: `tmux_cc_interactive_batch`
 - Custom name: use `--tmux-session my_name` argument
+
+The session processes all tasks sequentially and is preserved after completion.
 
 ### Cleanup tmux Sessions
 
 Sessions are preserved in interactive mode for observation, manual cleanup required:
 
 ```bash
-# Kill single session
-tmux kill-session -t tmux_cc_interactive_0_0
+# Kill the batch session
+tmux kill-session -t tmux_cc_interactive_batch
+
+# Kill custom named session
+tmux kill-session -t my_custom_session
 
 # Kill all tmux_cc sessions
 tmux ls | grep tmux_cc | cut -d: -f1 | xargs -I{} tmux kill-session -t {}
@@ -290,8 +313,8 @@ python experience/example/code_auto_encoder/test_baseline.py \
     --llm-method tmux_cc \
     --interactive
 
-# Terminal 2: Observe tmux_cc execution
-tmux attach -t tmux_cc_interactive_0_0
+# Terminal 2: Observe tmux_cc execution (single session for all tasks)
+tmux attach -t tmux_cc_interactive_batch
 ```
 
 ### Example 3: Multiple Iterations + Custom Workspace
@@ -374,8 +397,8 @@ tmux ls
 ### Q: How to cleanup tmux_cc sessions
 
 ```bash
-# Kill single session
-tmux kill-session -t tmux_cc_interactive_0_0
+# Kill the batch session
+tmux kill-session -t tmux_cc_interactive_batch
 
 # Kill all tmux_cc sessions
 tmux ls | grep tmux_cc | cut -d: -f1 | xargs -I{} tmux kill-session -t {}
