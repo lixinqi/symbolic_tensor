@@ -1,6 +1,6 @@
 get_def_count :=
     # how many definition-name relations exist for this symbol across all files
-    # counts FunctionDef.name, ClassDef.name, AsyncFunctionDef.name where member_tag matches
+    # counts FunctionDef__name, ClassDef__name, AsyncFunctionDef__name where member_tag matches
     # e.g. get_def_count(cache, "SimpleMerger") -> 1, get_def_count(cache, "forward") -> 13
     int
     <- $def_count dict[str, int]

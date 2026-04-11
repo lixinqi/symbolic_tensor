@@ -33,7 +33,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['subprocess'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -49,7 +49,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_36', '$withitem_2', '$Assign_37', '$Assign_38', '$Expr_22', '$Expr_23', '$Expr_24', '$Expr_25'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -69,7 +69,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_3', '$Expr_4', 'slice_tensor', '$Attribute_31', '$Assert_0', '$Assign_7', '$Assign_8', '$Assign_9', '$For_2', '$If_7', '$Assign_15', '$AnnAssign_0', '$For_3', '$If_8', '$Assign_18', '$Assign_19', '$Assign_20', '$Assert_1', '$Return_9'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -89,7 +89,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_1', '$Expr_1', 'assign_tensor', 'None', '$Assert_0', '$Assign_4', '$For_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -109,7 +109,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_25', '$withitem_7', '$Assign_26', '$Expr_38', '$Assign_27', '$Expr_39', '$Assign_28', '$Expr_40', '$Expr_41'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -129,7 +129,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['flat_index'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -145,7 +145,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Expr_40', 'AssertionError'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ExceptHandler.body', 'ExceptHandler.type'])
+        self.assertEqual(relation_tags, ['ExceptHandler__body', 'ExceptHandler__type'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -165,7 +165,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$comprehension_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ListComp.generators'])
+        self.assertEqual(relation_tags, ['ListComp__generators'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -185,7 +185,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_4', '$ImportFrom_4', 'st_patch', '$Return_4'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -205,7 +205,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0', 'experience.symbolic_tensor.tensor_util.make_tensor', '$alias_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ImportFrom.level', 'ImportFrom.module', 'ImportFrom.names'])
+        self.assertEqual(relation_tags, ['ImportFrom__level', 'ImportFrom__module', 'ImportFrom__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -225,7 +225,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['actual'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -241,7 +241,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['List'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -257,7 +257,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_12'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -277,7 +277,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_80', 'f'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -297,7 +297,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_8', 'None', '$arg_9', 'None', '$arg_10', '$arg_11'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -317,7 +317,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Return_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body'])
+        self.assertEqual(relation_tags, ['If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -337,7 +337,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0', 'experience.symbolic_tensor.tensor_util.make_tensor', '$alias_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ImportFrom.level', 'ImportFrom.module', 'ImportFrom.names'])
+        self.assertEqual(relation_tags, ['ImportFrom__level', 'ImportFrom__module', 'ImportFrom__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -357,7 +357,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_34', '$withitem_1', '$Assign_35', '$Expr_19', '$Expr_20', '$Expr_21'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -377,7 +377,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_0', '$Assign_0', 'staticmethod', 'forward', '$Assign_1', '$Expr_0', '$Expr_1', '$Assign_2', '$Return_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.decorator_list', 'FunctionDef.name', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__decorator_list', 'FunctionDef__name', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -397,7 +397,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_15', '$arg_17', '$arg_16'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.vararg', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__vararg', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -417,7 +417,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['expected'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -433,7 +433,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_48', '$Expr_46'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['For.body', 'For.body'])
+        self.assertEqual(relation_tags, ['For__body', 'For__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -453,7 +453,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['int', 'topk'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.annotation', 'arg.arg'])
+        self.assertEqual(relation_tags, ['arg__annotation', 'arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -469,7 +469,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['symlink'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -485,7 +485,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['comprehension.is_async'])
+        self.assertEqual(relation_tags, ['comprehension__is_async'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -501,7 +501,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['ctx'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -517,7 +517,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['comprehension.is_async'])
+        self.assertEqual(relation_tags, ['comprehension__is_async'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -533,7 +533,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_30', '$withitem_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -553,7 +553,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['self'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -569,7 +569,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0', 'experience.symbolic_tensor.tensor_util.make_tensor', '$alias_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ImportFrom.level', 'ImportFrom.module', 'ImportFrom.names'])
+        self.assertEqual(relation_tags, ['ImportFrom__level', 'ImportFrom__module', 'ImportFrom__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -589,7 +589,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$If_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['For.body'])
+        self.assertEqual(relation_tags, ['For__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -609,7 +609,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0', 'experience.llm_client.agent_task', '$alias_5'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ImportFrom.level', 'ImportFrom.module', 'ImportFrom.names'])
+        self.assertEqual(relation_tags, ['ImportFrom__level', 'ImportFrom__module', 'ImportFrom__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -629,7 +629,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Return_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body'])
+        self.assertEqual(relation_tags, ['If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -649,7 +649,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$alias_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Import.names'])
+        self.assertEqual(relation_tags, ['Import__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -669,7 +669,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Import_0', '$Import_1', '$ImportFrom_0', '$ImportFrom_1', '$ImportFrom_2', '$FunctionDef_0', '$FunctionDef_1', '$ClassDef_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body'])
+        self.assertEqual(relation_tags, ['Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -689,7 +689,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['Callable'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -705,7 +705,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_85', 'f'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -725,7 +725,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$For_4', '$withitem_5', '$Assign_17', '$Assign_18', '$Expr_26', '$Expr_27'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -745,7 +745,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assert_0', '$Return_4'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body', 'If.body'])
+        self.assertEqual(relation_tags, ['If__body', 'If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -765,7 +765,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['flat_index'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -781,7 +781,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Expr_12', '$Expr_13', '$If_11'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body', 'If.orelse', 'If.orelse'])
+        self.assertEqual(relation_tags, ['If__body', 'If__orelse', 'If__orelse'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -801,7 +801,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Return_1', '$withitem_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -821,7 +821,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_76', 'tmpdir'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -841,7 +841,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['topk'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -857,7 +857,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_6', '$arg_7'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -877,7 +877,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Import_0', '$Import_1', '$Import_2', '$ImportFrom_0', '$FunctionDef_0', '$FunctionDef_1', '$FunctionDef_2', '$FunctionDef_3', '$If_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body', 'Module.body'])
+        self.assertEqual(relation_tags, ['Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body', 'Module__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -897,7 +897,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_89', 'tmpdir'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -917,7 +917,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0', 'experience.symbolic_tensor.function.st_moe_backward', '$alias_11', '$alias_12', '$alias_13', '$alias_14'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['ImportFrom.level', 'ImportFrom.module', 'ImportFrom.names', 'ImportFrom.names', 'ImportFrom.names', 'ImportFrom.names'])
+        self.assertEqual(relation_tags, ['ImportFrom__level', 'ImportFrom__module', 'ImportFrom__names', 'ImportFrom__names', 'ImportFrom__names', 'ImportFrom__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -937,7 +937,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_26', '$arg_27'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -957,7 +957,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_1', '$Expr_1', 'get_frames', '$Assign_3', '$If_1', '$Return_3'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -977,7 +977,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_197', 'tmpdir'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -997,7 +997,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['axis'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1013,7 +1013,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['todo_tensor_like'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1029,7 +1029,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['text'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1045,7 +1045,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_29', '$withitem_4', '$Assign_30', '$Assign_31', '$Expr_33', '$Expr_34'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1065,7 +1065,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_14', '$arg_15', '$arg_16'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1085,7 +1085,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_10', '$withitem_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1105,7 +1105,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['experience_shape'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1121,7 +1121,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['actual'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1137,7 +1137,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['List'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1153,7 +1153,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Expr_4', '$Expr_5'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body', 'If.body'])
+        self.assertEqual(relation_tags, ['If__body', 'If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1173,7 +1173,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['dim'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1189,7 +1189,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_51', '$withitem_5', '$Expr_30', '$Assign_52', '$Assign_53', '$Assign_54', '$Assign_55', '$Assign_56', '$Assign_57', '$Assign_58', '$Assign_59', '$Expr_31', '$For_5'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1209,7 +1209,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$alias_3'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Import.names'])
+        self.assertEqual(relation_tags, ['Import__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1229,7 +1229,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_3', '$If_7', 'run_test'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1249,7 +1249,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['actual'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1265,7 +1265,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_17', '$withitem_6', '$Assign_18', '$Expr_21', '$Expr_22'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1285,7 +1285,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['torch'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1301,7 +1301,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['List'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1317,7 +1317,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['tempfile'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1333,7 +1333,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$alias_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Import.names'])
+        self.assertEqual(relation_tags, ['Import__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1353,7 +1353,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['dtype'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1369,7 +1369,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_0', 'tmp_dump_dir'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1389,7 +1389,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_2', '$Expr_2', '_write_storage', 'None', '$Assign_2', '$Expr_3', '$With_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1409,7 +1409,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_0', 'None', '$arg_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.defaults', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__defaults', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1429,7 +1429,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_9', '$withitem_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1449,7 +1449,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_6', 'f'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1469,7 +1469,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['comprehension.is_async'])
+        self.assertEqual(relation_tags, ['comprehension__is_async'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1485,7 +1485,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_11', '0', '$arg_12', '$arg_13', '$arg_14'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1505,7 +1505,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_12', '$withitem_3', '$Assign_13', '$withitem_4', '$Expr_17', '$Assign_14', '$For_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.items', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__items', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1525,7 +1525,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$alias_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Import.names'])
+        self.assertEqual(relation_tags, ['Import__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1545,7 +1545,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['comprehension.is_async'])
+        self.assertEqual(relation_tags, ['comprehension__is_async'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1561,7 +1561,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Call_28', 'tmpdir'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['withitem.context_expr', 'withitem.optional_vars'])
+        self.assertEqual(relation_tags, ['withitem__context_expr', 'withitem__optional_vars'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1581,7 +1581,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['assign_tensor'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['alias.name'])
+        self.assertEqual(relation_tags, ['alias__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1597,7 +1597,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Return_9', '$withitem_3'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1617,7 +1617,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_1', '$If_1', 'run_test'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1637,7 +1637,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Subscript_0', 'coordinates'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.annotation', 'arg.arg'])
+        self.assertEqual(relation_tags, ['arg__annotation', 'arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1657,7 +1657,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_1', '$Expr_2', '_grep_by_file_content_hint', '$Subscript_0', '$Assign_1', '$For_1', '$Return_2'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1677,7 +1677,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Expr_16', '$withitem_1'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1697,7 +1697,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arg_0', 'False', '$arg_1', 'None', '$arg_2', "''", '$arg_3', "'raw_llm_api'", '$arg_4', 'None', '$arg_5', '$arg_6', '$arg_7'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.defaults', 'arguments.args', 'arguments.args', 'arguments.args'])
+        self.assertEqual(relation_tags, ['arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__defaults', 'arguments__args', 'arguments__args', 'arguments__args'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1717,7 +1717,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['nested'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1733,7 +1733,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['axis'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1749,7 +1749,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['name'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['arg.arg'])
+        self.assertEqual(relation_tags, ['arg__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1765,7 +1765,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['stream'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['keyword.arg'])
+        self.assertEqual(relation_tags, ['keyword__arg'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1781,7 +1781,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_45', '$withitem_8', '$Assign_46', '$Assign_47', '$Expr_46', '$Assign_48', '$Expr_47'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['With.body', 'With.items', 'With.body', 'With.body', 'With.body', 'With.body', 'With.body'])
+        self.assertEqual(relation_tags, ['With__body', 'With__items', 'With__body', 'With__body', 'With__body', 'With__body', 'With__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1801,7 +1801,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$alias_0'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['Import.names'])
+        self.assertEqual(relation_tags, ['Import__names'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1821,7 +1821,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_5', '$Expr_4', 'slice_backward', '$Subscript_9', '$If_3', '$Assign_8', '$Assign_9', '$Expr_5', '$Assign_10', '$Assign_11', '$Assign_12', '$Assign_13', '$For_5', '$Return_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1841,7 +1841,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Assign_39', '$Assign_40'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body', 'If.body'])
+        self.assertEqual(relation_tags, ['If__body', 'If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1861,7 +1861,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$arguments_8', '$Expr_12', '_flatten_nested_indexes', '$Subscript_21', '$If_5', '$Assign_7', '$For_0', '$Return_12'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['FunctionDef.args', 'FunctionDef.body', 'FunctionDef.name', 'FunctionDef.returns', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body', 'FunctionDef.body'])
+        self.assertEqual(relation_tags, ['FunctionDef__args', 'FunctionDef__body', 'FunctionDef__name', 'FunctionDef__returns', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body', 'FunctionDef__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:
@@ -1881,7 +1881,7 @@ class TestLexicalScopeExpandChildren(unittest.TestCase):
         member_tags = [c.member_tag for c in children]
         self.assertEqual(member_tags, ['$Expr_6'])
         relation_tags = [c.relation_tag for c in children]
-        self.assertEqual(relation_tags, ['If.body'])
+        self.assertEqual(relation_tags, ['If__body'])
         for rt in relation_tags:
             self.assertIn(rt, LEXICAL_RELATION_TAGS)
         for c in children:

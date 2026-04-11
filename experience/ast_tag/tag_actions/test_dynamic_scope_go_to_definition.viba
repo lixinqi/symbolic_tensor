@@ -2,7 +2,7 @@ test_dynamic_scope_go_to_definition :=
     # 100 tests: pick symbols used in dynamic relations, find their definitions
     # validates:
     #   1. returns list[CodePosition] (possibly empty for builtins/externals)
-    #   2. each definition has relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name')
+    #   2. each definition has relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name')
     #      with member_tag == symbol_name
     #   3. definition sites are unique (no duplicates)
     #   4. round-trip: find_all_references on the defined symbol includes the original usage site
@@ -16,7 +16,7 @@ test_dynamic_scope_go_to_definition :=
     <- ($all_file_ids list[str] <- $ast_tag_db.get_all_loaded_file_ids)
     <- ($defined_symbols list[(str, str)]
         <- { SELECT DISTINCT file_id, member_tag FROM relations
-             WHERE relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name') }
+             WHERE relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name') }
         <- $ast_tag_db)
     <- (list[bool]
         <- { repeat num_tests times }
@@ -29,7 +29,7 @@ test_dynamic_scope_go_to_definition :=
             3. call dynamic_scope_go_to_definition(symbol_name)
             4. assert: returns list[CodePosition] with at least 1 result
             5. assert: at least one result has file_id == def_file_id
-               and relation_tag IN ('FunctionDef.name', ...) and member_tag == symbol_name
+               and relation_tag IN ('FunctionDef__name', ...) and member_tag == symbol_name
             6. assert: no duplicate (file_id, owner_tag) pairs in results
             7. assert: round-trip — dynamic_scope_find_all_references(symbol_name)
                returns at least one reference in usage_file_id

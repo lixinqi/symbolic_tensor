@@ -115,7 +115,7 @@ def _extract(node: Any, rels: List[Dict], tmp_gen: _TempVarGen,
         order_counters = {}
 
     def add_rel(field_name: str, member: str):
-        rel_tag = f"{t}.{field_name}"
+        rel_tag = f"{t}__{field_name}"
         key = (me, rel_tag)
         ov = order_counters.get(key, 0)
         order_counters[key] = ov + 1

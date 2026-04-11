@@ -17,8 +17,8 @@ from ast_tag_db import AstTagDB
 
 
 DEFINITION_RELATION_TAGS = frozenset({
-    "FunctionDef.name", "AsyncFunctionDef.name", "ClassDef.name",
-    "alias.name",  # imported symbols
+    "FunctionDef__name", "AsyncFunctionDef__name", "ClassDef__name",
+    "alias__name",  # imported symbols
 })
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     db = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     # pick some defined symbols
     rows = db.execute_raw_sql_query(
-        "SELECT DISTINCT member_tag FROM relations WHERE relation_tag = 'FunctionDef.name' LIMIT 10"
+        "SELECT DISTINCT member_tag FROM relations WHERE relation_tag = 'FunctionDef__name' LIMIT 10"
     )
     for (sym,) in rows:
         defs = dynamic_scope_go_to_definition(db, sym)

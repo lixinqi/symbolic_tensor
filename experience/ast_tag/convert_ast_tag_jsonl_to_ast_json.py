@@ -181,7 +181,7 @@ def _reconstruct(sym: str, idx: _RelationIndex, path: str,
         node["_lineno"] = ln
 
     for field_name in _get_ast_fields(type_name):
-        members = idx.get(sym, f"{type_name}.{field_name}")
+        members = idx.get(sym, f"{type_name}__{field_name}")
         if not members:
             continue
 
@@ -229,7 +229,7 @@ def convert_ast_tag_jsonl_to_ast_json(
 ) -> Tuple[List[Dict], Dict[str, str]]:
     idx = _RelationIndex(records)
     path_map: Dict[str, str] = {}
-    body_members = idx.get("<module>", "Module.body")
+    body_members = idx.get("<module>", "Module__body")
     json_nodes = [
         _reconstruct(sym, idx, f"/body/{i}", path_map)
         for i, sym in enumerate(body_members)

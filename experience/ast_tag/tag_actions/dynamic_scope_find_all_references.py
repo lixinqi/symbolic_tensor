@@ -49,7 +49,7 @@ def dynamic_scope_find_all_references(
         """
         SELECT file_id, line, owner_tag, relation_tag, member_tag, member_order_value
         FROM relations
-        WHERE relation_tag = 'Attribute.attr' AND member_tag = ?
+        WHERE relation_tag = 'Attribute__attr' AND member_tag = ?
         """,
         (symbol_name,),
     )
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     db = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     # pick some defined symbols
     rows = db.execute_raw_sql_query(
-        "SELECT DISTINCT member_tag FROM relations WHERE relation_tag = 'FunctionDef.name' LIMIT 10"
+        "SELECT DISTINCT member_tag FROM relations WHERE relation_tag = 'FunctionDef__name' LIMIT 10"
     )
     for (sym,) in rows:
         refs = dynamic_scope_find_all_references(db, sym)

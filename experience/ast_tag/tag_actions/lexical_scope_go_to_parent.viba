@@ -2,7 +2,7 @@ lexical_scope_go_to_parent :=
     # Go to Parent: which scope lexically contains this node?
     # every AST node has exactly one lexical parent — returns a single position
     # e.g. lexical_scope_go_to_parent(db, "f.jsonl", "$Call_3") ->
-    #   (f.jsonl, 5, $FunctionDef_0, "FunctionDef.body", "$Expr_0", 0)
+    #   (f.jsonl, 5, $FunctionDef_0, "FunctionDef__body", "$Expr_0", 0)
     #   where $Expr_0 contains $Call_3
     Import[./code_position.viba].CodePosition
     <- $ast_tag_db Import[../ast_tag_db.viba].AstTagDB

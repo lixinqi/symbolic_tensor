@@ -19,7 +19,7 @@ test_dynamic_scope_find_all_references :=
     <- ($all_file_ids list[str] <- $ast_tag_db.get_all_loaded_file_ids)
     <- ($defined_symbols list[(str, str, str)]
         <- { SELECT file_id, owner_tag, member_tag FROM relations
-             WHERE relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name') }
+             WHERE relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name') }
         <- $ast_tag_db)
     <- (list[bool]
         <- { repeat num_tests times }

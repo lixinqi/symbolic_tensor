@@ -2,9 +2,9 @@ lexical_scope_expand_children :=
     # Expand Children: what symbols are lexically contained inside this node?
     # follows LEXICAL_RELATION_TAGS from relation_tag_classification.viba
     # e.g. lexical_scope_expand_children(db, "f.jsonl", "$FunctionDef_0") ->
-    #   [(f.jsonl, 5, $FunctionDef_0, "FunctionDef.body", "$Assign_0", 0),
-    #    (f.jsonl, 5, $FunctionDef_0, "FunctionDef.args", "$arguments_0", 0),
-    #    (f.jsonl, 5, $FunctionDef_0, "FunctionDef.decorator_list", "staticmethod", 0)]
+    #   [(f.jsonl, 5, $FunctionDef_0, "FunctionDef__body", "$Assign_0", 0),
+    #    (f.jsonl, 5, $FunctionDef_0, "FunctionDef__args", "$arguments_0", 0),
+    #    (f.jsonl, 5, $FunctionDef_0, "FunctionDef__decorator_list", "staticmethod", 0)]
     list[$child Import[./code_position.viba].CodePosition]
     <- $ast_tag_db Import[../ast_tag_db.viba].AstTagDB
     <- $file_id str

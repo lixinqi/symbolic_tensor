@@ -25,7 +25,7 @@ if __name__ == "__main__":
     r = AstTagRecord(
         file_id="test.jsonl",
         line=1,
-        relation_tag="FunctionDef.name",
+        relation_tag="FunctionDef__name",
         owner_tag="$FunctionDef_0",
         member_tag="pack_dir",
         member_order_value=0,

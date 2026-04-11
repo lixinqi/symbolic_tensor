@@ -9,7 +9,7 @@ build_symbol_count_cache :=
     <- Import[../relation_tag_classification.viba].DYNAMIC_RELATION_TAGS
     <- ($def_count dict[str, int]
         <- { SELECT member_tag, COUNT(*) FROM relations
-             WHERE relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name')
+             WHERE relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name')
              GROUP BY member_tag }
         <- $ast_tag_db)
     <- ($ref_count dict[str, int]

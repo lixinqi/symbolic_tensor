@@ -6,5 +6,5 @@ convert_ast_tag_jsonl_to_ast_json :=
         1. reconstruct ast in json format
         2. all tmp_var started from '$' should be inlined, i.e. make nested ast tree
         3. the name convention of inner_path is the same as jsondiff path
-        4. parse relation_tag "Type.field_name" to extract field_name for reconstruction
+        4. parse relation_tag "Type__field_name" to extract field_name for reconstruction
     }

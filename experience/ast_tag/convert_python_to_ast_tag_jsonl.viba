@@ -10,7 +10,7 @@ convert_python_to_ast_tag_jsonl[ProgrammingLanguage] :=
         files. any line numbers or column numbers are not allowed to be encoded
         into Symbol[ProgrammingLanguage] instances. the underlying trouble is how to express ast tree structure.
         the solution is create a tmp_var symbol as owner_tag to flatten the tree structure.
-        relation_tag format: Type.field_name (aligned with ast module).
+        relation_tag format: Type__field_name (aligned with ast module).
         generic tree walker: iterate node fields, skip _-prefixed and ctx/type_comment/kind/type_params.
         leaf inlining: Name->id, Constant->repr(value), operators->_type.
     }

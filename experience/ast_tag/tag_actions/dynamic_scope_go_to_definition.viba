@@ -1,15 +1,15 @@
 dynamic_scope_go_to_definition :=
     # Go to Definition: where is this symbol defined?
-    # searches ALL files for FunctionDef.name / ClassDef.name with member_tag == symbol_name
+    # searches ALL files for FunctionDef__name / ClassDef__name with member_tag == symbol_name
     # may return multiple results (e.g., same name defined in different files)
     # e.g. dynamic_scope_go_to_definition(db, "make_tensor") ->
-    #   [(tensor_util/make_tensor.jsonl, 1, $FunctionDef_0, "FunctionDef.name", "make_tensor", 0)]
+    #   [(tensor_util/make_tensor.jsonl, 1, $FunctionDef_0, "FunctionDef__name", "make_tensor", 0)]
     #
-    # implementation note: FunctionDef.name is a lexical relation (structural),
+    # implementation note: FunctionDef__name is a lexical relation (structural),
     # but the ACTION of looking up a definition is a dynamic-scope operation —
     # you're asking "at runtime, where does this name resolve to?"
     # the implementation may need to:
-    #   1. direct lookup: SELECT WHERE relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name') AND member_tag = ?
+    #   1. direct lookup: SELECT WHERE relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name') AND member_tag = ?
     #   2. import resolution: if symbol is imported, trace import chain
     #   3. attribute resolution: "foo.bar" -> find foo's class, then bar in class body
     list[$definition_site Import[./code_position.viba].CodePosition]
@@ -20,12 +20,12 @@ dynamic_scope_go_to_definition :=
         step 1 — direct definition lookup:
         SELECT file_id, line, owner_tag, relation_tag, member_tag, member_order_value
         FROM relations
-        WHERE relation_tag IN ('FunctionDef.name', 'AsyncFunctionDef.name', 'ClassDef.name')
+        WHERE relation_tag IN ('FunctionDef__name', 'AsyncFunctionDef__name', 'ClassDef__name')
           AND member_tag = ?
 
         step 2 — import resolution (if step 1 finds nothing in the calling file):
-        find Import.names / ImportFrom.names relations,
-        check alias.name == symbol_name,
+        find Import__names / ImportFrom__names relations,
+        check alias__name == symbol_name,
         resolve module path to target file_id,
         then repeat step 1 in the target file
 

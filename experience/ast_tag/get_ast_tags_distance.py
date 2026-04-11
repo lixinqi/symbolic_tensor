@@ -19,7 +19,7 @@ from experience.ast_tag.get_json_distance import get_json_distance
 #: Symbol: $Type_N owner tags, leaf-inlined member tags, or <module>.
 Symbol = Union[str, int, float, bool]
 
-#: RelationTag: "Type.field_name" format (e.g. "FunctionDef.body").
+#: RelationTag: "Type__field_name" format (e.g. "FunctionDef__body").
 RelationTag = str
 
 

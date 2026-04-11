@@ -2,8 +2,8 @@ dynamic_scope_find_all_references :=
     # Find All References: who uses/calls/references this symbol?
     # searches ALL files for dynamic relations where member_tag == symbol_name
     # e.g. dynamic_scope_find_all_references(db, "make_tensor") ->
-    #   [(train.jsonl, 10, $Call_5, "Call.func", "make_tensor", 0),
-    #    (test.jsonl, 3, $alias_2, "alias.name", "make_tensor", 0)]
+    #   [(train.jsonl, 10, $Call_5, "Call__func", "make_tensor", 0),
+    #    (test.jsonl, 3, $alias_2, "alias__name", "make_tensor", 0)]
     #
     # implementation note: beyond direct member_tag match, a thorough search needs:
     #   1. direct match: SELECT WHERE member_tag = ? AND relation_tag IN DYNAMIC
@@ -29,5 +29,5 @@ dynamic_scope_find_all_references :=
 
         step 3 — attribute references:
         search for attr relations where member_tag = symbol_name,
-        check if the Attribute.value resolves to an object of the defining type
+        check if the Attribute__value resolves to an object of the defining type
     }
