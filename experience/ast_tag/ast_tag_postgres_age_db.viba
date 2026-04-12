@@ -1,0 +1,204 @@
+# ═══════════════════════════════════════════════════════════
+# AstTagPostgresAgeDB — PostgreSQL + Apache AGE Implementation of AstTagDB
+# ═══════════════════════════════════════════════════════════
+# Uses Apache AGE graph extension for openCypher queries.
+# Each relation_tag maps to an edge label in the graph.
+#
+# Graph name: ast_tag
+#
+# ═══════════════════════════════════════════════════════════
+# Node labels & classification
+# ═══════════════════════════════════════════════════════════
+#
+# Node labels: root, inner, leaf_symbol, leaf_literal
+#
+# Classification rules (applied to both owner_tag and member_tag):
+#   root         — symbol == "<module>"
+#   inner        — symbol starts with "$"  (e.g. $FunctionDef_0, $Call_3)
+#   leaf_literal — symbol is repr of a constant:
+#                    matches int/float literal, or quoted string ('...' / "..."),
+#                    or True/False/None/... /b'...'
+#   leaf_symbol  — everything else: identifiers (make_tensor, x),
+#                    operators (Add, Eq, Not), <null>
+#
+# ═══════════════════════════════════════════════════════════
+# Node identity
+# ═══════════════════════════════════════════════════════════
+#
+# root and inner nodes are file-scoped:
+#   unique key = (file_id, symbol)
+#   because $FunctionDef_0 in file A != $FunctionDef_0 in file B
+#
+# leaf_symbol and leaf_literal nodes are global:
+#   unique key = symbol
+#   "make_tensor" is the same vertex across all files
+#   this enables cross-file graph traversal for dynamic scope queries
+#
+# ═══════════════════════════════════════════════════════════
+# Edge model
+# ═══════════════════════════════════════════════════════════
+#
+# Each AstTagRecord becomes one edge:
+#   edge label = relation_tag  (e.g. FunctionDef__body, Call__func)
+#   edge properties:
+#     file_id              str
+#     line                 int
+#     member_order_value   int
+#   direction: (owner_tag_node)-[relation_tag]->(member_tag_node)
+
+AstTagPostgresAgeDB := Implements[AstTagDB] * WrapperOf[psycopg2.Connection]
+
+AstTagPostgresAgeDB.__init__ :=
+    # wrap an existing psycopg2 connection with AGE extension loaded
+    # assumes graph "ast_tag" already exists and is populated
+    void
+    <- $self AstTagPostgresAgeDB
+    <- $conn psycopg2.Connection
+    <- $graph_name str # default "ast_tag"
+    # inline
+    <- (void <- { store conn and graph_name } <- $conn <- $graph_name)
+
+# ═══════════════════════════════════════════════════════════
+# Node label classification helper
+# ═══════════════════════════════════════════════════════════
+
+classify_node_label :=
+    # classify a symbol string into its AGE node label
+    Oneof["root", "inner", "leaf_symbol", "leaf_literal"]
+    <- $symbol str
+    # inline
+    <- {
+        if symbol == "<module>": return "root"
+        if symbol.startswith("$"): return "inner"
+        # leaf_literal: int/float literals, repr'd strings, True/False/None/...
+        # try int(symbol), float(symbol); check startswith("'"/'"'/b"'"/b'"')
+        # check symbol in ("True", "False", "None", "...")
+        if is_literal(symbol): return "leaf_literal"
+        return "leaf_symbol"
+    }
+
+# ═══════════════════════════════════════════════════════════
+# Schema management
+# ═══════════════════════════════════════════════════════════
+
+create_ast_tag_age_graph :=
+    # create the AGE graph and vertex/edge labels
+    # idempotent: checks existence before creating
+    void
+    <- $conn psycopg2.Connection
+    <- $graph_name str # default "ast_tag"
+    # inline
+    <- { LOAD 'age' }
+    <- { SET search_path = ag_catalog, "$user", public }
+    <- { SELECT create_graph($graph_name) if not exists }
+    <- {
+        create vertex labels: root, inner, leaf_symbol, leaf_literal
+        create edge labels: one per distinct relation_tag from
+            LEXICAL_RELATION_TAGS ∪ DYNAMIC_RELATION_TAGS
+    }
+    <- Import[./relation_tag_classification.viba]
+
+load_jsonl_dataset_into_ast_tag_age_db :=
+    # walk dataset_dir, load all .jsonl files into the AGE graph
+    # for each AstTagRecord:
+    #   1. MERGE owner_tag node (classified by label, keyed by file_id+symbol or symbol)
+    #   2. MERGE member_tag node (same classification)
+    #   3. CREATE edge with relation_tag label and properties
+    AstTagPostgresAgeDB
+    <- $dataset_dir str
+    <- $conn_params str # psycopg2 connection string, e.g. "dbname=ast_tag"
+    <- $graph_name str  # default "ast_tag"
+    # inline
+    <- Import[./ast_tag_record.viba]
+    <- ($conn psycopg2.Connection <- psycopg2.connect <- $conn_params)
+    <- (void <- create_ast_tag_age_graph <- $conn <- $graph_name)
+    <- {
+        for each .jsonl file in dataset_dir:
+            for each record:
+                owner_label = classify_node_label(owner_tag)
+                member_label = classify_node_label(member_tag)
+
+                # file-scoped nodes: MERGE on (file_id, symbol)
+                # global nodes: MERGE on (symbol) alone
+                cypher:
+                    MERGE (owner:{owner_label} {symbol: $owner_tag, ...file_id if scoped})
+                    MERGE (member:{member_label} {symbol: $member_tag, ...file_id if scoped})
+                    CREATE (owner)-[:{relation_tag} {
+                        file_id: $file_id,
+                        line: $line,
+                        member_order_value: $member_order_value
+                    }]->(member)
+    }
+    <- (AstTagPostgresAgeDB <- $conn <- $graph_name)
+
+# ═══════════════════════════════════════════════════════════
+# AstTagDB interface implementation
+# ═══════════════════════════════════════════════════════════
+
+AstTagPostgresAgeDB.get_all_loaded_file_ids :=
+    # enumerate all loaded source files, sorted alphabetically
+    # root nodes are file-scoped, each represents one loaded file
+    list[$file_id str]
+    <- $self AstTagPostgresAgeDB
+    # inline
+    <- {
+        cypher(self.graph_name):
+            MATCH (r:root)
+            RETURN DISTINCT r.file_id
+            ORDER BY r.file_id
+    }
+
+AstTagPostgresAgeDB.count_file_relation_records :=
+    # total edges originating from nodes in a file
+    int
+    <- $self AstTagPostgresAgeDB
+    <- $file_id str
+    # inline
+    <- {
+        cypher(self.graph_name):
+            MATCH ()-[r]->()
+            WHERE r.file_id = $file_id
+            RETURN count(r)
+    }
+
+AstTagPostgresAgeDB.get_nearby_symbols_around_line_range :=
+    # collect symbols from edges near a line range (excluding the range itself)
+    list[$nearby_symbol str]
+    <- $self AstTagPostgresAgeDB
+    <- $file_id str
+    <- $line_range_start int
+    <- $line_range_end int
+    <- $context_margin int # default 5
+    # inline
+    <- {
+        cypher(self.graph_name):
+            MATCH (owner)-[r]->(member)
+            WHERE r.file_id = $file_id
+              AND r.line >= ($line_range_start - $context_margin)
+              AND r.line <= ($line_range_end + $context_margin)
+              AND NOT (r.line >= $line_range_start AND r.line <= $line_range_end)
+            RETURN DISTINCT owner.symbol, member.symbol
+    }
+
+AstTagPostgresAgeDB.execute_raw_query :=
+    # raw Cypher query escape hatch
+    # query_statement is a Cypher string executed inside ag_catalog
+    list[dict]
+    <- $self AstTagPostgresAgeDB
+    <- $query_statement str
+    <- $query_params tuple # default ()
+    # inline
+    <- {
+        SELECT * FROM cypher(self.graph_name, $query_statement, $query_params)
+    }
+
+# ═══════════════════════════════════════════════════════════
+# Lifecycle
+# ═══════════════════════════════════════════════════════════
+
+AstTagPostgresAgeDB.close :=
+    # close the underlying psycopg2 connection
+    void
+    <- $self AstTagPostgresAgeDB
+    # inline
+    <- { self._conn.close() }

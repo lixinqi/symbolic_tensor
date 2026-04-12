@@ -1,0 +1,23 @@
+postgres_age_lexical_scope_expand_children :=
+    # Expand Children: what symbols are lexically contained inside this node?
+    # Graph query: traverse outgoing edges from owner node, filter by lexical edge labels
+    #
+    # e.g. postgres_age_lexical_scope_expand_children(db, "f.jsonl", "$FunctionDef_0") ->
+    #   [(f.jsonl, 5, $FunctionDef_0, "FunctionDef__body", "$Assign_0", 0),
+    #    (f.jsonl, 5, $FunctionDef_0, "FunctionDef__args", "$arguments_0", 0)]
+    #
+    # Graph advantage: single hop from owner node, no table scan
+    list[$child Import[./code_position.viba].CodePosition]
+    <- $ast_tag_db Import[../ast_tag_postgres_age_db.viba].AstTagPostgresAgeDB
+    <- $file_id str
+    <- $owner_tag str
+    # inline
+    <- Import[../relation_tag_classification.viba].LEXICAL_RELATION_TAGS
+    <- {
+        cypher(ast_tag_db.graph_name):
+            MATCH (owner {symbol: $owner_tag, file_id: $file_id})-[r]->(child)
+            WHERE type(r) IN $LEXICAL_RELATION_TAGS
+              AND r.file_id = $file_id
+            RETURN r.file_id, r.line, owner.symbol, type(r), child.symbol, r.member_order_value
+            ORDER BY r.member_order_value
+    }

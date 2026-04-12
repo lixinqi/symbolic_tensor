@@ -1,0 +1,31 @@
+postgres_age_dynamic_scope_find_all_references :=
+    # Find All References: who uses/calls/references this symbol?
+    # Graph query: find the leaf node for the symbol, traverse all incoming dynamic edges
+    #
+    # e.g. postgres_age_dynamic_scope_find_all_references(db, "make_tensor") ->
+    #   [(train.jsonl, 10, $Call_5, "Call__func", "make_tensor", 0),
+    #    (test.jsonl, 3, $alias_2, "alias__name", "make_tensor", 0)]
+    #
+    # Graph advantage over SQL:
+    #   leaf_symbol nodes are global — "make_tensor" is ONE vertex shared across all files.
+    #   all incoming edges to that vertex are the references. no full table scan needed.
+    #   cross-file references are naturally captured by the graph topology.
+    list[$reference_site Import[./code_position.viba].CodePosition]
+    <- $ast_tag_db Import[../ast_tag_postgres_age_db.viba].AstTagPostgresAgeDB
+    <- $symbol_name str
+    # inline
+    <- Import[../relation_tag_classification.viba].DYNAMIC_RELATION_TAGS
+    <- {
+        # step 1 — direct dynamic references via global leaf node
+        cypher(ast_tag_db.graph_name):
+            MATCH (owner)-[r]->(member {symbol: $symbol_name})
+            WHERE type(r) IN $DYNAMIC_RELATION_TAGS
+            RETURN r.file_id, r.line, owner.symbol, type(r), member.symbol, r.member_order_value
+
+        # step 2 — attribute references: Attribute__attr edges pointing to same symbol
+        cypher(ast_tag_db.graph_name):
+            MATCH (owner)-[r:Attribute__attr]->(member {symbol: $symbol_name})
+            RETURN r.file_id, r.line, owner.symbol, type(r), member.symbol, r.member_order_value
+
+        # dedup on (file_id, line, owner_tag)
+    }

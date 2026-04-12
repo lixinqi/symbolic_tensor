@@ -9,10 +9,13 @@ lexical_scope_go_to_parent :=
 
 from experience.ast_tag.tag_actions.code_position import CodePosition
 from experience.ast_tag.ast_tag_db import AstTagDB
-from experience.ast_tag.ast_tag_sqlite_db import AstTagSqliteDB
 from experience.ast_tag.tag_actions.sqlite_lexical_scope_go_to_parent import (
     sqlite_lexical_scope_go_to_parent,
 )
+
+
+def _db_type_name(db: AstTagDB) -> str:
+    return type(db).__name__
 
 
 def lexical_scope_go_to_parent(
@@ -22,10 +25,16 @@ def lexical_scope_go_to_parent(
 
     Dispatches to the appropriate implementation based on ast_tag_db type.
     """
-    if isinstance(ast_tag_db, AstTagSqliteDB):
+    name = _db_type_name(ast_tag_db)
+    if name == "AstTagSqliteDB":
         return sqlite_lexical_scope_go_to_parent(ast_tag_db, file_id, member_tag)
+    if name == "AstTagPostgresAgeDB":
+        from experience.ast_tag.tag_actions.postgres_age_lexical_scope_go_to_parent import (
+            postgres_age_lexical_scope_go_to_parent,
+        )
+        return postgres_age_lexical_scope_go_to_parent(ast_tag_db, file_id, member_tag)
     raise NotImplementedError(
-        f"lexical_scope_go_to_parent not implemented for {type(ast_tag_db).__name__}"
+        f"lexical_scope_go_to_parent not implemented for {name}"
     )
 
 

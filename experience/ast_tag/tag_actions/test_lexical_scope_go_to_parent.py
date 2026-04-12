@@ -10,7 +10,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ast_tag_db import load_jsonl_dataset_into_ast_tag_db, AstTagDB
+from ast_tag_db import AstTagDB
 from relation_tag_classification import LEXICAL_RELATION_TAGS
 from tag_actions.lexical_scope_go_to_parent import lexical_scope_go_to_parent
 from tag_actions.lexical_scope_expand_children import lexical_scope_expand_children
@@ -19,7 +19,17 @@ from tag_actions.lexical_scope_expand_children import lexical_scope_expand_child
 def _db() -> AstTagDB:
     if not hasattr(_db, "_instance"):
         dataset_dir = os.path.join(os.path.dirname(__file__), "..", "test_dataset")
-        _db._instance = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
+        backend = os.environ.get("AST_TAG_DB_BACKEND", "sqlite")
+        if backend == "postgres_age":
+            from ast_tag_postgres_age_db import load_jsonl_dataset_into_ast_tag_age_db
+            conn_params = os.environ.get("AST_TAG_PG_CONN", "dbname=ast_tag")
+            graph_name = os.environ.get("AST_TAG_PG_GRAPH", "ast_tag")
+            _db._instance = load_jsonl_dataset_into_ast_tag_age_db(
+                dataset_dir, conn_params, graph_name
+            )
+        else:
+            from ast_tag_db import load_jsonl_dataset_into_ast_tag_db
+            _db._instance = load_jsonl_dataset_into_ast_tag_db(dataset_dir)
     return _db._instance
 
 

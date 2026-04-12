@@ -1,0 +1,29 @@
+postgres_age_lexical_scope_go_to_parent :=
+    # Go to Parent: which scope lexically contains this node?
+    # Graph query: traverse incoming edges to member node, filter by lexical edge labels
+    #
+    # For inner/root member: match on (file_id, symbol)
+    # For leaf member: match any incoming lexical edge with r.file_id = $file_id
+    #
+    # e.g. postgres_age_lexical_scope_go_to_parent(db, "f.jsonl", "$Call_3") ->
+    #   (f.jsonl, 5, $FunctionDef_0, "FunctionDef__body", "$Expr_0", 0)
+    #
+    # Graph advantage: single reverse hop, no table scan
+    Import[./code_position.viba].CodePosition
+    <- $ast_tag_db Import[../ast_tag_postgres_age_db.viba].AstTagPostgresAgeDB
+    <- $file_id str
+    <- $member_tag str
+    # inline
+    <- Import[../relation_tag_classification.viba].LEXICAL_RELATION_TAGS
+    <- {
+        cypher(ast_tag_db.graph_name):
+            MATCH (parent)-[r]->(member {symbol: $member_tag})
+            WHERE type(r) IN $LEXICAL_RELATION_TAGS
+              AND r.file_id = $file_id
+            RETURN r.file_id, r.line, parent.symbol, type(r), member.symbol, r.member_order_value
+            LIMIT 1
+
+        # note: member may be inner (file-scoped) or leaf (global).
+        # filtering on r.file_id ensures we stay within the correct file
+        # regardless of whether the member node itself carries file_id.
+    }

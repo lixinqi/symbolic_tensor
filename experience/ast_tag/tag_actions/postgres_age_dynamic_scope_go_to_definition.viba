@@ -1,0 +1,28 @@
+postgres_age_dynamic_scope_go_to_definition :=
+    # Go to Definition: where is this symbol defined?
+    # Graph query: find the leaf node, traverse incoming definition edges
+    #
+    # e.g. postgres_age_dynamic_scope_go_to_definition(db, "make_tensor") ->
+    #   [(tensor_util/make_tensor.jsonl, 1, $FunctionDef_0, "FunctionDef__name", "make_tensor", 0)]
+    #
+    # Graph advantage over SQL:
+    #   the symbol "make_tensor" is a single global leaf_symbol vertex.
+    #   definition edges (FunctionDef__name, ClassDef__name, etc.) are a small subset
+    #   of all incoming edges — graph index makes this O(degree) not O(table_size).
+    list[$definition_site Import[./code_position.viba].CodePosition]
+    <- $ast_tag_db Import[../ast_tag_postgres_age_db.viba].AstTagPostgresAgeDB
+    <- $symbol_name str
+    # inline
+    <- {
+        DEFINITION_EDGE_LABELS := Oneof
+            | "FunctionDef__name"
+            | "AsyncFunctionDef__name"
+            | "ClassDef__name"
+            | "alias__name"
+
+        cypher(ast_tag_db.graph_name):
+            MATCH (owner)-[r:FunctionDef__name|AsyncFunctionDef__name|ClassDef__name|alias__name]->(member {symbol: $symbol_name})
+            RETURN r.file_id, r.line, owner.symbol, type(r), member.symbol, r.member_order_value
+
+        # dedup on (file_id, owner_tag)
+    }
