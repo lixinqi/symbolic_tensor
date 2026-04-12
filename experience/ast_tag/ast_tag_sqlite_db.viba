@@ -1,0 +1,107 @@
+# ═══════════════════════════════════════════════════════════
+# AstTagSqliteDB — SQLite Implementation of AstTagDB
+# ═══════════════════════════════════════════════════════════
+
+AstTagSqliteDB := Implements[AstTagDB] * WrapperOf[sqlite3.Connection]
+
+AstTagSqliteDB.__init__ :=
+    # wrap an existing sqlite3.Connection — assumes schema already exists and is populated
+    # use load_jsonl_dataset_into_ast_tag_sqlite_db() to create a populated instance
+    void
+    <- $self AstTagSqliteDB
+    <- $conn sqlite3.Connection
+    # inline
+    <- (void <- { store conn reference } <- $conn)
+
+# ═══════════════════════════════════════════════════════════
+# Schema management
+# ═══════════════════════════════════════════════════════════
+
+create_ast_tag_sqlite_db_schema :=
+    # create the relations table and indexes on a bare sqlite3 connection
+    # idempotent: uses CREATE TABLE IF NOT EXISTS
+    void
+    <- $conn sqlite3.Connection
+    # inline
+    <- Import[./ast_tag_record.viba]
+    <- { CREATE TABLE IF NOT EXISTS relations
+         (file_id TEXT, line INTEGER, relation_tag TEXT,
+          owner_tag TEXT, member_tag TEXT, member_order_value INTEGER) }
+    <- { CREATE INDEX IF NOT EXISTS idx_owner ON relations(file_id, owner_tag, relation_tag) }
+    <- { CREATE INDEX IF NOT EXISTS idx_member ON relations(file_id, member_tag, relation_tag) }
+
+# ═══════════════════════════════════════════════════════════
+# Factory function
+# ═══════════════════════════════════════════════════════════
+
+load_jsonl_dataset_into_ast_tag_sqlite_db :=
+    # walk dataset_dir, load all .jsonl files, INSERT as AstTagRecord rows
+    # returns a ready-to-query AstTagSqliteDB wrapping an in-memory or file-backed DB
+    # e.g. load_jsonl_dataset_into_ast_tag_sqlite_db("./dataset/") -> AstTagSqliteDB with 55019 records
+    AstTagSqliteDB
+    <- $dataset_dir str
+    <- $db_path str # default ":memory:"
+    # inline
+    <- Import[./ast_tag_record.viba]
+    <- ($conn sqlite3.Connection <- sqlite3.connect <- $db_path)
+    <- (void <- create_ast_tag_sqlite_db_schema <- $conn)
+    <- (void <- { walk dataset_dir, load all .jsonl, INSERT as AstTagRecord rows } <- $conn <- $dataset_dir)
+    <- (AstTagSqliteDB <- $conn)
+
+# ═══════════════════════════════════════════════════════════
+# AstTagDB interface implementation
+# ═══════════════════════════════════════════════════════════
+
+AstTagSqliteDB.get_all_loaded_file_ids :=
+    # enumerate all loaded JSONL files, sorted alphabetically
+    list[$file_id str]
+    <- $self AstTagSqliteDB
+    # inline
+    <- { SELECT DISTINCT file_id FROM relations ORDER BY file_id }
+
+AstTagSqliteDB.count_file_relation_records :=
+    # total relation rows in a file — proxy for file complexity
+    int
+    <- $self AstTagSqliteDB
+    <- $file_id str
+    # inline
+    <- { SELECT COUNT(*) FROM relations WHERE file_id = ? }
+
+AstTagSqliteDB.get_nearby_symbols_around_line_range :=
+    # collect symbols from lines surrounding a line range (excluding the range itself)
+    # used to seed the agent's initial queries around a masked region
+    list[$nearby_symbol str]
+    <- $self AstTagSqliteDB
+    <- $file_id str
+    <- $line_range_start int
+    <- $line_range_end int
+    <- $context_margin int # default 5
+    # inline
+    <- {
+        SELECT DISTINCT owner_tag, member_tag FROM relations
+        WHERE file_id = ?
+          AND line BETWEEN (line_range_start - context_margin)
+                      AND (line_range_end + context_margin)
+          AND line NOT BETWEEN line_range_start AND line_range_end
+        collect unique symbols from both owner_tag and member_tag columns
+    }
+
+AstTagSqliteDB.execute_raw_query :=
+    # raw SQL escape hatch for ad-hoc analysis
+    list[tuple]
+    <- $self AstTagSqliteDB
+    <- $sql_statement str
+    <- $query_params tuple # default ()
+    # inline
+    <- { execute and fetchall }
+
+# ═══════════════════════════════════════════════════════════
+# Lifecycle methods
+# ═══════════════════════════════════════════════════════════
+
+AstTagSqliteDB.close :=
+    # close the underlying sqlite3 connection
+    void
+    <- $self AstTagSqliteDB
+    # inline
+    <- { self._conn.close() }

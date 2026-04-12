@@ -1,59 +1,29 @@
-AstTagDB := WrapperOf[sqlite3.Connection]
+# ═══════════════════════════════════════════════════════════
+# AstTagDB — Abstract Interface
+# ═══════════════════════════════════════════════════════════
+# A database abstraction for querying AST tag relations.
+# Implementations may use SQLite, PostgreSQL, in-memory structures, etc.
 
-AstTagDB.__init__ :=
-    # wrap an existing sqlite3.Connection — assumes schema already exists and is populated
-    # use load_jsonl_dataset_into_ast_tag_db() to create a populated instance
-    void
-    <- $self AstTagDB
-    <- $conn sqlite3.Connection
-    # inline
-    <- (void <- { store conn reference } <- $conn)
-
-create_ast_tag_db_schema :=
-    # create the relations table and indexes on a bare connection
-    # idempotent: uses CREATE TABLE IF NOT EXISTS
-    void
-    <- $conn sqlite3.Connection
-    # inline
-    <- Import[./ast_tag_record.viba]
-    <- { CREATE TABLE IF NOT EXISTS relations
-         (file_id TEXT, line INTEGER, relation_tag TEXT,
-          owner_tag TEXT, member_tag TEXT, member_order_value INTEGER) }
-    <- { CREATE INDEX IF NOT EXISTS idx_owner ON relations(file_id, owner_tag, relation_tag) }
-    <- { CREATE INDEX IF NOT EXISTS idx_member ON relations(file_id, member_tag, relation_tag) }
-
-load_jsonl_dataset_into_ast_tag_db :=
-    # walk dataset_dir, load all .jsonl files, INSERT as AstTagRecord rows
-    # returns a ready-to-query AstTagDB wrapping an in-memory or file-backed DB
-    # e.g. load_jsonl_dataset_into_ast_tag_db("./dataset/") -> AstTagDB with 55019 records
-    AstTagDB
-    <- $dataset_dir str
-    <- $db_path str # default ":memory:"
-    # inline
-    <- Import[./ast_tag_record.viba]
-    <- ($conn sqlite3.Connection <- sqlite3.connect <- $db_path)
-    <- (void <- create_ast_tag_db_schema <- $conn)
-    <- (void <- { walk dataset_dir, load all .jsonl, INSERT as AstTagRecord rows } <- $conn <- $dataset_dir)
-    <- (AstTagDB <- $conn)
+AstTagDB := AbstractInterface
 
 # ═══════════════════════════════════════════════════════════
-# Utility queries
+# Core query methods (must be implemented by subclasses)
 # ═══════════════════════════════════════════════════════════
 
 AstTagDB.get_all_loaded_file_ids :=
-    # enumerate all loaded JSONL files, sorted alphabetically
+    # enumerate all loaded source files, sorted alphabetically
+    # returns empty list if no files loaded
     list[$file_id str]
     <- $self AstTagDB
-    # inline
-    <- { SELECT DISTINCT file_id FROM relations ORDER BY file_id }
+    # abstract: implementation-dependent
 
 AstTagDB.count_file_relation_records :=
     # total relation rows in a file — proxy for file complexity
+    # returns 0 if file_id not found
     int
     <- $self AstTagDB
     <- $file_id str
-    # inline
-    <- { SELECT COUNT(*) FROM relations WHERE file_id = ? }
+    # abstract: implementation-dependent
 
 AstTagDB.get_nearby_symbols_around_line_range :=
     # collect symbols from lines surrounding a line range (excluding the range itself)
@@ -64,21 +34,39 @@ AstTagDB.get_nearby_symbols_around_line_range :=
     <- $line_range_start int
     <- $line_range_end int
     <- $context_margin int # default 5
-    # inline
-    <- {
-        SELECT DISTINCT owner_tag, member_tag FROM relations
-        WHERE file_id = ?
-          AND line BETWEEN (line_range_start - context_margin)
-                      AND (line_range_end + context_margin)
-          AND line NOT BETWEEN line_range_start AND line_range_end
-        collect unique symbols from both owner_tag and member_tag columns
-    }
+    # abstract: implementation-dependent
 
-AstTagDB.execute_raw_sql_query :=
-    # raw SQL escape hatch for ad-hoc analysis
-    list[tuple]
+AstTagDB.execute_raw_query :=
+    # raw query escape hatch for ad-hoc analysis
+    # return type depends on implementation
+    list[tuple] | dict | ...
     <- $self AstTagDB
-    <- $sql_statement str
+    <- $query_statement str
     <- $query_params tuple # default ()
-    # inline
-    <- { execute and fetchall }
+    # abstract: implementation-dependent
+
+# ═══════════════════════════════════════════════════════════
+# Lifecycle methods (optional, implementation-specific)
+# ═══════════════════════════════════════════════════════════
+
+AstTagDB.close :=
+    # release resources (connections, file handles, etc.)
+    # safe to call multiple times
+    void
+    <- $self AstTagDB
+    # optional: default implementation is no-op
+
+AstTagDB.__enter__ :=
+    # context manager support
+    $self AstTagDB
+    <- $self AstTagDB
+    # inline: return self
+
+AstTagDB.__exit__ :=
+    # context manager support — ensures close() is called
+    void
+    <- $self AstTagDB
+    <- $exc_type ... | void
+    <- $exc_val ... | void
+    <- $exc_tb ... | void
+    # inline: call close(), suppress exceptions if False
