@@ -256,6 +256,17 @@ def _wait_for_tmux_cc_idle(
         # 3. "Done." message from tmux_cc
         # 4. tmux_cc idle state: empty prompt line with ❯ at the end (after processing)
         if not command_completed:
+            # Check if ducc is still thinking/working
+            # These indicators mean ducc is NOT done yet
+            still_working_indicators = ['Proofing', 'Thinking', 'thinking', 'Searching', 'Reading', 'Writing', 'Editing']
+            is_still_working = any(ind in clean_content for ind in still_working_indicators)
+            
+            if is_still_working:
+                print(f"[tmux_cc] ducc still working (detected active indicator)", file=sys.stderr)
+                last_content = content
+                time.sleep(check_interval)
+                continue
+            
             # Check for tmux_cc idle state: line ends with ❯
             # This indicates tmux_cc has finished processing and is waiting for new input
             tmux_cc_idle = False
@@ -467,6 +478,7 @@ class TmuxCcTaskHandler:
                         "-p", ducc_prompt,
                         "--allowedTools", "Read,Edit,Write",
                         "--permission-mode", "bypassPermissions",
+                        "--effort", "low",  # Use low effort for faster response
                     ]
 
                     result = subprocess.run(
@@ -545,7 +557,8 @@ class TmuxCcTaskHandler:
 
                     # Step 1: Start tmux_cc with reduced interactions
                     # IS_SANDBOX=1 skips some prompts, --permission-mode bypassPermissions skips permission checks
-                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write"'
+                    # --effort low for faster response (avoid extended thinking)
+                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write" --effort low'
                     _tmux_send_keys(session_name, tmux_cc_cmd, "Enter")
 
                     # Step 2: Wait for tmux_cc to start and show trust prompt
@@ -574,6 +587,26 @@ class TmuxCcTaskHandler:
                         session_name,
                         auto_confirm=auto_confirm,
                     )
+
+                    # Step 7: Verify output file has been written
+                    # Wait a bit for any pending file I/O to complete
+                    max_wait_for_file = 10  # seconds
+                    wait_interval = 0.5
+                    waited = 0
+                    while waited < max_wait_for_file:
+                        if os.path.exists(todo_file_path):
+                            try:
+                                with open(todo_file_path, "r", encoding="utf-8") as f:
+                                    content = f.read()
+                                if content.strip() != todo_file_content_hint:
+                                    print(f"[tmux_cc] Output file verified: content changed from '{todo_file_content_hint}'", file=sys.stderr)
+                                    break
+                            except Exception:
+                                pass
+                        time.sleep(wait_interval)
+                        waited += wait_interval
+                    else:
+                        print(f"[tmux_cc] WARNING: Output file still contains placeholder after {max_wait_for_file}s", file=sys.stderr)
 
                     print(f"[tmux_cc] Task completed, session '{session_name}' preserved for observation", file=sys.stderr)
 

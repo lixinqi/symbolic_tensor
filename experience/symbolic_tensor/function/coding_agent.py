@@ -37,13 +37,30 @@ def _copy_back_to_storage(mutable_dir: str, output_tensor: torch.Tensor, row_idx
         output_tensor: The original output tensor (not a view)
         row_idx: The batch row index to write to
     """
+    import sys
+    
     mutable_file = os.path.join(mutable_dir, "data.txt")
-    if not os.path.isfile(mutable_file):
+    
+    # Check if file exists (could be symlink or regular file)
+    if not os.path.exists(mutable_file):
+        print(f"[_copy_back_to_storage] File not found: {mutable_file}", file=sys.stderr)
         return
-
-    # Read content from workspace file (may be regular file if symlink was broken)
+    
+    # Check if it's a symlink (ducc should have replaced it with a regular file)
+    is_symlink = os.path.islink(mutable_file)
+    
+    # Read content from workspace file
     with open(mutable_file, "r", encoding="utf-8") as f:
         content = f.read()
+    
+    # Debug: show what we're copying
+    content_preview = content[:50].replace('\n', '\\n') if content else "(empty)"
+    print(f"[_copy_back_to_storage] row={row_idx}, symlink={is_symlink}, content={content_preview}...", file=sys.stderr)
+    
+    # Skip if content is still the placeholder (ducc didn't write)
+    if content.strip() == "TODO":
+        print(f"[_copy_back_to_storage] WARNING: Content still 'TODO', skipping copy", file=sys.stderr)
+        return
 
     # Write directly to the original tensor's storage
     digits = list(str(row_idx))
