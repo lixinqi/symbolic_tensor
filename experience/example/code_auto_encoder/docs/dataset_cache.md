@@ -22,7 +22,7 @@ python experience/example/code_auto_encoder/test_baseline.py \
     --llm-method raw_llm_api \
     --num-iterations 1 \
     --total-batch-size 1 \
-    --dataset-cache-dir ./my_experiment \
+    --experiment-dir ./my_experiment \
     --seed 42
 ```
 
@@ -35,7 +35,7 @@ python experience/example/code_auto_encoder/test_baseline.py \
     --llm-method coding_agent \
     --num-iterations 1 \
     --total-batch-size 1 \
-    --dataset-cache-dir ./my_experiment \
+    --experiment-dir ./my_experiment \
     --seed 42
 ```
 
@@ -50,7 +50,7 @@ python experience/example/code_auto_encoder/test_baseline.py \
     --tmux-session manual_ducc \
     --num-iterations 1 \
     --total-batch-size 1 \
-    --dataset-cache-dir ./my_experiment \
+    --experiment-dir ./my_experiment \
     --seed 42
 ```
 
@@ -72,12 +72,12 @@ tmux attach -t manual_ducc
 ```python
 from experience.example.code_auto_encoder.prepare_dataset import parepare_dataset
 
-# Generate and cache
+# Generate and cache (dataset stored in experiment_dir/dataset/)
 paths, contents, gt, info = parepare_dataset(
     total_batch_size=16,
     dataset_dir="./codebase",
     tmpdir="/tmp/tensors",
-    dataset_cache_dir="./my_experiment",  # Cache directory
+    cache_dir="./my_experiment/dataset",  # Cache directory
     seed=42,                               # Random seed
 )
 
@@ -86,10 +86,10 @@ paths, contents, gt, info = parepare_dataset(
     total_batch_size=16,
     dataset_dir="./codebase",
     tmpdir="/tmp/tensors2",
-    dataset_cache_dir="./my_experiment",
+    cache_dir="./my_experiment/dataset",
     seed=42,
 )
-# Output: Loaded 16 samples from cache: ./my_experiment/seed_42
+# Output: Loaded 16 samples from cache: ./my_experiment/dataset/seed_42
 ```
 
 ## Parameter Description
@@ -99,28 +99,33 @@ paths, contents, gt, info = parepare_dataset(
 | `total_batch_size` | int | Required | Number of samples needed |
 | `dataset_dir` | str | Required | Source code directory (containing .py files) |
 | `tmpdir` | str | Required | Symbolic tensor storage directory |
-| `dataset_cache_dir` | str | None | Cache directory, None means no caching |
+| `cache_dir` | str | None | Cache directory, None means no caching |
 | `seed` | int | None | Random seed, None means not fixed |
 
 ## Cache Directory Structure
 
+When using `--experiment-dir`, dataset is cached in `experiment_dir/dataset/`:
+
 ```
-my_experiment/                      # dataset_cache_dir
-├── seed_42/                        # Data for seed=42
-│   ├── metadata.json               # Metadata
-│   ├── source_files/               # Original source files (stored once)
-│   │   ├── index.json              # File path list
-│   │   └── contents/               # File contents
-│   │       ├── 0.txt
-│   │       ├── 1.txt
+my_experiment/                      # experiment_dir
+├── dataset/                        # Dataset cache (auto-managed)
+│   ├── seed_42/                    # Data for seed=42
+│   │   ├── metadata.json           # Metadata
+│   │   ├── source_files/           # Original source files (stored once)
+│   │   │   ├── index.json          # File path list
+│   │   │   └── contents/           # File contents
+│   │   │       ├── 0.txt
+│   │   │       ├── 1.txt
+│   │   │       └── ...
+│   │   └── samples/                # Sample mask indices
+│   │       ├── 0.json
+│   │       ├── 1.json
 │   │       └── ...
-│   └── samples/                    # Sample mask indices
-│       ├── 0.json
-│       ├── 1.json
+│   ├── seed_123/                   # Data for seed=123
+│   │   └── ...
+│   └── seed_none/                  # Data for seed=None
 │       └── ...
-├── seed_123/                       # Data for seed=123
-│   └── ...
-└── seed_none/                      # Data for seed=None
+└── runs/                           # Experiment results
     └── ...
 ```
 
@@ -194,15 +199,15 @@ Ensure different models use exactly the same input:
 ```bash
 # Model A
 python test_baseline.py --llm-method raw_llm_api \
-    --dataset-cache-dir ./exp_v1 --seed 42 --total-batch-size 20
+    --experiment-dir ./exp_v1 --seed 42 --total-batch-size 20
 
 # Model B (using same data)
 python test_baseline.py --llm-method tmux_cc \
-    --dataset-cache-dir ./exp_v1 --seed 42 --total-batch-size 20
+    --experiment-dir ./exp_v1 --seed 42 --total-batch-size 20
 
 # Model C (using same data)
 python test_baseline.py --llm-method coding_agent \
-    --dataset-cache-dir ./exp_v1 --seed 42 --total-batch-size 20
+    --experiment-dir ./exp_v1 --seed 42 --total-batch-size 20
 ```
 
 ### Case 2: Incremental Sample Expansion
@@ -211,13 +216,13 @@ Start with small dataset for validation, then expand:
 
 ```bash
 # First use 5 samples for quick validation
-python test_baseline.py --dataset-cache-dir ./exp_v1 --seed 42 --total-batch-size 5
+python test_baseline.py --experiment-dir ./exp_v1 --seed 42 --total-batch-size 5
 
 # After validation, expand to 50 samples (reuses first 5)
-python test_baseline.py --dataset-cache-dir ./exp_v1 --seed 42 --total-batch-size 50
+python test_baseline.py --experiment-dir ./exp_v1 --seed 42 --total-batch-size 50
 # Output: Cache has 5 samples, need 50, will generate more
-#         Loaded 5 cached samples from: ./exp_v1/seed_42
-#         Saved 45 new samples to cache: ./exp_v1/seed_42
+#         Loaded 5 cached samples from: ./exp_v1/dataset/seed_42
+#         Saved 45 new samples to cache: ./exp_v1/dataset/seed_42
 ```
 
 ### Case 3: Multiple Control Group Experiments
@@ -226,21 +231,24 @@ Use different seeds to generate multiple independent datasets:
 
 ```bash
 # Experiment group 1
-python test_baseline.py --dataset-cache-dir ./exp --seed 42 --total-batch-size 20
+python test_baseline.py --experiment-dir ./exp --seed 42 --total-batch-size 20
 
 # Experiment group 2 (different data)
-python test_baseline.py --dataset-cache-dir ./exp --seed 123 --total-batch-size 20
+python test_baseline.py --experiment-dir ./exp --seed 123 --total-batch-size 20
 
 # Experiment group 3 (different data)
-python test_baseline.py --dataset-cache-dir ./exp --seed 456 --total-batch-size 20
+python test_baseline.py --experiment-dir ./exp --seed 456 --total-batch-size 20
 ```
 
 Cache structure:
 ```
 exp/
-├── seed_42/    # Experiment group 1 data
-├── seed_123/   # Experiment group 2 data
-└── seed_456/   # Experiment group 3 data
+├── dataset/
+│   ├── seed_42/    # Experiment group 1 data
+│   ├── seed_123/   # Experiment group 2 data
+│   └── seed_456/   # Experiment group 3 data
+└── runs/
+    └── ...
 ```
 
 ## Cache Behavior
@@ -271,17 +279,17 @@ New format (v2) significantly saves space compared to old format:
 
 3. **Incremental consistency**: During incremental generation, random numbers for cached samples are skipped to ensure new samples are consistent with fresh generation
 
-4. **Without cache**: If `dataset_cache_dir` is not provided, data is regenerated every run (using seed ensures reproducibility)
+4. **Without cache**: If `--experiment-dir` is not provided, data is regenerated every run (using seed ensures reproducibility)
 
 ## Parameter Combination Comparison
 
 | Command Parameters | Data Consistency | Caching | Use Cases |
 |-------------------|------------------|---------|-----------|
 | `--seed 42` | ✅ Same every time | ❌ No cache | Debugging, quick validation |
-| `--dataset-cache-dir ./exp` | ❌ Different every time | ✅ Cached | ⚠️ Not recommended |
-| `--seed 42 --dataset-cache-dir ./exp` | ✅ Same every time | ✅ Cached | **Production experiments (recommended)** |
+| `--experiment-dir ./exp` | ❌ Different every time | ✅ Cached | ⚠️ Not recommended |
+| `--seed 42 --experiment-dir ./exp` | ✅ Same every time | ✅ Cached | **Production experiments (recommended)** |
 
 **Notes**:
 - **seed only**: Reproducible, but regenerates data every time (wastes computation time)
-- **cache-dir only**: Caches to `seed_none/` directory, but data is not reproducible
+- **experiment-dir only**: Caches to `seed_none/` directory, but data is not reproducible
 - **Both**: ✅ Best practice, both reproducible and cache-accelerated

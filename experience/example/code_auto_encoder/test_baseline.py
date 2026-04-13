@@ -21,7 +21,10 @@ Viba DSL specification:
 import os
 import sys
 import tempfile
+from dataclasses import dataclass
 from typing import Optional, List
+
+import torch
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -30,6 +33,7 @@ from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit
 
 from experience.example.code_auto_encoder.prepare_dataset import parepare_dataset
 from experience.example.code_auto_encoder.baseline_agent_model import BaselineAgentModel
+from experience.example.code_auto_encoder.organize_results import ExperimentTracker, print_results_summary
 
 
 # <- ($dataset_dir <- { ./codebase/ })
@@ -47,6 +51,17 @@ def _read_storage(tensor, flat_index: int) -> str:
         return f.read()
 
 
+@dataclass
+class IterationResult:
+    """Result of a single iteration."""
+    losses: List[float]
+    file_info: List[str]
+    masked_path_tensor: torch.Tensor
+    masked_content_tensor: torch.Tensor
+    gt_tensor: torch.Tensor
+    output_tensor: torch.Tensor
+
+
 def _run_single_iteration(
     iteration_idx: int,
     total_batch_size: int,
@@ -58,7 +73,8 @@ def _run_single_iteration(
     tmux_session: str = None,
     dataset_cache_dir: str = None,
     seed: int = None,
-) -> List[float]:
+    tracker: ExperimentTracker = None,
+) -> IterationResult:
     """Run a single iteration of the baseline test."""
     print(f"\n{'='*50}")
     print(f"Iteration {iteration_idx + 1}")
@@ -67,7 +83,7 @@ def _run_single_iteration(
     # <- Import[./parepare_dataset]
     masked_path_tensor, masked_content_tensor, gt_tensor, file_info = parepare_dataset(
         total_batch_size, dataset_dir, tmpdir,
-        dataset_cache_dir=dataset_cache_dir,
+        cache_dir=dataset_cache_dir,
         seed=seed,
     )
     print(f"Batch={total_batch_size}, files={masked_path_tensor.shape[1]}")
@@ -93,6 +109,10 @@ def _run_single_iteration(
     print(f"\noutput tensor uid: {output.st_tensor_uid}")
     print(f"ground_truth tensor uid: {gt_tensor.st_tensor_uid}")
 
+    # Register tensors with tracker if available
+    if tracker is not None:
+        tracker.set_tensors(masked_path_tensor, masked_content_tensor, gt_tensor, output)
+
     print(f"\nResults (edit_distance_ratio, lower=better):")
     baseline_loss = []
     for i in range(total_batch_size):
@@ -100,25 +120,42 @@ def _run_single_iteration(
         gt = _read_storage(gt_tensor, i)
         r = loss[i].item()
         baseline_loss.append(r)
+        newline = '\n'
         print(f"  [{i}] {file_info[i]}  loss={r:.4f}")
-        print(f"       gt:     {gt[:80].replace(chr(10), '\\n')}")
-        print(f"       actual: {actual[:80].replace(chr(10), '\\n')}")
+        print(f"       gt:     {gt[:80].replace(newline, chr(92) + 'n')}")
+        print(f"       actual: {actual[:80].replace(newline, chr(92) + 'n')}")
+
+        # Update tracker for each task (incremental update)
+        if tracker is not None:
+            tracker.update_task(
+                task_index=i,
+                file_info=file_info[i],
+                loss=r,
+                gt_preview=gt,
+                output_content=actual,  # Full output content, will be saved to file
+            )
 
     mean_loss = loss.float().mean().item()
     print(f"\nIteration {iteration_idx + 1} mean loss: {mean_loss:.4f}")
-    return baseline_loss
+    return IterationResult(
+        losses=baseline_loss,
+        file_info=file_info,
+        masked_path_tensor=masked_path_tensor,
+        masked_content_tensor=masked_content_tensor,
+        gt_tensor=gt_tensor,
+        output_tensor=output,
+    )
 
 
 def test_baseline(
     total_batch_size: int = 16,
     num_iterations: int = 1,
     llm_method: str = "raw_llm_api",
-    workspace_dir: Optional[str] = None,
     interactive: bool = False,
     auto_confirm: bool = True,
     tmux_session: Optional[str] = None,
-    dataset_cache_dir: Optional[str] = None,
     seed: Optional[int] = None,
+    experiment_dir: Optional[str] = None,
 ) -> List[List[float]]:
     """test_baseline from test_baseline.viba.
 
@@ -126,14 +163,27 @@ def test_baseline(
         total_batch_size: default 16
         num_iterations: default 1
         llm_method: default "raw_llm_api", also supports "coding_agent" and "tmux_cc"
-        workspace_dir: None means temp directory
         interactive: If True and llm_method="tmux_cc", run in tmux for visual observation.
             Use `tmux attach -t <session>` to watch ducc in real-time.
         auto_confirm: If True (and interactive), auto-confirm prompts in tmux.
         tmux_session: Custom tmux session name (interactive mode only).
-        dataset_cache_dir: If provided, cache/load dataset from this directory.
-            Ensures same input data across different model runs.
         seed: Random seed for dataset generation reproducibility.
+        experiment_dir: Organize all results into structured directory:
+            experiment_dir/
+            ├── dataset/              # Input data cache (auto-managed)
+            ├── runs/
+            │   ├── raw_llm_api/      # Grouped by llm_method
+            │   ├── coding_agent/
+            │   └── tmux_cc/
+            │       └── run_YYYYMMDD_HHMMSS/
+            │           ├── config.json
+            │           ├── results.json
+            │           ├── output/
+            │           │   └── 0/
+            │           │       ├── prediction.txt
+            │           │       └── ground_truth.txt
+            │           └── logs/
+            └── latest -> runs/...    # Symlink to latest run
 
     Returns:
         List of baseline_loss per iteration
@@ -142,25 +192,50 @@ def test_baseline(
     dataset_dir = os.path.realpath(CODEBASE_DIR)
     print(f"Dataset: {dataset_dir}")
 
-    # <- $workspace_dir (str | None) # None means temp directory
-    if workspace_dir is None:
-        tmpdir = tempfile.mkdtemp()
-    else:
-        tmpdir = workspace_dir
-        os.makedirs(tmpdir, exist_ok=True)
+    # Handle experiment_dir: dataset cache is always under experiment_dir/dataset
+    dataset_cache_dir = None
+    if experiment_dir is not None:
+        os.makedirs(experiment_dir, exist_ok=True)
+        dataset_cache_dir = os.path.join(experiment_dir, "dataset")
+
+    # Temporary directory for symbolic tensor storage
+    tmpdir = tempfile.mkdtemp()
+
+    # Create experiment tracker if experiment_dir is specified
+    tracker = None
+    if experiment_dir is not None:
+        config = {
+            "llm_method": llm_method,
+            "total_batch_size": total_batch_size,
+            "num_iterations": num_iterations,
+            "seed": seed,
+            "interactive": interactive,
+        }
+        tracker = ExperimentTracker(
+            experiment_dir=experiment_dir,
+            config=config,
+            batch_size=total_batch_size,
+            seed=seed,
+            dataset_cache_dir=dataset_cache_dir,
+            llm_method=llm_method,
+        )
 
     # <- IterationList[int] <- range <- $num_iterations
-    all_iteration_losses: List[List[float]] = []
+    all_iteration_results: List[IterationResult] = []
     for iteration_idx in range(num_iterations):
-        baseline_loss = _run_single_iteration(
+        result = _run_single_iteration(
             iteration_idx, total_batch_size, dataset_dir, tmpdir, llm_method,
             interactive=interactive,
             auto_confirm=auto_confirm,
             tmux_session=tmux_session,
             dataset_cache_dir=dataset_cache_dir,
             seed=seed,
+            tracker=tracker,
         )
-        all_iteration_losses.append(baseline_loss)
+        all_iteration_results.append(result)
+
+    # Extract losses for return value
+    all_iteration_losses = [r.losses for r in all_iteration_results]
 
     # Summary
     if num_iterations > 1:
@@ -171,6 +246,12 @@ def test_baseline(
         print(f"Mean losses per iteration: {['%.4f' % m for m in mean_losses]}")
         overall_mean = sum(mean_losses) / len(mean_losses)
         print(f"Overall mean loss: {overall_mean:.4f}")
+
+    # Finalize experiment tracker
+    if tracker is not None:
+        run_dir = tracker.finalize()
+        results_path = os.path.join(run_dir, "results.json")
+        print_results_summary(results_path)
 
     return all_iteration_losses
 
@@ -194,10 +275,6 @@ if __name__ == "__main__":
         help="LLM method to use (default: raw_llm_api)"
     )
     parser.add_argument(
-        "--workspace-dir", type=str, default=None,
-        help="Workspace directory (default: temp directory)"
-    )
-    parser.add_argument(
         "--interactive", action="store_true",
         help="Run in interactive tmux mode for visual observation (only for llm_method=tmux_cc)"
     )
@@ -210,12 +287,12 @@ if __name__ == "__main__":
         help="Custom tmux session name (only for interactive mode)"
     )
     parser.add_argument(
-        "--dataset-cache-dir", type=str, default=None,
-        help="Directory to cache/load dataset. Ensures same input across model runs."
-    )
-    parser.add_argument(
         "--seed", type=int, default=None,
         help="Random seed for dataset generation reproducibility."
+    )
+    parser.add_argument(
+        "--experiment-dir", type=str, default=None,
+        help="Experiment directory for organized results. Creates: dataset/, runs/, latest symlink."
     )
 
     args = parser.parse_args()
@@ -236,10 +313,9 @@ if __name__ == "__main__":
         total_batch_size=args.total_batch_size,
         num_iterations=args.num_iterations,
         llm_method=args.llm_method,
-        workspace_dir=args.workspace_dir,
         interactive=args.interactive,
         auto_confirm=not args.no_auto_confirm,
         tmux_session=args.tmux_session,
-        dataset_cache_dir=args.dataset_cache_dir,
         seed=args.seed,
+        experiment_dir=args.experiment_dir,
     )

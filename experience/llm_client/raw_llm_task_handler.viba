@@ -18,16 +18,24 @@ RawLlmTaskHandler :=
         <- grep_by_file_content_hint
         <- $root_dir f"{workspace_dir}/{output_relative_dir}"
         <- $todo_file_content_hint)
-    <- ($raw_llm_prompt str
-        <- f"{prompt}\n\nThe Directories are packed as following like repomix:\n\n{packed_workspace}\n\nThe whole task are split into several pieces, One LLMs request for one piece, In This request, Your output will replace the {todo_file_content_hint} placeholder in file {todo_file_path}. \nDo not generate unrelated content.")
+    <- ($raw_llm_prompt_template str <- '''
+        {prompt}
+
+        === WORKSPACE CONTENT ===
+        {packed_workspace}
+        === END WORKSPACE ===
+
+        Based on the code context above, output the missing source code that should replace the placeholder.
+        Output ONLY the raw source code. No markdown code fences. No explanations.
+    ''')
     <- $raw_llm_query Import[experience/llm_client/raw_llm_query.py]
     <- $async_do_for_one_batch (
         str
         <- $raw_llm_query
-        <- $raw_llm_prompt
+        <- $raw_llm_prompt_template
         <- $llm_env)
-    <- (NestList[OutputFilesList[$output_file_content str]] 
-        <- async_gather_run 
+    <- (NestList[OutputFilesList[$output_file_content str]]
+        <- async_gather_run
         <- NestList[OutputFilesList[$async_do_for_one_batch]])
     <- (void
         <- save_file

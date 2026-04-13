@@ -1,70 +1,25 @@
 
 TmuxCcTaskHandler :=
-    # __call__
+    # Use tmux_cc (ducc) CLI to process agent tasks
+    # Supports interactive tmux mode for visual observation or subprocess mode for batch processing
     void
     <- NestedList[$agent_task Import[experience/llm_client/agent_task.viba]]
     <- $llm_env dict[str, str] # default None
     <- $interactive bool # default False
     <- $auto_confirm bool # default True
     <- $tmux_session str # default None
-    # __init__
     <- ()
-    # inline
-    <- (($workspace_dir, $prompt) <- $agent_task)
-    <- $tmux_cc_bin _find_tmux_cc_bin()
-    <- $workspace_root _get_workspace_root()  # ~/.tmux_cc_tmp/ or TMUX_CC_WORKSPACE_ROOT
-    <- $task_workspace _create_task_workspace($workspace_root, $workspace_dir, $prompt)
-    <- $file_based_prompt _build_file_based_prompt($task_workspace)
-    <- $run_mode (if $interactive then "tmux" else "subprocess")
-    <- $tmux_cc_run (void <- $tmux_cc_bin <- $file_based_prompt <- $task_workspace <- $llm_env <- $run_mode)
-    <- (void <- batch_run <- NestList[$tmux_cc_run])
-    <- (void <- copy_output_from_workspace <- $task_workspace <- $workspace_dir)
-
-_find_tmux_cc_bin :=
-    # Find tmux_cc binary in order of priority
-    str
-    <- ()
-    # inline
-    <- $env_bin os.environ.get("TMUX_CC_BIN")
-    <- $path_bin shutil.which("ducc")
-    <- $glob_pattern "~/.comate/extensions/baidu.baidu-cc-*/resources/native-binary/bin/ducc"
-    <- $glob_matches sorted(glob.glob($glob_pattern), reverse=True)
-    <- (return $env_bin if $env_bin else $path_bin if $path_bin else $glob_matches[0])
-
-_get_workspace_root :=
-    # Get workspace root directory
-    str
-    <- ()
-    # inline
-    <- $default "~/.tmux_cc_tmp"
-    <- (return os.environ.get("TMUX_CC_WORKSPACE_ROOT", $default))
-
-_create_task_workspace :=
-    # Create workspace directory with input files
-    str  # returns workspace path
-    <- $workspace_root str
-    <- $original_workspace_dir str
-    <- $prompt str
-    <- $packed_workspace str
-    <- $todo_file_path str
-    <- $todo_file_content_hint str
-    # inline
-    # Creates:
-    #   ~/.tmux_cc_tmp/task_YYYYMMDD_HHMMSS_idx/
-    #       input/
-    #           prompt.txt
-    #           packed_workspace.txt
-    #           task_info.txt
-    #       output/
-    #           (ducc writes result.txt here)
-
-_build_file_based_prompt :=
-    # Build a short prompt that tells ducc to read from files
-    str
-    <- $task_workspace str
-    <- $todo_file_path str
-    <- $todo_file_content_hint str
-    # inline
-    # Returns prompt like:
-    #   "Read task from ./input/prompt.txt, codebase from ./input/packed_workspace.txt,
-    #    write output to ./output/result.txt"
+    # Pipeline:
+    # 1. Find the tmux_cc binary from environment or default paths
+    <- $tmux_cc_bin { search TMUX_CC_BIN env, then PATH, then ~/.comate/extensions/ }
+    # 2. Prepare workspace root directory
+    <- $workspace_root { use TMUX_CC_WORKSPACE_ROOT env or default ~/.tmux_cc_tmp/ }
+    # 3. For each task, create isolated workspace with input/output directories
+    <- $task_workspace { create task dir with input/prompt.txt, input/packed_workspace.txt, output/ }
+    # 4. Build file-based prompt that tells ducc to read from workspace files
+    <- $file_based_prompt { instruct ducc to read from input/ and write to output/result.txt }
+    # 5. Run tmux_cc in interactive tmux mode or subprocess mode
+    <- $run_mode { "tmux" if interactive else "subprocess" }
+    <- { batch run all tasks using tmux_cc_bin with file_based_prompt }
+    # 6. Copy results back from workspace to original directory
+    <- { copy output from task_workspace to original workspace_dir }

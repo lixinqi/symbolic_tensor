@@ -4,16 +4,26 @@ dump_view :=
     <- $dump_dir str
     <- $extension str
     # inline
+    <- $platform_is_macos (bool <- sys.platform == 'darwin')
+    <- _normalize_path_for_symlink ($func <- '''
+        Normalize path for symlink creation, avoiding macOS /private doubling.
+        On macOS, /var is a symlink to /private/var. Using os.path.realpath() would
+        convert /var/... to /private/var/..., but if the symlink target already
+        contains /private/var, we get /private/private/var.
+        This function uses os.path.abspath() instead of os.path.realpath() to avoid
+        following the /var -> /private/var symlink.
+    ''')
+    <- $normalized_relative_to ($func <- $tensor.st_relative_to)
     <- (list[$coordinates list[int]] <- get_coordinates <- $tensor.size)
     <- $get_index (int <- $coordinates <- $tensor.stride)
     <- $get_src_index_dentries (list[$digit str] <- str_to_digit_list <- str <- $get_index)
     <- $get_coordinates_dentries (str <- path_join <- int_list_to_str_list <- $coordinates)
     <- $get_src_file_path (
-        str 
-        <- path_join 
-        <- $tensor.st_relative_to 
-        <- $tensor.st_tensor_uid 
-        <- $get_src_index_dentries 
+        str
+        <- path_join
+        <- $normalized_relative_to
+        <- $tensor.st_tensor_uid
+        <- $get_src_index_dentries
         <- "data"
     )
     <- $get_dst_file_path (
@@ -24,8 +34,10 @@ dump_view :=
         <- "data"
         <- $extension
     )
-    <- $make_dirs_for_dir_name (void <- shutil <- $get_src_file_path <- $get_dst_file_path ...)
-    <- $relative_sym_link_for_file (void <- shutil <- $get_src_file_path <- $get_dst_file_path <- ...)
+    <- $dst_dir_normalized ($func <- path_dir <- $get_dst_file_path)
+    <- $relative_symlink (str <- path_relpath <- $get_src_file_path <- $dst_dir_normalized)
+    <- $make_dirs_for_dir_name (void <- os.makedirs <- path_dir <- $get_dst_file_path <- exist_ok=True)
+    <- (void <- os.symlink <- $relative_symlink <- $get_dst_file_path)
     
 
 # prepare test input nested data for symbolic.tensor_util.make_tensor

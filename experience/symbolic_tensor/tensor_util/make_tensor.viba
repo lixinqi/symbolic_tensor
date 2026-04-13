@@ -6,6 +6,15 @@ make_tensor :=
     <- $relative_to str
     <- $symlink bool # default False, only for pathlib.Path and relative_symlink
     # inline
+    <- $platform_is_macos (bool <- sys.platform == 'darwin')
+    <- _normalize_path_for_symlink ($func <- '''
+        Normalize path for symlink creation, avoiding macOS /private doubling.
+        On macOS, /var is a symlink to /private/var. Using resolve() would
+        convert /var/... to /private/var/..., but if the symlink target already
+        contains /private/var, we get /private/private/var.
+        This function uses os.path.abspath() instead of resolve() to avoid
+        following the /var -> /private/var symlink.
+    ''')
     <- ($shape list[int] <- $nested_data)
     <- { assert NestedDataConsistentWithShape[$nested_data, $shape] }
     <- $make_none_tensor Import[experience/symbolic_tensor/tensor_util/make_none_tensor]

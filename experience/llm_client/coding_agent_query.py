@@ -1,8 +1,44 @@
 import asyncio
+import glob
 import os
 import sys
 from typing import Dict, Optional
 from claude_agent_sdk import query, ClaudeAgentOptions
+
+
+def _find_ducc_cli_path() -> str:
+    """Find ducc CLI binary path."""
+    # 1. Check environment variable
+    if env_bin := os.environ.get("TMUX_CC_BIN"):
+        return env_bin
+
+    # 2. Check PATH
+    import shutil
+    if path_bin := shutil.which("ducc"):
+        return path_bin
+
+    # 3. Glob pattern for comate extension
+    pattern = os.path.expanduser(
+        "~/.comate/extensions/baidu.baidu-cc-*/resources/native-binary/bin/ducc"
+    )
+    matches = sorted(glob.glob(pattern), reverse=True)
+    if matches:
+        return matches[0]
+
+    # Fallback to default claude CLI
+    return None
+
+
+def _find_ducc_settings_path() -> str:
+    """Find ducc settings.json path."""
+    pattern = os.path.expanduser(
+        "~/.comate/extensions/baidu.baidu-cc-*/resources/settings.json"
+    )
+    matches = sorted(glob.glob(pattern), reverse=True)
+    if matches:
+        return matches[0]
+    return None
+
 
 async def coding_agent_query(
     prompt: str,
@@ -18,6 +54,11 @@ async def coding_agent_query(
         for key, val in llm_env.items():
             env_backup[key] = os.environ.get(key)
             os.environ[key] = val
+
+    # Find ducc CLI and settings
+    cli_path = _find_ducc_cli_path()
+    settings_path = _find_ducc_settings_path()
+
     try:
         async for item in query(
             prompt=prompt,
@@ -25,6 +66,8 @@ async def coding_agent_query(
                 allowed_tools=allowed_tools,
                 permission_mode=permission_mode,
                 cwd=cwd,
+                cli_path=cli_path,
+                settings=settings_path,
             ),
         ):
             # print(item, file=sys.stderr)

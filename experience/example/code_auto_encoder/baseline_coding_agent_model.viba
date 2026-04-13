@@ -1,24 +1,31 @@
 
 BaselineCodingAgentModel[torch.nn.Module] :=
     # forward
-    $baseline_output SymblicTensor[($total_batch_size,)]
+    $baseline_output SymbolicTensor[($total_batch_size,)]
     <- $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
-    <- $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]]
-    <- $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]]
+    <- $masked_file_content_tensor Symbolic[Tensor[($total_batch_size, $num_files)]]
+    <- $llm_method str # default "coding_agent"
     # __init__
-    <- $llm_method str # default  "raw_llm_api"
-    #inline
+    <- ($llm_method str # default "coding_agent")
+    # inline
+    <- $st_stack Import[experience/symbolic_tensor/function/st_stack.viba]
+    <- $merge Import[experience/symbolic_tensor/function/merge.viba]
+    <- (
+        $stacked_tensor Symbolic[Tensor[($total_batch_size, $num_files, 2)]]
+        <- $st_stack
+        <- list[$masked_file_path_tensor, $masked_file_content_tensor]
+        <- $dim -1
+    )
     <- (
         $path_and_contents Symbolic[Tensor[($total_batch_size, $num_files)]]
-        <- Import[function/merge]
-        <- { concat on last axis }
-        <- $masked_file_path_tensor
-        <- $masked_file_content_tensor
+        <- $merge
+        <- $stacked_tensor
+        <- $axis -1
     )
     <- ($prompt str <- { Get back the original content that was masked in f"{kMaskedHint}" })
     <- (
-        $baseline_output 
-        <- Import[function/coding_agent.viba]
+        $baseline_output
+        <- Import[experience/symbolic_tensor/function/coding_agent.viba]
         <- $path_and_contents
         <- $prompt
         <- $llm_method "coding_agent"

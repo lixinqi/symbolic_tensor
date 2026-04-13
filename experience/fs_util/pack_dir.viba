@@ -2,14 +2,23 @@ pack_dir :=
     $ret str
     <- $root_dir str
     # inline
+    <- $platform_is_macos (bool <- sys.platform == 'darwin')
+    <- _resolve_symlink_safe ($func <- '''
+        Resolve symlink chain handling macOS /var -> /private/var symlink.
+        This function recursively resolves symlinks, handling:
+        1. Chains of symlinks (e.g., dump_view -> slice_view -> original storage)
+        2. macOS /var -> /private/var mapping
+    ''')
+    <- $normalized_root_dir (str <- os.path.realpath <- $root_dir)
     <- ($dir_struct str
         <- Import[seedir].seedir
-        <- $root_dir)
+        <- $normalized_root_dir)
     <- (list[$file_path str, $file_content str]
         <- recursively_find_all_file_content
         <- get_original_file_content_if_is_sym_link
-        <- $root_dir)
-    <- ($relative_file_path str <- file_path)
+        <- $normalized_root_dir)
+    <- $real_file_path (str <- _resolve_symlink_safe <- $file_path)
+    <- $relative_file_path str <- path_relpath <- $file_path <- $root_dir
     <- $ret_template '''
         # Directories structure
         ```

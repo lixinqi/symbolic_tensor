@@ -59,12 +59,11 @@ class RawLlmTaskHandler:
                 for todo_file_path in todo_file_paths:
                     raw_llm_prompt = (
                         f"{prompt}\n\n"
-                        f"The Directories are packed as following like repomix:\n\n"
-                        f"{packed_workspace}\n\n"
-                        f"The whole task are split into several pieces, One LLMs request for one piece, "
-                        f"In This request, Your output will replace the {todo_file_content_hint} placeholder in file {todo_file_path}. \n"
-                        f"Output raw text only. Do NOT wrap in markdown code fences (``` or ```lang).\n"
-                        f"Do not generate unrelated content."
+                        f"=== WORKSPACE CONTENT ===\n"
+                        f"{packed_workspace}\n"
+                        f"=== END WORKSPACE ===\n\n"
+                        f"Based on the code context above, output the missing source code that should replace the placeholder.\n"
+                        f"Output ONLY the raw source code. No markdown code fences. No explanations.\n"
                     )
                     jobs.append((todo_file_path, raw_llm_prompt))
 

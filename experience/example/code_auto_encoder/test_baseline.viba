@@ -1,5 +1,3 @@
-
-
 kMaskedHint := "<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>"
 
 test_baseline :=
@@ -7,18 +5,34 @@ test_baseline :=
     <- $total_batch_size int # default 16
     <- $num_iterations int # default 1
     <- $llm_method str # default "raw_llm_api"
-    <- $workspace_dir (str | None) # None means temp directory
-    #inline
-    <- ($dataset_dir <- { ./codebase/ })
-    <- { In most cases, operators on Symbolic[Tensor] should be symblic}
-    <- (($file_path_tensor, $file_content_tensor, $ground_truth_content_tensor)
-        <- Import[./parepare_dataset])
+    <- $interactive bool # default False
+    <- $auto_confirm bool # default True
+    <- $tmux_session (str | None) # default None
+    <- $seed (int | None) # default None
+    <- $experiment_dir (str | None) # default None
+    # inline
+    <- $dataset_dir str <- { ./codebase/ }
+    <- $tmpdir str <- tempfile.mkdtemp()
+    <- ($dataset_cache_dir (str | None) <- { if $experiment_dir then path_join($experiment_dir, "dataset") else None })
+    <- (($masked_path_tensor, $masked_content_tensor, $ground_truth_tensor, $file_info)
+        <- Import[./prepare_dataset.viba].parepare_dataset
+        <- $total_batch_size
+        <- $dataset_dir
+        <- $tmpdir
+        <- $dataset_cache_dir
+        <- $seed)
     <- (IterationList[int] <- range <- $num_iterations)
+    <- $baseline_model (
+        Import[./baseline_coding_agent_model.viba].BaselineCodingAgentModel |
+        Import[./baseline_raw_llm_api_model.viba].BaselineRawLlmApiModel |
+        Import[./baseline_tmux_cc_model.viba].BaselineTmuxCcModel
+    )
     <- ($baseline_output SymblicTensor[($total_batch_size,)]
-        <- Import[./baseline_agent_model.viba].BaselineAgentModel
-        <- $llm_method)
-    <- ($baseline_loss
-        <- Import[function/get_edit_distance]
+        <- $baseline_model
+        <- $masked_path_tensor
+        <- $masked_content_tensor)
+    <- ($baseline_loss list[float]
+        <- Import[experience/symbolic_tensor/function/get_edit_distance_ratio.viba].get_edit_distance_ratio
         <- $baseline_output
-        <- $ground_truth_content_tensor)
-    <- { print $baseline_output.st_uid ground_truth_content_tensor.st_uid }
+        <- $ground_truth_tensor)
+    <- { print($baseline_output.st_tensor_uid, $ground_truth_tensor.st_tensor_uid) }

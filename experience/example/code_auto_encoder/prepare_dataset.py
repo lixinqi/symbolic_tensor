@@ -328,8 +328,63 @@ def _find_maskable_range(content: str) -> Tuple[int, int]:
     return code_start, main_start
 
 
-def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10) -> Tuple[int, int, str]:
-    """Pick random line range to mask. Range size in (min_size, max_size)."""
+def _contains_comment(code_snippet: str) -> bool:
+    """Check if code snippet contains Python comments.
+
+    Detects:
+    - Single line comments starting with #
+    - Docstrings (triple quotes)
+    """
+    lines = code_snippet.splitlines()
+    in_docstring = False
+    docstring_char = None
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check for docstring boundaries
+        if not in_docstring:
+            if stripped.startswith('"""') or stripped.startswith("'''"):
+                docstring_char = stripped[:3]
+                # Check if docstring ends on same line
+                if stripped.count(docstring_char) >= 2:
+                    return True  # Single line docstring
+                in_docstring = True
+                return True
+        else:
+            if docstring_char in stripped:
+                in_docstring = False
+                return True
+
+        # Check for single line comments (# not in string)
+        # Simple heuristic: if # appears and is not inside a string
+        if '#' in line:
+            # Check if # is inside a string by counting quotes before it
+            hash_idx = line.find('#')
+            before_hash = line[:hash_idx]
+            # Count unescaped quotes
+            single_quotes = before_hash.count("'") - before_hash.count("\\'")
+            double_quotes = before_hash.count('"') - before_hash.count('\\"')
+            # If both quote counts are even, # is not inside a string
+            if single_quotes % 2 == 0 and double_quotes % 2 == 0:
+                return True
+
+    return in_docstring  # Still in unclosed docstring
+
+
+def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10, max_retries: int = 100) -> Tuple[int, int, str]:
+    """Pick random line range to mask. Range size in (min_size, max_size).
+
+    Args:
+        content: The file content.
+        min_size: Minimum number of lines to mask.
+        max_size: Maximum number of lines to mask.
+        max_retries: Maximum attempts to find a comment-free range.
+
+    Returns:
+        Tuple of (start_line, end_line, masked_content).
+        The masked content will not contain Python comments.
+    """
     lines = content.splitlines(keepends=True)
     code_start, main_start = _find_maskable_range(content)
     maskable_len = main_start - code_start
@@ -337,14 +392,24 @@ def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10) 
     if maskable_len < min_size:
         mask_len = max(1, maskable_len)
         start = code_start
-    else:
-        upper_bound = min(max_size, maskable_len)
-        lower_bound = min(min_size, upper_bound)
+        end = start + mask_len
+        return start, end, "".join(lines[start:end])
+
+    upper_bound = min(max_size, maskable_len)
+    lower_bound = min(min_size, upper_bound)
+
+    for _ in range(max_retries):
         mask_len = random.randint(lower_bound, upper_bound)
         start = random.randint(code_start, main_start - mask_len)
+        end = start + mask_len
+        snippet = "".join(lines[start:end])
 
-    end = start + mask_len
-    return start, end, "".join(lines[start:end])
+        if not _contains_comment(snippet):
+            return start, end, snippet
+
+    # Fallback: return last attempt even if it contains comments
+    # This should rarely happen in practice
+    return start, end, snippet
 
 
 def _apply_mask(content: str, start: int, end: int) -> str:
@@ -357,7 +422,7 @@ def parepare_dataset(
     total_batch_size: int,
     dataset_dir: str,
     tmpdir: str,
-    dataset_cache_dir: Optional[str] = None,
+    cache_dir: Optional[str] = None,
     seed: Optional[int] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, List[str]]:
     """PrepareDataSet from prepare_dataset.viba.
@@ -366,7 +431,7 @@ def parepare_dataset(
         total_batch_size: Number of samples to generate.
         dataset_dir: Directory containing .py source files.
         tmpdir: Temp directory for symbolic tensor storage.
-        dataset_cache_dir: If provided, cache dataset to this directory.
+        cache_dir: If provided, cache dataset to this directory.
             - Cache is organized by seed: {cache_dir}/seed_{N}/
             - If cache has enough samples, load from cache.
             - If cache has partial samples, load existing + generate more.
@@ -380,12 +445,12 @@ def parepare_dataset(
         file_info: list of "file_path:start-end" for logging
     """
     # Try to load full dataset from cache
-    if dataset_cache_dir is not None:
+    if cache_dir is not None:
         cached = _load_dataset_cache(
-            dataset_cache_dir, total_batch_size, dataset_dir, seed, tmpdir
+            cache_dir, total_batch_size, dataset_dir, seed, tmpdir
         )
         if cached is not None:
-            seed_dir = _get_seed_subdir(dataset_cache_dir, seed)
+            seed_dir = _get_seed_subdir(cache_dir, seed)
             print(f"Loaded {total_batch_size} samples from cache: {seed_dir}")
             return cached
 
@@ -395,11 +460,11 @@ def parepare_dataset(
     file_contents = []
     start_index = 0
 
-    if dataset_cache_dir is not None:
+    if cache_dir is not None:
         sample_indices, file_paths, file_contents, start_index = \
-            _load_partial_cache(dataset_cache_dir, dataset_dir, seed)
+            _load_partial_cache(cache_dir, dataset_dir, seed)
         if start_index > 0:
-            seed_dir = _get_seed_subdir(dataset_cache_dir, seed)
+            seed_dir = _get_seed_subdir(cache_dir, seed)
             print(f"Loaded {start_index} cached samples from: {seed_dir}")
 
     # Set random seed if provided (advance it to correct position)
@@ -457,9 +522,9 @@ def parepare_dataset(
     gt_tensor = make_tensor(all_ground_truths, tmpdir)
 
     # Save to cache if requested
-    if dataset_cache_dir is not None:
+    if cache_dir is not None:
         _save_dataset_cache(
-            dataset_cache_dir,
+            cache_dir,
             total_batch_size,
             dataset_dir,
             seed,
@@ -468,7 +533,7 @@ def parepare_dataset(
             sample_indices,
             start_index=start_index,
         )
-        seed_dir = _get_seed_subdir(dataset_cache_dir, seed)
+        seed_dir = _get_seed_subdir(cache_dir, seed)
         if start_index > 0:
             print(f"Saved {total_batch_size - start_index} new samples to cache: {seed_dir}")
         else:

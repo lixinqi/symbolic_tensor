@@ -2,25 +2,25 @@
 parepare_dataset :=
     (
         $masked_file_path_tensor Symbolic[Tensor[($total_batch_size, $num_files)]],
-        $masked_file_content_tensor Symbolic[TensorTensor[($total_batch_size, $num_files)]],
-        $ground_truth_content_tensor Symbolic[TensorTensor[($total_batch_size)]],
+        $masked_file_content_tensor Symbolic[Tensor[($total_batch_size, $num_files)]],
+        $ground_truth_content_tensor Symbolic[Tensor[($total_batch_size)]],
         $file_info list[str]
     )
     <- $total_batch_size int
     <- $dataset_dir str
     <- $tmpdir str
-    <- $dataset_cache_dir (str | None) # default None, cache directory for reproducible experiments
+    <- $cache_dir (str | None) # default None, cache directory for reproducible experiments
     <- $seed (int | None) # default None, random seed for reproducibility
     # inline
 
     # Try to load from cache first
     <- ($cached (tuple | None) <- _load_dataset_cache
-        <- $dataset_cache_dir <- $total_batch_size <- $dataset_dir <- $seed <- $tmpdir)
+        <- $cache_dir <- $total_batch_size <- $dataset_dir <- $seed <- $tmpdir)
     <- { if cached is not None: return cached }
 
     # Try to load partial cache for incremental generation
     <- (($sample_indices list[dict], $file_paths list[str], $file_contents list[str], $start_index int)
-        <- _load_partial_cache <- $dataset_cache_dir <- $dataset_dir <- $seed)
+        <- _load_partial_cache <- $cache_dir <- $dataset_dir <- $seed)
 
     # Set random seed if provided (advance to correct position)
     <- { if seed is not None: random.seed(seed); skip start_index random calls }
@@ -54,7 +54,7 @@ parepare_dataset :=
 
     # Save to cache if requested
     <- (void <- _save_dataset_cache
-        <- $dataset_cache_dir <- $total_batch_size <- $dataset_dir <- $seed
+        <- $cache_dir <- $total_batch_size <- $dataset_dir <- $seed
         <- $file_paths <- $file_contents <- $sample_indices <- $start_index)
 
 

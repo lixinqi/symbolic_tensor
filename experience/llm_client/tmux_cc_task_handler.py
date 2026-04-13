@@ -205,6 +205,7 @@ def _wait_for_tmux_cc_idle(
     last_content = ""
     idle_count = 0
     start_time = time.time()
+    task_started = False  # True after we see ducc start processing (e.g., tool calls)
     command_completed = False
 
     while True:
@@ -227,6 +228,23 @@ def _wait_for_tmux_cc_idle(
                 last_content = ""  # Reset to re-check
                 continue
 
+        # Check if ducc has started processing the task
+        # Look for tool call indicators like "Read(", "Write(", "Edit(", or thinking indicators
+        if not task_started:
+            task_indicators = ['Read(', 'Write(', 'Edit(', '⏺', 'Thinking', 'Reading', 'Writing']
+            for indicator in task_indicators:
+                if indicator in clean_content:
+                    task_started = True
+                    print(f"[tmux_cc] Task started (detected: {indicator})", file=sys.stderr)
+                    break
+
+        # Only check for completion after the task has started
+        if not task_started:
+            print(f"[tmux_cc] Waiting for task to start...", file=sys.stderr)
+            last_content = content
+            time.sleep(check_interval)
+            continue
+
         # Check if command has completed (shell prompt appears after output)
         # Look for patterns indicating tmux_cc has finished
         lines = clean_content.strip().split('\n')
@@ -238,6 +256,17 @@ def _wait_for_tmux_cc_idle(
         # 3. "Done." message from tmux_cc
         # 4. tmux_cc idle state: empty prompt line with ❯ at the end (after processing)
         if not command_completed:
+            # Check if ducc is still thinking/working
+            # These indicators mean ducc is NOT done yet
+            still_working_indicators = ['Proofing', 'Thinking', 'thinking', 'Searching', 'Reading', 'Writing', 'Editing']
+            is_still_working = any(ind in clean_content for ind in still_working_indicators)
+            
+            if is_still_working:
+                print(f"[tmux_cc] ducc still working (detected active indicator)", file=sys.stderr)
+                last_content = content
+                time.sleep(check_interval)
+                continue
+            
             # Check for tmux_cc idle state: line ends with ❯
             # This indicates tmux_cc has finished processing and is waiting for new input
             tmux_cc_idle = False
@@ -292,8 +321,6 @@ def _create_task_workspace(
                 prompt.txt          # The task prompt
                 packed_workspace.txt # The packed directory content
                 task_info.txt       # Metadata about the task
-            output/
-                (ducc will write output here)
 
     Returns:
         The path to the created workspace directory.
@@ -305,9 +332,7 @@ def _create_task_workspace(
 
     # Create directories
     input_dir = os.path.join(workspace_dir, "input")
-    output_dir = os.path.join(workspace_dir, "output")
     os.makedirs(input_dir, exist_ok=True)
-    os.makedirs(output_dir, exist_ok=True)
 
     # Write prompt
     prompt_file = os.path.join(input_dir, "prompt.txt")
@@ -335,26 +360,28 @@ def _build_file_based_prompt(workspace_dir: str, todo_file_path: str, todo_file_
 
     Args:
         workspace_dir: The task workspace directory (contains input/ and output/)
-        todo_file_path: The original path to the TODO file
+        todo_file_path: The original path to the TODO file (absolute path to mutable_output_dir/data.txt)
         todo_file_content_hint: The placeholder string to replace
 
     Returns:
-        A short prompt that tells ducc where to find the input files.
+        A short prompt that tells ducc where to find the input files and where to write output.
     """
     prompt = f"""Please complete the following task:
 
 1. Read the task description from: ./input/prompt.txt
 2. Read the codebase content from: ./input/packed_workspace.txt
 3. The packed_workspace.txt contains the directory structure in repomix format.
-4. Your output will replace the "{todo_file_content_hint}" placeholder.
-5. Write your output to: ./output/result.txt
+4. Follow the instructions in prompt.txt to complete the task.
+
+CRITICAL - Output Location:
+- Write your result DIRECTLY to this file: {todo_file_path}
+- This is an absolute path, use the Write tool to write to it.
+- The file currently contains "{todo_file_content_hint}" - replace it with your answer.
 
 IMPORTANT:
 - Output raw text only. Do NOT wrap in markdown code fences (``` or ```lang).
 - Do not generate unrelated content.
 - Only output the code/content that should replace the placeholder.
-
-Original target file: {todo_file_path}
 """
     return prompt
 
@@ -375,8 +402,9 @@ class TmuxCcTaskHandler:
                 prompt.txt          # The task prompt
                 packed_workspace.txt # The packed directory content
                 task_info.txt       # Metadata about the task
-            output/
-                result.txt          # Output from ducc
+
+    Note: Output is handled by coding_agent.py via _copy_back_to_storage_view,
+    not by this handler directly.
     """
 
     def __call__(
@@ -450,6 +478,7 @@ class TmuxCcTaskHandler:
                         "-p", ducc_prompt,
                         "--allowedTools", "Read,Edit,Write",
                         "--permission-mode", "bypassPermissions",
+                        "--effort", "low",  # Use low effort for faster response
                     ]
 
                     result = subprocess.run(
@@ -461,23 +490,6 @@ class TmuxCcTaskHandler:
 
                     if result.returncode != 0:
                         print(f"[tmux_cc] stderr: {result.stderr}", file=sys.stderr)
-
-                    # Read output from file
-                    output_file = os.path.join(task_workspace, "output", "result.txt")
-                    if os.path.exists(output_file):
-                        with open(output_file, "r", encoding="utf-8") as f:
-                            output_content = f.read().strip()
-                        if output_content:
-                            with open(todo_file_path, "w", encoding="utf-8") as f:
-                                f.write(output_content)
-                            print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
-                    else:
-                        # Fallback: try stdout if no output file
-                        output_content = result.stdout.strip() if result.stdout else ""
-                        if output_content:
-                            with open(todo_file_path, "w", encoding="utf-8") as f:
-                                f.write(output_content)
-                            print(f"[tmux_cc] Output (from stdout) written to: {todo_file_path}", file=sys.stderr)
 
     def _run_interactive(
         self,
@@ -491,7 +503,7 @@ class TmuxCcTaskHandler:
         This mode:
         1. Creates a workspace directory with input files
         2. Starts ducc in tmux with a short prompt pointing to the files
-        3. Waits for completion and reads output from file
+        3. Waits for completion (output is handled by coding_agent.py)
         """
         flat_tasks = _flatten_nested(all_tasks)
 
@@ -545,7 +557,8 @@ class TmuxCcTaskHandler:
 
                     # Step 1: Start tmux_cc with reduced interactions
                     # IS_SANDBOX=1 skips some prompts, --permission-mode bypassPermissions skips permission checks
-                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write"'
+                    # --effort low for faster response (avoid extended thinking)
+                    tmux_cc_cmd = f'IS_SANDBOX=1 {TMUX_CC_BIN} --permission-mode bypassPermissions --allowedTools "Read,Edit,Write" --effort low'
                     _tmux_send_keys(session_name, tmux_cc_cmd, "Enter")
 
                     # Step 2: Wait for tmux_cc to start and show trust prompt
@@ -575,19 +588,27 @@ class TmuxCcTaskHandler:
                         auto_confirm=auto_confirm,
                     )
 
-                    print(f"[tmux_cc] Task completed, session '{session_name}' preserved for observation", file=sys.stderr)
-
-                    # Read output from file and copy to original location
-                    output_file = os.path.join(task_workspace, "output", "result.txt")
-                    if os.path.exists(output_file):
-                        with open(output_file, "r", encoding="utf-8") as f:
-                            output_content = f.read().strip()
-                        if output_content:
-                            with open(todo_file_path, "w", encoding="utf-8") as f:
-                                f.write(output_content)
-                            print(f"[tmux_cc] Output written to: {todo_file_path}", file=sys.stderr)
+                    # Step 7: Verify output file has been written
+                    # Wait a bit for any pending file I/O to complete
+                    max_wait_for_file = 10  # seconds
+                    wait_interval = 0.5
+                    waited = 0
+                    while waited < max_wait_for_file:
+                        if os.path.exists(todo_file_path):
+                            try:
+                                with open(todo_file_path, "r", encoding="utf-8") as f:
+                                    content = f.read()
+                                if content.strip() != todo_file_content_hint:
+                                    print(f"[tmux_cc] Output file verified: content changed from '{todo_file_content_hint}'", file=sys.stderr)
+                                    break
+                            except Exception:
+                                pass
+                        time.sleep(wait_interval)
+                        waited += wait_interval
                     else:
-                        print(f"[tmux_cc] Warning: No output file found at {output_file}", file=sys.stderr)
+                        print(f"[tmux_cc] WARNING: Output file still contains placeholder after {max_wait_for_file}s", file=sys.stderr)
+
+                    print(f"[tmux_cc] Task completed, session '{session_name}' preserved for observation", file=sys.stderr)
 
 
 if __name__ == "__main__":
@@ -620,7 +641,6 @@ if __name__ == "__main__":
     assert os.path.exists(os.path.join(test_workspace, "input", "prompt.txt"))
     assert os.path.exists(os.path.join(test_workspace, "input", "packed_workspace.txt"))
     assert os.path.exists(os.path.join(test_workspace, "input", "task_info.txt"))
-    assert os.path.exists(os.path.join(test_workspace, "output"))
     print(f"  ok: Workspace created at {test_workspace}")
 
     # Cleanup test workspace

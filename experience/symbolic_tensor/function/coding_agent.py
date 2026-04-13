@@ -26,39 +26,53 @@ from experience.llm_client.agent_task import AgentTask
 from experience.llm_client.task_handler import TaskHandler
 
 
-def _copy_back_to_storage_view(mutable_dir: str, view_tensor: torch.Tensor) -> None:
-    """Copy LLM results from mutable workspace dir back through view tensor's symlinks."""
-    flat_index = 0
-    digits = list(str(flat_index))
-    view_storage_path = os.path.join(
-        view_tensor.st_relative_to,
-        view_tensor.st_tensor_uid,
+def _copy_back_to_storage(mutable_dir: str, output_tensor: torch.Tensor, row_idx: int) -> None:
+    """Copy LLM results from mutable workspace dir back to the original output tensor storage.
+
+    Since LLM tools (like ducc's Write) may delete and recreate files (breaking symlinks),
+    we read from the workspace file and write directly to the original tensor's storage.
+
+    Args:
+        mutable_dir: Directory containing the LLM's output file (data.txt)
+        output_tensor: The original output tensor (not a view)
+        row_idx: The batch row index to write to
+    """
+    import sys
+    
+    mutable_file = os.path.join(mutable_dir, "data.txt")
+    
+    # Check if file exists (could be symlink or regular file)
+    if not os.path.exists(mutable_file):
+        print(f"[_copy_back_to_storage] File not found: {mutable_file}", file=sys.stderr)
+        return
+    
+    # Check if it's a symlink (ducc should have replaced it with a regular file)
+    is_symlink = os.path.islink(mutable_file)
+    
+    # Read content from workspace file
+    with open(mutable_file, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # Debug: show what we're copying
+    content_preview = content[:50].replace('\n', '\\n') if content else "(empty)"
+    print(f"[_copy_back_to_storage] row={row_idx}, symlink={is_symlink}, content={content_preview}...", file=sys.stderr)
+    
+    # Skip if content is still the placeholder (ducc didn't write)
+    if content.strip() == "TODO":
+        print(f"[_copy_back_to_storage] WARNING: Content still 'TODO', skipping copy", file=sys.stderr)
+        return
+
+    # Write directly to the original tensor's storage
+    digits = list(str(row_idx))
+    storage_path = os.path.join(
+        output_tensor.st_relative_to,
+        output_tensor.st_tensor_uid,
         "storage",
         os.path.join(*digits),
         "data",
     )
-    # Resolve symlink to get real storage path
-    # Note: If it's a symlink, we need to resolve it; if not, use the path directly
-    if os.path.islink(view_storage_path):
-        # Read the symlink target and resolve it relative to the symlink's directory
-        link_target = os.readlink(view_storage_path)
-        if not os.path.isabs(link_target):
-            link_dir = os.path.dirname(view_storage_path)
-            real_storage_path = os.path.normpath(os.path.join(link_dir, link_target))
-        else:
-            real_storage_path = link_target
-    else:
-        real_storage_path = view_storage_path
-
-    # Ensure parent directory exists
-    os.makedirs(os.path.dirname(real_storage_path), exist_ok=True)
-
-    mutable_file = os.path.join(mutable_dir, "data.txt")
-    if os.path.isfile(mutable_file):
-        with open(mutable_file, "r", encoding="utf-8") as f:
-            content = f.read()
-        with open(real_storage_path, "w", encoding="utf-8") as f:
-            f.write(content)
+    with open(storage_path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 
 def default_prompt_for_output(
@@ -67,12 +81,18 @@ def default_prompt_for_output(
     const_input_view: str,
     mutable_output_dir: str,
 ) -> str:
+    # Get relative path of output file from workspace_dir
+    output_file_relpath = os.path.relpath(
+        os.path.join(mutable_output_dir, "data.txt"), workspace_dir
+    )
     return (
-        "You are a coding agent.\n\n"
         f"{task_prompt}\n\n"
-        f"Input: \"{const_input_view}\"\n"
-        f"Output: \"{mutable_output_dir}\"\n\n"
-        f"Replace TODO in \"{mutable_output_dir}\" with result.\n"
+        f"Look at the files in the packed workspace below.\n"
+        f"Find the content marked with a MASK placeholder (like <AUTOENCODER-CLOZE-MASK-PLACEHOLDER>).\n"
+        f"Your task is to predict what the original code was before it was masked.\n\n"
+        f"IMPORTANT: Write your prediction (the missing source code ONLY, no explanations, no markdown) "
+        f"to the file: {output_file_relpath}\n"
+        f"Replace the TODO placeholder in that file with your prediction.\n"
     )
 
 
@@ -114,6 +134,7 @@ def coding_agent(
 
     all_tasks: List[AgentTask] = []
     all_copyback_info: List[tuple] = []
+    temp_workspace_dirs: List[str] = []  # Track temp dirs for cleanup
 
     # <- (list[$row_input_view] <- list[$slice_view] <- $input)
     # <- (list[$row_output_view] <- list[$slice_view] <- $output)
@@ -126,18 +147,21 @@ def coding_agent(
             # 2D input: slice row with [row_idx, slice(None)]
             row_input_view = slice_view(input, [row_idx, slice(None)])
         # Slice output row: shape ()
+        # Use slice_view (not slice_tensor) so that LLM writes go directly to original tensor storage
         row_output_view = slice_view(output, [row_idx])
-        row_output_value = slice_tensor(output, [row_idx])
 
         # <- ($workspace_dir str <- TemporaryDirectory)
         workspace_dir = tempfile.mkdtemp()
+        temp_workspace_dirs.append(workspace_dir)
         input_view_dir = os.path.join(workspace_dir, "const_input_view")
         output_dir = os.path.join(workspace_dir, "mutable_output_dir")
 
         # <- (void <- $dump_view <- $row_input_view <- f"{workspace_dir}/const_input_view")
-        # <- (void <- $dump_view <- $row_output_value <- f"{workspace_dir}/mutable_output_dir")
+        # <- (void <- $dump_view <- $row_output_view <- f"{workspace_dir}/mutable_output_dir")
+        # Using row_output_view creates a symlink to the original tensor storage,
+        # so LLM writes will directly update the output tensor
         dump_view(row_input_view, input_view_dir, "txt")
-        dump_view(row_output_value, output_dir, "txt")
+        dump_view(row_output_view, output_dir, "txt")
 
         # <- ($prompt str <- ($output_prompt | default_prompt_for_output) ...)
         prompt = (output_prompt or default_prompt_for_output)(
@@ -150,7 +174,7 @@ def coding_agent(
             output_relative_dir="mutable_output_dir",
             prompt=prompt,
         ))
-        all_copyback_info.append((output_dir, row_output_view))
+        all_copyback_info.append((output_dir, row_idx))
 
     # <- (void <- Import[task_handler] <- $all_tasks <- $llm_method <- $llm_env)
     TaskHandler()(
@@ -162,13 +186,14 @@ def coding_agent(
         tmux_session=tmux_session,
     )
 
-    # <- (void <- copy_back_to_storage_view <- f"{workspace_dir}/mutable_output_dir" <- $row_output_view)
-    for output_dir, row_output_view in all_copyback_info:
-        _copy_back_to_storage_view(output_dir, row_output_view)
+    # Copy LLM results back to original output tensor storage
+    # (needed because LLM tools may break symlinks by deleting and recreating files)
+    for output_dir, row_idx in all_copyback_info:
+        _copy_back_to_storage(output_dir, output, row_idx)
 
-    # Cleanup
-    for task in all_tasks:
-        shutil.rmtree(task.workspace_dir, ignore_errors=True)
+    # Cleanup only temporary workspace directories (not user-provided ones)
+    for ws_dir in temp_workspace_dirs:
+        shutil.rmtree(ws_dir, ignore_errors=True)
 
     return output
 
