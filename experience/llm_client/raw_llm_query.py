@@ -43,6 +43,7 @@ async def raw_llm_query(prompt: str, llm_env: Optional[Dict[str, str]] = None):
 
     # Get base_url directly (user should provide full path like https://xxx/v1)
     base_url = env.get('LLM_BASE_URL') or os.environ.get('LLM_BASE_URL')
+    model = env.get('LLM_MODEL') or os.environ.get('LLM_MODEL')
 
     # 每次调用创建客户端，避免跨 asyncio.run() 复用已关闭的连接池
     client = AsyncOpenAI(
@@ -53,7 +54,7 @@ async def raw_llm_query(prompt: str, llm_env: Optional[Dict[str, str]] = None):
     # 发送异步请求
     try:
         response = await client.chat.completions.create(
-            model=env.get('LLM_MODEL') or os.environ.get('LLM_MODEL'),
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant. Output raw content only, no thinking process."},
                 {"role": "user", "content": prompt},

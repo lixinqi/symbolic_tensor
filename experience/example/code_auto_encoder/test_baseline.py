@@ -219,6 +219,10 @@ def test_baseline(
             dataset_cache_dir=dataset_cache_dir,
             llm_method=llm_method,
         )
+        
+        # Log LLM configuration
+        from experience.llm_client.config import get_config_summary
+        tracker.log(f"LLM Config ({llm_method}): {get_config_summary(llm_method)}")
 
     # <- IterationList[int] <- range <- $num_iterations
     all_iteration_results: List[IterationResult] = []
@@ -297,16 +301,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Setup environment for LLM API
-    result = subprocess.run(
-        ["bash", "-c", "source ~/.anthropic.sh && env"],
-        capture_output=True, text=True,
-    )
-    for line in result.stdout.splitlines():
-        if "=" in line:
-            key, _, val = line.partition("=")
-            os.environ[key] = val
-    os.environ.pop("CLAUDECODE", None)
+    # Setup environment from ~/.experience.json based on llm_method
+    from experience.llm_client.config import setup_env_for_method, get_config_summary
+    setup_env_for_method(args.llm_method)
+    print(f"[Config] {args.llm_method}: {get_config_summary(args.llm_method)}")
 
     # Run the test
     test_baseline(

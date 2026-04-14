@@ -4,6 +4,7 @@ import os
 import sys
 from typing import Dict, Optional
 from claude_agent_sdk import query, ClaudeAgentOptions
+from experience.llm_client.config import get_config
 
 
 def _find_ducc_cli_path() -> str:
@@ -12,12 +13,7 @@ def _find_ducc_cli_path() -> str:
     if env_bin := os.environ.get("TMUX_CC_BIN"):
         return env_bin
 
-    # 2. Check PATH
-    import shutil
-    if path_bin := shutil.which("ducc"):
-        return path_bin
-
-    # 3. Glob pattern for comate extension
+    # 2. Glob pattern for comate extension (preferred - supports --setting-sources)
     pattern = os.path.expanduser(
         "~/.comate/extensions/baidu.baidu-cc-*/resources/native-binary/bin/ducc"
     )
@@ -25,7 +21,11 @@ def _find_ducc_cli_path() -> str:
     if matches:
         return matches[0]
 
-    # Fallback to default claude CLI
+    # 3. Check PATH (fallback - may be old version)
+    import shutil
+    if path_bin := shutil.which("ducc"):
+        return path_bin
+
     return None
 
 
@@ -56,9 +56,18 @@ async def coding_agent_query(
             env_backup[key] = os.environ.get(key)
             os.environ[key] = val
 
-    # Find ducc CLI and settings
+    # Find ducc CLI
     cli_path = _find_ducc_cli_path()
-    settings_path = _find_ducc_settings_path()
+    
+    # Use empty settings and disable default setting sources to use env vars
+    # This allows ~/.experience.json config to take effect via env vars
+    config = get_config("coding_agent")
+    if config.get("base_url"):
+        settings_path = "{}"  # Empty settings, rely on env vars
+        setting_sources = ""  # Disable default settings
+    else:
+        settings_path = _find_ducc_settings_path()
+        setting_sources = None
     
     # Get model from parameter or environment variable
     if model is None:
@@ -72,6 +81,9 @@ async def coding_agent_query(
             cli_path=cli_path,
             settings=settings_path,
         )
+        # Add setting_sources if needed
+        if setting_sources is not None:
+            options.setting_sources = setting_sources
         if model:
             options.model = model
         async for item in query(
