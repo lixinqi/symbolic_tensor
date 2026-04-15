@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import re
+import sys
 from typing import Dict, Optional
 from openai import AsyncOpenAI  # 导入异步客户端
 
@@ -16,7 +17,8 @@ DEFAULT_LLM_ENV = {
 
 def _get_custom_headers() -> Dict[str, str]:
     """Get custom headers required for internal API authentication."""
-    username = os.environ.get("USER", os.environ.get("LLM_USERNAME", "unknown"))
+    username = os.environ.get("LLM_USERNAME", os.environ.get("USER", "unknown"))
+    print(f"[DEBUG] _get_custom_headers: LLM_USERNAME={os.environ.get('LLM_USERNAME')!r}, USER={os.environ.get('USER')!r}, final_username={username!r}", file=sys.stderr)
     custom_header_value = json.dumps({
         "agentId": f"raw_llm_api:user:{username}",
         "username": username,

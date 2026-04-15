@@ -8,17 +8,19 @@ Configuration is read from ~/.experience.json with the following structure:
     "base_url": "https://qianfan.baidubce.com/v2",
     "api_key": "your-api-key",
     "model": "deepseek-v3.2",
-    "username": "your-username"  // optional, for internal API header
+    "username": "your-username"  // for comate_custom_header auth
   },
   "coding_agent": {
     "base_url": "https://qianfan.baidubce.com/anthropic",
     "api_key": "your-api-key",
-    "model": "deepseek-v3.2"
+    "model": "deepseek-v3.2",
+    "username": "your-username"  // for comate_custom_header auth
   },
   "tmux_cc": {
     "base_url": "https://qianfan.baidubce.com/anthropic",
     "api_key": "your-api-key",
-    "model": "deepseek-v3.2"
+    "model": "deepseek-v3.2",
+    "username": "your-username"  // for comate_custom_header auth
   }
 }
 """
