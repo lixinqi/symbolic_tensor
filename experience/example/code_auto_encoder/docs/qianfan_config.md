@@ -10,17 +10,17 @@ Create `~/.experience.json` to configure LLM APIs for different methods.
 {
   "raw_llm_api": {
     "base_url": "https://qianfan.baidubce.com/v2",
-    "api_key": "bce-v3/xxxxx",
+    "api_key": "<KEY>",
     "model": "deepseek-v3.2"
   },
   "coding_agent": {
     "base_url": "https://qianfan.baidubce.com/anthropic",
-    "api_key": "bce-v3/xxxxx",
+    "api_key": "<KEY>",
     "model": "deepseek-v3.2"
   },
   "tmux_cc": {
     "base_url": "https://qianfan.baidubce.com/anthropic",
-    "api_key": "bce-v3/xxxxx",
+    "api_key": "<KEY>",
     "model": "deepseek-v3.2"
   }
 }
@@ -31,18 +31,19 @@ Create `~/.experience.json` to configure LLM APIs for different methods.
 ```json
 {
   "raw_llm_api": {
-    "base_url": "https://qianfan.baidubce.com/v2",
-    "api_key": "bce-v3/xxxxx",
-    "model": "ernie-5.0"
+    "base_url": "https://oneapi-comate.baidu-int.com/v1",
+    "api_key": "<KEY>",
+    "model": "GLM-5",
+    "username": "yuhaitao01"
   },
   "coding_agent": {
-    "base_url": "https://qianfan.baidubce.com/anthropic",
-    "api_key": "bce-v3/xxxxx",
-    "model": "deepseek-v3.2"
+    "base_url": "https://oneapi-comate.baidu-int.com",
+    "api_key": "<KEY>",
+    "model": "GLM-5"
   },
   "tmux_cc": {
     "base_url": "https://oneapi-comate.baidu-int.com",
-    "model": "MiniMax-M2.5"
+    "model": "GLM-5"
   }
 }
 ```
