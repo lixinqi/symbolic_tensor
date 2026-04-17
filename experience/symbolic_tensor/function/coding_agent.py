@@ -90,9 +90,11 @@ def default_prompt_for_output(
         f"Look at the files in the packed workspace below.\n"
         f"Find the content marked with a MASK placeholder (like <AUTOENCODER-CLOZE-MASK-PLACEHOLDER>).\n"
         f"Your task is to predict what the original code was before it was masked.\n\n"
-        f"IMPORTANT: Write your prediction (the missing source code ONLY, no explanations, no markdown) "
+        f"IMPORTANT: Write your prediction (the missing source code ONLY, no explanations, no markdown, no extra comments) "
         f"to the file: {output_file_relpath}\n"
         f"Replace the TODO placeholder in that file with your prediction.\n"
+        f"Output ONLY the code that was in the masked region - do NOT include function signatures, decorators, or docstrings unless they were explicitly masked.\n"
+        f"Do NOT add any comments that were not in the original code.\n"
     )
 
 

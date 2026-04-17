@@ -64,7 +64,10 @@ class BaselineRawLlmApiModel(nn.Module):
         # $prompt <- { Get back the original content that was masked in f"{kMaskedHint}" }
         task_prompt = (
             f"Get back the original content that was masked in {kMaskedHint}\n"
-            "Output ONLY the missing source code lines. No explanations."
+            "Output ONLY the missing source code lines that were masked. No explanations.\n"
+            "Do NOT output function signatures, decorators, or docstrings.\n"
+            "Do NOT add any comments that were not in the original code.\n"
+            "Only output the exact code that was in the masked region - nothing before or after it."
         )
 
         # $baseline_output <- Import[function/coding_agent.viba]

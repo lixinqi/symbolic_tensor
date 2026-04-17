@@ -63,7 +63,9 @@ class RawLlmTaskHandler:
                         f"{packed_workspace}\n"
                         f"=== END WORKSPACE ===\n\n"
                         f"Based on the code context above, output the missing source code that should replace the placeholder.\n"
-                        f"Output ONLY the raw source code. No markdown code fences. No explanations.\n"
+                        f"Output ONLY the raw source code that was in the masked region. No markdown code fences. No explanations. No extra comments.\n"
+                        f"Do NOT output function signatures, decorators, or docstrings unless they were in the masked region.\n"
+                        f"Do NOT add any comments that were not in the original code.\n"
                     )
                     jobs.append((todo_file_path, raw_llm_prompt))
 
