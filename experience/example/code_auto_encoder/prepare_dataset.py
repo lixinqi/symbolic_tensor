@@ -328,13 +328,52 @@ def _find_maskable_range(content: str) -> Tuple[int, int]:
     return code_start, main_start
 
 
-def _contains_comment(code_snippet: str) -> bool:
+def _is_inside_docstring(lines: list, line_idx: int) -> bool:
+    """Check if a given line index is inside a multi-line docstring.
+
+    Scans from the beginning of the file up to (but not including) line_idx,
+    tracking triple-quote open/close state.
+    """
+    in_docstring = False
+    docstring_char = None
+
+    for i in range(line_idx):
+        stripped = lines[i].strip()
+
+        if not in_docstring:
+            for marker in ('"""', "'''"):
+                if marker in stripped:
+                    # Count occurrences of the marker in this line
+                    count = stripped.count(marker)
+                    if count % 2 == 1:
+                        # Odd count: docstring opened but not closed on this line
+                        in_docstring = True
+                        docstring_char = marker
+                    # Even count: opened and closed on same line(s), state unchanged
+                    break
+        else:
+            if docstring_char in stripped:
+                count = stripped.count(docstring_char)
+                if count % 2 == 1:
+                    in_docstring = False
+                    docstring_char = None
+
+    return in_docstring
+
+
+def _contains_comment(code_snippet: str, full_file_lines: list = None, snippet_start: int = None) -> bool:
     """Check if code snippet contains Python comments.
 
     Detects:
     - Single line comments starting with #
-    - Docstrings (triple quotes)
+    - Docstrings (triple quotes) within the snippet
+    - Snippet that falls inside a multi-line docstring (requires full_file_lines and snippet_start)
     """
+    # Check if the snippet starts inside a docstring (context-aware check)
+    if full_file_lines is not None and snippet_start is not None:
+        if _is_inside_docstring(full_file_lines, snippet_start):
+            return True
+
     lines = code_snippet.splitlines()
     in_docstring = False
     docstring_char = None
@@ -372,6 +411,54 @@ def _contains_comment(code_snippet: str) -> bool:
     return in_docstring  # Still in unclosed docstring
 
 
+def _build_comment_free_line_map(lines: list) -> list:
+    """Build a boolean map indicating which lines are NOT inside comments/docstrings.
+
+    Returns:
+        List of bools, same length as lines. True = line is clean code, False = comment/docstring.
+    """
+    n = len(lines)
+    is_clean = [True] * n
+    in_docstring = False
+    docstring_char = None
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+
+        if not in_docstring:
+            # Check for # comments
+            if '#' in line:
+                hash_idx = line.find('#')
+                before_hash = line[:hash_idx]
+                single_quotes = before_hash.count("'") - before_hash.count("\\'")
+                double_quotes = before_hash.count('"') - before_hash.count('\\"')
+                if single_quotes % 2 == 0 and double_quotes % 2 == 0:
+                    is_clean[i] = False
+                    continue
+
+            # Check for docstring start
+            for marker in ('"""', "'''"):
+                if marker in stripped:
+                    count = stripped.count(marker)
+                    if count % 2 == 1:
+                        # Docstring opened but not closed on this line
+                        in_docstring = True
+                        docstring_char = marker
+                    # Either way, this line contains a docstring marker
+                    is_clean[i] = False
+                    break
+        else:
+            # Inside docstring - mark as not clean
+            is_clean[i] = False
+            if docstring_char in stripped:
+                count = stripped.count(docstring_char)
+                if count % 2 == 1:
+                    in_docstring = False
+                    docstring_char = None
+
+    return is_clean
+
+
 def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10, max_retries: int = 100) -> Tuple[int, int, str]:
     """Pick random line range to mask. Range size in (min_size, max_size).
 
@@ -395,6 +482,9 @@ def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10, 
         end = start + mask_len
         return start, end, "".join(lines[start:end])
 
+    # Pre-compute which lines are clean (not comment/docstring)
+    is_clean = _build_comment_free_line_map(lines)
+
     upper_bound = min(max_size, maskable_len)
     lower_bound = min(min_size, upper_bound)
 
@@ -402,14 +492,14 @@ def _get_random_mask_range(content: str, min_size: int = 5, max_size: int = 10, 
         mask_len = random.randint(lower_bound, upper_bound)
         start = random.randint(code_start, main_start - mask_len)
         end = start + mask_len
-        snippet = "".join(lines[start:end])
 
-        if not _contains_comment(snippet):
-            return start, end, snippet
+        # Check all lines in range are clean
+        if all(is_clean[start:end]):
+            return start, end, "".join(lines[start:end])
 
     # Fallback: return last attempt even if it contains comments
     # This should rarely happen in practice
-    return start, end, snippet
+    return start, end, "".join(lines[start:end])
 
 
 def _apply_mask(content: str, start: int, end: int) -> str:
@@ -481,9 +571,26 @@ def parepare_dataset(
     # Only fetch if not loaded from cache
     if not file_paths:
         files = _fetch_all_files(dataset_dir)
-        # Filter files with maskable range >= 5 lines
-        files = [(fp, fc) for fp, fc in files
-                 if _find_maskable_range(fc)[1] - _find_maskable_range(fc)[0] >= 5]
+        # Filter files: must have enough maskable lines AND enough clean (non-comment) lines
+        filtered = []
+        for fp, fc in files:
+            cs, me = _find_maskable_range(fc)
+            if me - cs < 5:
+                continue
+            lines = fc.splitlines(keepends=True)
+            is_clean = _build_comment_free_line_map(lines)
+            # Check if there's at least one consecutive clean run of 5 lines in maskable range
+            max_run = 0
+            cur_run = 0
+            for i in range(cs, me):
+                if is_clean[i]:
+                    cur_run += 1
+                    max_run = max(max_run, cur_run)
+                else:
+                    cur_run = 0
+            if max_run >= 5:
+                filtered.append((fp, fc))
+        files = filtered
         assert len(files) > 0, f"No sufficiently large .py files in {dataset_dir}"
         file_paths = [fp for fp, _ in files]
         file_contents = [fc for _, fc in files]
