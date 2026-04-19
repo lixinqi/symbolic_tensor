@@ -142,6 +142,7 @@ if __name__ == "__main__":
 
     from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as st_make_tensor
     from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
+    from experience.future_tensor.status import Status
 
     print("Running 100 tests for slice_forward...\n")
 
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     def make_forwarded_ft(shape, data_list, tmpdir):
         """Create a FutureTensor that's already materialized with given data."""
         async def dummy_get(coords, prompt):
-            return ("unused", 1.0)
+            return ("unused", Status.confidence(1.0))
         ft = FutureTensor(shape, tmpdir, dummy_get)
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
@@ -320,7 +321,7 @@ if __name__ == "__main__":
 
         async def tracking_get(coords, prompt):
             received.append(coords)
-            return (f"val_{coords}", 1.0)
+            return (f"val_{coords}", Status.confidence(1.0))
 
         ft = FutureTensor([6], tmpdir, tracking_get)
         # NOT forwarded — slice should create lazy result
@@ -343,7 +344,7 @@ if __name__ == "__main__":
 
         async def tracking_get2(coords, prompt):
             received2.append(coords)
-            return (f"v{coords}", 1.0)
+            return (f"v{coords}", Status.confidence(1.0))
 
         ft = FutureTensor([4, 3], tmpdir, tracking_get2)
         r = slice_forward(ft, [1, slice(None)])
@@ -357,7 +358,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         async def step_get(coords, prompt):
-            return (str(coords), 1.0)
+            return (str(coords), Status.confidence(1.0))
 
         ft = FutureTensor([10], tmpdir, step_get)
         r = slice_forward(ft, [slice(0, 10, 3)])

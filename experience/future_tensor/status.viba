@@ -1,0 +1,21 @@
+Status := 
+    Oneof
+    | $confidence Bounded0To1[float]
+    | $self_confidence_yet_failed Bounded0To1Exclude0[float]
+    | $kConfidenceNotBounded 2
+    | $kContextOverflow 3
+
+Status.convert_status_to_float :=
+    float
+    <- $status Status
+    # inline
+    <- { match status }
+    <- { case $confidence: return confidence }
+    <- { case $self_confidence_yet_failed: return -self_confidence_yet_failed }
+    <- { otherwise $errno: return -enum_value(errno)}
+
+Status.convert_float_to_status :=
+    $status Status
+    <- $value float
+    # inline
+    <- { reverse procedure of convert_status_to_float }

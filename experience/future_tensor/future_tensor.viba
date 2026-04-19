@@ -1,8 +1,11 @@
+
+Status = Import[status].Status
+
 FutureTensor[$shape list[int]] :=
     SymbolicTensor[$shape list[int]]
     * $ft_forwarded bool
     * $ft_forward (void <- $prompt_tensor SymbolicTensor[$shape list[int]])
-    * $ft_async_get (Awaitable[(str, $confidence Bounded0To1[float])] <- $coordinates list[int] <- $prompt)
+    * $ft_async_get (Awaitable[(str, $confidence Status)] <- $coordinates list[int] <- $prompt)
 
 FutureTensor.ft_forward :=
     void
@@ -13,9 +16,9 @@ FutureTensor.ft_forward :=
     <- { set self.ft_forwarded at the end of this function }
     <- (AsyncList[$coordinates list[int]] <- $self.shape)
     <- (AsyncList[$prompt str] <- $prompt_tensor)
-    <- Async[($sole_elem_output, $confidence float)<- self.ft_async_get <- $coordinates <- $prompt]
+    <- Async[($sole_elem_output, $confidence Status)<- self.ft_async_get <- $coordinates <- $prompt]
     <- (void
-        <- {self.data[coordinates] = confidence }
+        <- { self.data[coordinates] = Status.convert_status_to_float(confidence) }
         <- $self.st_assign
         <- Import[symbolic_tensor make_tensor]
         <- list[$sole_elem_output])

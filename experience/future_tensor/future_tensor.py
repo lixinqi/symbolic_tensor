@@ -1,9 +1,11 @@
 """
+Status = Import[status].Status
+
 FutureTensor[$shape list[int]] :=
     SymbolicTensor[$shape list[int]]
     * $ft_forwarded bool
     * $ft_forward (void <- $prompt_tensor SymbolicTensor[$shape list[int]])
-    * $ft_async_get (Awaitable[(str, $confidence Bounded0To1[float])] <- $coordinates list[int] <- $prompt)
+    * $ft_async_get (Awaitable[(str, $confidence Status)] <- $coordinates list[int] <- $prompt)
 
 FutureTensor.ft_forward :=
     void
@@ -14,9 +16,9 @@ FutureTensor.ft_forward :=
     <- { set self.ft_forwarded at the end of this function }
     <- (AsyncList[$coordinates list[int]] <- $self.shape)
     <- (AsyncList[$prompt str] <- $prompt_tensor)
-    <- Async[($sole_elem_output, $confidence float)<- self.ft_async_get <- $coordinates <- $prompt]
+    <- Async[($sole_elem_output, $confidence Status)<- self.ft_async_get <- $coordinates <- $prompt]
     <- (void
-        <- {self.data[coordinates] = confidence }
+        <- { self.data[coordinates] = Status.convert_status_to_float(confidence) }
         <- $self.st_assign
         <- Import[symbolic_tensor make_tensor]
         <- list[$sole_elem_output])
@@ -31,11 +33,8 @@ import torch
 
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
+from experience.future_tensor.status import Status
 
-
-def _clamp_confidence(value: float) -> float:
-    """Clamp confidence to [0.0, 1.0] (Bounded0To1)."""
-    return max(0.0, min(1.0, value))
 
 
 def _read_element(tensor: torch.Tensor, flat_index: int) -> str:
@@ -72,16 +71,15 @@ class FutureTensor:
     Args:
         shape: The tensor shape.
         relative_to: Storage root directory.
-        ft_async_get: Async callable (coordinates, prompt) -> (str, float)
-            that produces (content, confidence) for the given coordinates and prompt.
-            Confidence is clamped to [0.0, 1.0].
+        ft_async_get: Async callable (coordinates, prompt) -> (str, Status)
+            that produces (content, status) for the given coordinates and prompt.
     """
 
     def __init__(
         self,
         shape: List[int],
         relative_to: str,
-        ft_async_get: Callable[[List[int], str], Awaitable[Tuple[str, float]]],
+        ft_async_get: Callable[[List[int], str], Awaitable[Tuple[str, "Status"]]],
     ):
         from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
 
@@ -137,16 +135,16 @@ class FutureTensor:
             ]
             return await asyncio.gather(*tasks)
 
-        results: List[Tuple[str, float]] = asyncio.run(_gather())
+        results: List[Tuple[str, Status]] = asyncio.run(_gather())
 
-        # Unpack (content, confidence) pairs; clamp confidence to [0, 1]
+        # Unpack (content, status) pairs; convert Status to float for tensor storage
         sole_elem_output: List[str] = [content for content, _ in results]
-        confidences: List[float] = [_clamp_confidence(c) for _, c in results]
+        float_values: List[float] = [Status.convert_status_to_float(s) for _, s in results]
 
-        # Set self.data[coordinates] = confidence for each element
-        for coords, confidence in zip(all_coordinates, confidences):
+        # Set self.data[coordinates] = Status.convert_status_to_float(confidence)
+        for coords, fval in zip(all_coordinates, float_values):
             flat_idx = _coords_to_flat(coords, shape)
-            self._tensor.data.flatten()[flat_idx] = confidence
+            self._tensor.data.flatten()[flat_idx] = fval
 
         # Reshape flat list into nested structure matching shape
         nested_data = _unflatten(sole_elem_output, shape)
@@ -233,7 +231,7 @@ if __name__ == "__main__":
     print("Test 1: Basic 1D forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def echo_get(coordinates, prompt):
-            return (f"output({coordinates}, {prompt})", 0.9)
+            return (f"output({coordinates}, {prompt})", Status.confidence(0.9))
 
         ft = FutureTensor([3], tmpdir, echo_get)
         run_test("Shape is [3]", ft.shape == [3])
@@ -257,7 +255,7 @@ if __name__ == "__main__":
 
         async def counting_get(coordinates, prompt):
             counter[0] += 1
-            return ("x", 1.0)
+            return ("x", Status.confidence(1.0))
 
         ft = FutureTensor([2], tmpdir, counting_get)
         prompt_t = make_tensor(["a", "b"], tmpdir)
@@ -274,7 +272,7 @@ if __name__ == "__main__":
     print("Test 3: 2D tensor [2, 3]")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def coord_get(coordinates, prompt):
-            return (f"{coordinates}", 0.75)
+            return (f"{coordinates}", Status.confidence(0.75))
 
         ft = FutureTensor([2, 3], tmpdir, coord_get)
         run_test("Shape is [2, 3]", ft.shape == [2, 3])
@@ -296,7 +294,7 @@ if __name__ == "__main__":
 
         async def slow_get(coordinates, prompt):
             await asyncio.sleep(0.05)
-            return (prompt.upper(), 1.0)
+            return (prompt.upper(), Status.confidence(1.0))
 
         ft = FutureTensor([4], tmpdir, slow_get)
         prompt_t = make_tensor(["alpha", "beta", "gamma", "delta"], tmpdir)
@@ -315,7 +313,7 @@ if __name__ == "__main__":
     print("Test 5: Scalar tensor [1]")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def scalar_get(coordinates, prompt):
-            return (f"scalar:{prompt}", 0.5)
+            return (f"scalar:{prompt}", Status.confidence(0.5))
 
         ft = FutureTensor([1], tmpdir, scalar_get)
         prompt_t = make_tensor(["hello"], tmpdir)
@@ -324,12 +322,12 @@ if __name__ == "__main__":
         run_test("Single element", read_storage(ft.tensor, 0) == "scalar:hello")
         run_test("Confidence 0.5", abs(ft.tensor.data.flatten()[0].item() - 0.5) < 0.01)
 
-    # ── Test 6: Tensor coefficients set to 1 after forward ────────────
+    # ── Test 6: Tensor coefficients after forward ────────────────────
 
     print("Test 6: Tensor coefficients after forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def fill_get(coordinates, prompt):
-            return ("filled", 0.8)
+            return ("filled", Status.confidence(0.8))
 
         ft = FutureTensor([3], tmpdir, fill_get)
         run_test("All zeros before forward",
@@ -350,7 +348,7 @@ if __name__ == "__main__":
 
         async def capture_get(coordinates, prompt):
             received_prompts.append((coordinates, prompt))
-            return ("ok", 1.0)
+            return ("ok", Status.confidence(1.0))
 
         ft = FutureTensor([2], tmpdir, capture_get)
         prompt_t = make_tensor(["multi\nline\nprompt", "second prompt"], tmpdir)
@@ -368,10 +366,9 @@ if __name__ == "__main__":
     print("Test 8: Storage overwritten by ft_forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def overwrite_get(coordinates, prompt):
-            return ("new_content", 0.95)
+            return ("new_content", Status.confidence(0.95))
 
         ft = FutureTensor([2], tmpdir, overwrite_get)
-        # Manually write initial content
         initial = make_tensor(["old_0", "old_1"], tmpdir)
         assign_tensor(ft._tensor, initial)
         run_test("Before: old_0", read_storage(ft.tensor, 0) == "old_0")
@@ -401,7 +398,7 @@ if __name__ == "__main__":
         async def failing_get(coordinates, prompt):
             if coordinates == [1]:
                 raise ValueError("boom")
-            return ("ok", 1.0)
+            return ("ok", Status.confidence(1.0))
 
         ft = FutureTensor([3], tmpdir, failing_get)
         prompt_t = make_tensor(["a", "b", "c"], tmpdir)
@@ -413,37 +410,60 @@ if __name__ == "__main__":
             run_test("ValueError propagated", "boom" in str(e))
             run_test("ft_forwarded still False on error", ft.ft_forwarded is False)
 
-    # ── Test 11: Confidence clamping (Bounded0To1) ─────────────────────
+    # ── Test 11: Status variants in tensor storage ─────────────────────
 
-    print("Test 11: Confidence clamping")
+    print("Test 11: Status variants")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def oob_confidence_get(coordinates, prompt):
+        async def status_get(coordinates, prompt):
             if coordinates == [0]:
-                return ("over", 1.5)
+                return ("over", Status.confidence(0.9))
             elif coordinates == [1]:
-                return ("under", -0.3)
+                return ("failed", Status.self_confidence_yet_failed(0.6))
             else:
-                return ("normal", 0.7)
+                return ("normal", Status.confidence(0.7))
 
-        ft = FutureTensor([3], tmpdir, oob_confidence_get)
+        ft = FutureTensor([3], tmpdir, status_get)
         prompt_t = make_tensor(["a", "b", "c"], tmpdir)
         ft.ft_forward(prompt_t)
 
-        run_test("Over 1.0 clamped to 1.0",
-                 abs(ft.tensor.data.flatten()[0].item() - 1.0) < 0.01)
-        run_test("Below 0.0 clamped to 0.0",
-                 abs(ft.tensor.data.flatten()[1].item() - 0.0) < 0.01)
-        run_test("Normal 0.7 preserved",
+        run_test("confidence(0.9) -> 0.9",
+                 abs(ft.tensor.data.flatten()[0].item() - 0.9) < 0.01)
+        run_test("self_confidence_yet_failed(0.6) -> -0.6",
+                 abs(ft.tensor.data.flatten()[1].item() - (-0.6)) < 0.01)
+        run_test("confidence(0.7) -> 0.7",
                  abs(ft.tensor.data.flatten()[2].item() - 0.7) < 0.01)
         run_test("Content still correct", read_storage(ft.tensor, 0) == "over")
 
-    # ── Test 12: Per-element varying confidence ────────────────────────
+    # ── Test 12: Status enum variants ────────────────────────────────
 
-    print("Test 12: Per-element varying confidence")
+    print("Test 12: Status enum variants (kConfidenceNotBounded, kContextOverflow)")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        async def enum_get(coordinates, prompt):
+            if coordinates == [0]:
+                return ("not_bounded", Status.kConfidenceNotBounded)
+            elif coordinates == [1]:
+                return ("overflow", Status.kContextOverflow)
+            else:
+                return ("ok", Status.confidence(0.5))
+
+        ft = FutureTensor([3], tmpdir, enum_get)
+        prompt_t = make_tensor(["a", "b", "c"], tmpdir)
+        ft.ft_forward(prompt_t)
+
+        run_test("kConfidenceNotBounded -> -2.0",
+                 abs(ft.tensor.data.flatten()[0].item() - (-2.0)) < 0.01)
+        run_test("kContextOverflow -> -3.0",
+                 abs(ft.tensor.data.flatten()[1].item() - (-3.0)) < 0.01)
+        run_test("confidence(0.5) -> 0.5",
+                 abs(ft.tensor.data.flatten()[2].item() - 0.5) < 0.01)
+
+    # ── Test 13: Per-element varying confidence ────────────────────────
+
+    print("Test 13: Per-element varying confidence")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def varying_get(coordinates, prompt):
             c = coordinates[0]
-            return (f"item_{c}", c * 0.25)
+            return (f"item_{c}", Status.confidence(c * 0.25))
 
         ft = FutureTensor([5], tmpdir, varying_get)
         prompt_t = make_tensor(["p"] * 5, tmpdir)

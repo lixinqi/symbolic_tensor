@@ -13,6 +13,12 @@ def st_assign(lvalue, rvalue):
 
 torch.Tensor.st_assign = st_assign
 
+def st_setitem(tensor, coordinates, content, coefficient=1.0):
+    from experience.symbolic_tensor.tensor_util.st_setitem import st_setitem
+    return st_setitem(tensor, coordinates, content, coefficient)
+
+torch.Tensor.st_setitem = st_setitem
+
 def st_assign_view(lvalue, rvalue):
     from experience.symbolic_tensor.tensor_util.assign_view import assign_view
     return assign_view(lvalue, rvalue)

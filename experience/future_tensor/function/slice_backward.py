@@ -16,6 +16,7 @@ from typing import List, Union
 import torch
 
 from experience.future_tensor.future_tensor import FutureTensor
+from experience.future_tensor.status import Status
 
 
 def slice_backward(
@@ -58,11 +59,10 @@ def slice_backward(
                 out_coords.append(indices.index(c))
         return out_coords
 
-    # Create ft_async_get that looks up from grad_output
     async def scatter_async_get(coordinates: List[int], prompt: str):
         out_coords = reverse_map(coordinates)
         if out_coords is None:
-            return ("", 0.0)  # Zero/empty for positions not in the slice
+            return ("", Status.confidence(0.0))  # Zero/empty for positions not in the slice
         return await grad_output.ft_async_get(out_coords, prompt)
 
     result = FutureTensor(original_shape, grad_output.st_relative_to, scatter_async_get)
@@ -129,6 +129,7 @@ if __name__ == "__main__":
 
     from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as st_make_tensor
     from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
+    from experience.future_tensor.status import Status
 
     print("Running 100 tests for slice_backward...\n")
 
@@ -154,7 +155,7 @@ if __name__ == "__main__":
 
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
-            return ("unused", 1.0)
+            return ("unused", Status.confidence(1.0))
         ft = FutureTensor(shape, tmpdir, dummy_get)
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
@@ -303,7 +304,7 @@ if __name__ == "__main__":
 
         async def lazy_grad_get(coords, prompt):
             received.append(coords)
-            return (f"lazy_{coords}", 1.0)
+            return (f"lazy_{coords}", Status.confidence(1.0))
 
         grad = FutureTensor([3], tmpdir, lazy_grad_get)
         # Don't forward grad — backward should be lazy too
@@ -325,7 +326,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         async def lazy_2d_get(coords, prompt):
-            return (f"g{coords}", 1.0)
+            return (f"g{coords}", Status.confidence(1.0))
 
         grad = FutureTensor([2, 2], tmpdir, lazy_2d_get)
         r = slice_backward(grad, [4, 4], [slice(1, 3), slice(0, 2)])

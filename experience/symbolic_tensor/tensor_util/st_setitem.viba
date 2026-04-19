@@ -1,0 +1,9 @@
+st_setitem :=
+    void
+    <- $tensor SymbolicTensor
+    <- $coordinates list[int]
+    <- $content str
+    <- $coefficient float # default 1.0
+    # inline
+    <- { set content into file coordinates }
+    <- { tensor[coordinates] = coefficient }

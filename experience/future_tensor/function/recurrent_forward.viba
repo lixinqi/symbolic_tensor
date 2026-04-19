@@ -1,7 +1,9 @@
 recurrent_forward :=
-    $output FutureTensor[($prefix_dims ...)]
-    <- $input FutureTensor[($prefix_dims ..., $recurrent_dim int, 3)]
+    ($output FutureTensor[($prefix_dims ...)],
+     $prompt_tensor FutureTensor[($prefix_dims ..., $recurrent_dim int)])
+    <- $input FutureTensor[($prefix_dims ..., $recurrent_dim int)]
     # inline
+    <- { prompt_tensor = future tensor of none_like(input) }
     <- $output.ft_async_get recurrent_forward_async_get
 
 recurrent_forward_async_get :=
@@ -9,35 +11,32 @@ recurrent_forward_async_get :=
     <- $cooridates list[int]
     <- $prompt str
     # captured args
-    <- $input FutureTensor[($prefix_dims ..., $recurrent_dim int, 3)]
+    <- $input FutureTensor[($prefix_dims ..., $recurrent_dim int)]
+    <- $prompt_tensor FutureTensor[($prefix_dims ..., $recurrent_dim int)]
     # inline
-    <- $cur_prompt ($prompt)
+    <- { prompt_tensor.st_setitem([*cooridates, 0], prompt) }
     <- (Loop[$i int] <- range <- $recurrent_dim)
-    <- (($cur_output str, $cur_output_confidence float)
+    <- { cur_prompt = prompt_tensor[*cooridates, i] }
+    <- (($cur_output str, $cur_output_status Status)
         <- $input.ft_async_get 
-        <- {[*cooridates, i, 0]}
-        <- $cur_prompt)
-    <- (($cur_output_status ("Ok"|"Error"), $cur_output_status_confidence float)
-        <- $input.ft_async_get 
-        <- {[*cooridates, i, 1]}
-        <- $cur_prompt)
-    <- { return (cur_output, 1.0) if cur_output_status is "Ok" }
-    <- (($error_details str, _)
-        <- $input.ft_async_get 
-        <- {[*cooridates, i, 2]}
-        <- $cur_prompt)
+        <- {[*cooridates, i]}
+        <- cur_prompt)
+    <- { match cur_output_status }
+    <- { case Status.confidence: return (cur_output, cur_output_status) }
+    <- { case Status.kConfidenceNotBounded:  return (cur_output, Status.confidence(1.0)) }
+    <- { case Status.kContextOverflow: return ("", Status.kContextOverflow) }
     <- {
+        case Status.self_confidence_yet_failed:
         # for next iteration
-        cur_prompt = (
-            f"{cur_prompt}\n"
-            f"====[Iteration {i}]====\n"
-            f"Output:\n\n{cur_output}\n\n"
-            f"Status:{cur_output_status}\n\n"
-            f"Error Details:\n\n{error_details}\n\n"
-        )
+        if i is not last element:
+            prompt_tensor.st_setitem([*cooridates, i+1], (
+                f"{cur_prompt}\n"
+                f"====[Iteration {i}]====\n"
+                f"Output:\n\n{cur_output}\n\n"
+            ))
     }
-    <- { 
+    <- {
         if all trials failed:
-            return ($cur_output, cur_output_confidence * cur_output_status_confidence)
-            where cur_output_confidence * cur_output_status_confidence is the max
+            return ($cur_output, cur_output_status.self_confidence_yet_failed)
+            where cur_output_status.self_confidence_yet_failed is the max
      }
