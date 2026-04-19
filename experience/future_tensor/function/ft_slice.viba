@@ -1,0 +1,8 @@
+FtSlice := torch.autograd.Function[
+    $forward Import[{future_tensor function slice_forward.viba}],
+    $backward Import[{future_tensor function slice_backward.viba}]
+]
+
+ft_slice = FtSlice.apply
+
+# the same behavior with torch slice

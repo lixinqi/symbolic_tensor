@@ -1,0 +1,10 @@
+FtUnsequeeze := torch.autograd.Function[
+    $forward Import[{future_tensor function unsqueeze_forward.viba}],
+    $backward Import[{future_tensor function slice_forward.viba}]
+]
+
+ft_unsqueeze = FtUnsequeeze.apply
+
+# the same behavior with torch slice
+
+# the same behavior with torch unsqueeze

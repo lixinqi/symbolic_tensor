@@ -1,0 +1,7 @@
+unsqueeze_forward :=
+    FutureTensor
+    <- FutureTensor
+    <- ...
+    # inline
+
+# the same behavior with torch unsqueeze

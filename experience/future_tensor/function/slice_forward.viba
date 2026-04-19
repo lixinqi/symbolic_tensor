@@ -1,0 +1,7 @@
+slice_forward :=
+    FutureTensor
+    <- FutureTensor
+    <- list[slice]
+    # inline
+
+# the same behavior with torch slice
