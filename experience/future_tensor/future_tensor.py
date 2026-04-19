@@ -3,7 +3,7 @@ FutureTensor[$shape list[int]] :=
     SymbolicTensor[$shape list[int]]
     * $ft_forwarded bool
     * $ft_forward (void <- $prompt_tensor SymbolicTensor[$shape list[int]])
-    * $ft_async_get Async[str <- $coordinates list[int] <- $prompt]
+    * $ft_async_get Async[(str, $confidence float) <- $coordinates list[int] <- $prompt]
 
 FutureTensor.ft_forward :=
     void
@@ -14,8 +14,9 @@ FutureTensor.ft_forward :=
     <- { set self.ft_forwarded at the end of this function }
     <- (AsyncList[$coordinates list[int]] <- $self.shape)
     <- (AsyncList[$prompt str] <- $prompt_tensor)
-    <- Async[$sole_elem_output str <- self.ft_async_get <- $coordinates <- $prompt]
+    <- Async[($sole_elem_output, $confidence float)<- self.ft_async_get <- $coordinates <- $prompt]
     <- (void
+        <- {self.data[coordinates] = confidence }
         <- $self.st_assign
         <- Import[symbolic_tensor make_tensor]
         <- list[$sole_elem_output])
@@ -24,7 +25,7 @@ FutureTensor.ft_forward :=
 import asyncio
 import itertools
 import os
-from typing import Callable, Awaitable, List
+from typing import Callable, Awaitable, List, Tuple
 
 import torch
 
@@ -66,15 +67,15 @@ class FutureTensor:
     Args:
         shape: The tensor shape.
         relative_to: Storage root directory.
-        ft_async_get: Async callable (coordinates, prompt) -> str that produces
-            the element content for the given coordinates and prompt.
+        ft_async_get: Async callable (coordinates, prompt) -> (str, float)
+            that produces (content, confidence) for the given coordinates and prompt.
     """
 
     def __init__(
         self,
         shape: List[int],
         relative_to: str,
-        ft_async_get: Callable[[List[int], str], Awaitable[str]],
+        ft_async_get: Callable[[List[int], str], Awaitable[Tuple[str, float]]],
     ):
         from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
 
@@ -130,7 +131,16 @@ class FutureTensor:
             ]
             return await asyncio.gather(*tasks)
 
-        sole_elem_output: List[str] = asyncio.run(_gather())
+        results: List[Tuple[str, float]] = asyncio.run(_gather())
+
+        # Unpack (content, confidence) pairs
+        sole_elem_output: List[str] = [content for content, _ in results]
+        confidences: List[float] = [confidence for _, confidence in results]
+
+        # Set self.data[coordinates] = confidence for each element
+        for coords, confidence in zip(all_coordinates, confidences):
+            flat_idx = _coords_to_flat(coords, shape)
+            self._tensor.data.flatten()[flat_idx] = confidence
 
         # Reshape flat list into nested structure matching shape
         nested_data = _unflatten(sole_elem_output, shape)
@@ -138,8 +148,8 @@ class FutureTensor:
         # Make a new symbolic tensor from the results
         result_tensor = make_tensor(nested_data, self.st_relative_to)
 
-        # Assign result back to self
-        assign_tensor(self._tensor, result_tensor)
+        # Assign result back to self (symbolic channel only)
+        _assign_symbolic_only(self._tensor, result_tensor)
 
         self.ft_forwarded = True
 
@@ -157,6 +167,33 @@ def _unflatten(flat_list: List[str], shape: List[int]):
         _unflatten(flat_list[i * chunk_size:(i + 1) * chunk_size], shape[1:])
         for i in range(shape[0])
     ]
+
+
+def _assign_symbolic_only(lvalue: torch.Tensor, rvalue: torch.Tensor) -> None:
+    """Copy symbolic storage from rvalue to lvalue without overwriting data coefficients."""
+    import shutil
+
+    assert lvalue.shape == rvalue.shape
+    shape = list(lvalue.shape)
+    for coords in itertools.product(*[range(s) for s in shape]):
+        coords = list(coords)
+        lvalue_path = _storage_path_for_tensor(lvalue, coords, shape)
+        rvalue_path = _storage_path_for_tensor(rvalue, coords, shape)
+        os.makedirs(os.path.dirname(lvalue_path), exist_ok=True)
+        if os.path.isfile(rvalue_path):
+            shutil.copy2(rvalue_path, lvalue_path)
+
+
+def _storage_path_for_tensor(
+    tensor: torch.Tensor, coordinates: List[int], shape: List[int]
+) -> str:
+    """Get storage file path for a tensor at given coordinates."""
+    flat_index = _coords_to_flat(coordinates, shape)
+    digits = list(str(flat_index))
+    return os.path.join(
+        tensor.st_relative_to, tensor.st_tensor_uid,
+        "storage", os.path.join(*digits), "data",
+    )
 
 
 if __name__ == "__main__":
@@ -190,7 +227,7 @@ if __name__ == "__main__":
     print("Test 1: Basic 1D forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def echo_get(coordinates, prompt):
-            return f"output({coordinates}, {prompt})"
+            return (f"output({coordinates}, {prompt})", 0.9)
 
         ft = FutureTensor([3], tmpdir, echo_get)
         run_test("Shape is [3]", ft.shape == [3])
@@ -203,6 +240,8 @@ if __name__ == "__main__":
         run_test("Element 0", read_storage(ft.tensor, 0) == "output([0], prompt_0)")
         run_test("Element 1", read_storage(ft.tensor, 1) == "output([1], prompt_1)")
         run_test("Element 2", read_storage(ft.tensor, 2) == "output([2], prompt_2)")
+        run_test("Confidence 0", abs(ft.tensor.data.flatten()[0].item() - 0.9) < 0.01)
+        run_test("Confidence 1", abs(ft.tensor.data.flatten()[1].item() - 0.9) < 0.01)
 
     # ── Test 2: Idempotent forward (early return) ─────────────────────
 
@@ -212,7 +251,7 @@ if __name__ == "__main__":
 
         async def counting_get(coordinates, prompt):
             counter[0] += 1
-            return "x"
+            return ("x", 1.0)
 
         ft = FutureTensor([2], tmpdir, counting_get)
         prompt_t = make_tensor(["a", "b"], tmpdir)
@@ -229,7 +268,7 @@ if __name__ == "__main__":
     print("Test 3: 2D tensor [2, 3]")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def coord_get(coordinates, prompt):
-            return f"{coordinates}"
+            return (f"{coordinates}", 0.75)
 
         ft = FutureTensor([2, 3], tmpdir, coord_get)
         run_test("Shape is [2, 3]", ft.shape == [2, 3])
@@ -251,7 +290,7 @@ if __name__ == "__main__":
 
         async def slow_get(coordinates, prompt):
             await asyncio.sleep(0.05)
-            return prompt.upper()
+            return (prompt.upper(), 1.0)
 
         ft = FutureTensor([4], tmpdir, slow_get)
         prompt_t = make_tensor(["alpha", "beta", "gamma", "delta"], tmpdir)
@@ -270,20 +309,21 @@ if __name__ == "__main__":
     print("Test 5: Scalar tensor [1]")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def scalar_get(coordinates, prompt):
-            return f"scalar:{prompt}"
+            return (f"scalar:{prompt}", 0.5)
 
         ft = FutureTensor([1], tmpdir, scalar_get)
         prompt_t = make_tensor(["hello"], tmpdir)
         ft.ft_forward(prompt_t)
 
         run_test("Single element", read_storage(ft.tensor, 0) == "scalar:hello")
+        run_test("Confidence 0.5", abs(ft.tensor.data.flatten()[0].item() - 0.5) < 0.01)
 
     # ── Test 6: Tensor coefficients set to 1 after forward ────────────
 
     print("Test 6: Tensor coefficients after forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def fill_get(coordinates, prompt):
-            return "filled"
+            return ("filled", 0.8)
 
         ft = FutureTensor([3], tmpdir, fill_get)
         run_test("All zeros before forward",
@@ -292,8 +332,9 @@ if __name__ == "__main__":
         prompt_t = make_tensor(["a", "b", "c"], tmpdir)
         ft.ft_forward(prompt_t)
 
-        run_test("All ones after forward",
-                 torch.all(ft.tensor == 1).item())
+        run_test("Coefficients are confidence (0.8)",
+                 all(abs(ft.tensor.data.flatten()[i].item() - 0.8) < 0.01
+                     for i in range(3)))
 
     # ── Test 7: Prompt content correctly passed ───────────────────────
 
@@ -303,7 +344,7 @@ if __name__ == "__main__":
 
         async def capture_get(coordinates, prompt):
             received_prompts.append((coordinates, prompt))
-            return "ok"
+            return ("ok", 1.0)
 
         ft = FutureTensor([2], tmpdir, capture_get)
         prompt_t = make_tensor(["multi\nline\nprompt", "second prompt"], tmpdir)
@@ -321,7 +362,7 @@ if __name__ == "__main__":
     print("Test 8: Storage overwritten by ft_forward")
     with tempfile.TemporaryDirectory() as tmpdir:
         async def overwrite_get(coordinates, prompt):
-            return "new_content"
+            return ("new_content", 0.95)
 
         ft = FutureTensor([2], tmpdir, overwrite_get)
         # Manually write initial content
@@ -354,7 +395,7 @@ if __name__ == "__main__":
         async def failing_get(coordinates, prompt):
             if coordinates == [1]:
                 raise ValueError("boom")
-            return "ok"
+            return ("ok", 1.0)
 
         ft = FutureTensor([3], tmpdir, failing_get)
         prompt_t = make_tensor(["a", "b", "c"], tmpdir)

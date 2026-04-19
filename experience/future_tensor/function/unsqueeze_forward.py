@@ -77,7 +77,8 @@ def _copy_unsqueezed_storage(input, output, output_shape, dim):
         if os.path.isfile(src_path):
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
-            output._tensor.data.flatten()[out_flat] = 1.0
+            # Copy coefficient (confidence) from input
+            output._tensor.data.flatten()[out_flat] = input._tensor.data.flatten()[in_flat]
 
 
 def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
@@ -129,7 +130,7 @@ if __name__ == "__main__":
 
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
-            return "unused"
+            return ("unused", 1.0)
         ft = FutureTensor(shape, tmpdir, dummy_get)
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
@@ -265,7 +266,7 @@ if __name__ == "__main__":
 
         async def tracking_get(coords, prompt):
             received.append(coords)
-            return f"val_{coords}"
+            return (f"val_{coords}", 1.0)
 
         ft = FutureTensor([4, 3], tmpdir, tracking_get)
         r = unsqueeze_forward(ft, 0)
@@ -295,7 +296,7 @@ if __name__ == "__main__":
 
         async def tracking_get2(coords, prompt):
             received2.append(coords)
-            return f"r{coords}"
+            return (f"r{coords}", 1.0)
 
         ft = FutureTensor([5], tmpdir, tracking_get2)
         r = unsqueeze_forward(ft, 1)
@@ -310,7 +311,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         async def simple_get(coords, prompt):
-            return f"x{coords}"
+            return (f"x{coords}", 1.0)
 
         ft = FutureTensor([2, 3], tmpdir, simple_get)
         r = unsqueeze_forward(ft, 1)

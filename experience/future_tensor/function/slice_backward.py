@@ -59,10 +59,10 @@ def slice_backward(
         return out_coords
 
     # Create ft_async_get that looks up from grad_output
-    async def scatter_async_get(coordinates: List[int], prompt: str) -> str:
+    async def scatter_async_get(coordinates: List[int], prompt: str):
         out_coords = reverse_map(coordinates)
         if out_coords is None:
-            return ""  # Zero/empty for positions not in the slice
+            return ("", 0.0)  # Zero/empty for positions not in the slice
         return await grad_output.ft_async_get(out_coords, prompt)
 
     result = FutureTensor(original_shape, grad_output.st_relative_to, scatter_async_get)
@@ -102,7 +102,8 @@ def _scatter_storage(grad_output, result, original_shape, per_dim):
         if os.path.isfile(src_path):
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
-            result._tensor.data.flatten()[in_flat] = 1.0
+            # Copy coefficient (confidence) from grad_output
+            result._tensor.data.flatten()[in_flat] = grad_output._tensor.data.flatten()[out_flat]
 
 
 def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
@@ -153,7 +154,7 @@ if __name__ == "__main__":
 
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
-            return "unused"
+            return ("unused", 1.0)
         ft = FutureTensor(shape, tmpdir, dummy_get)
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
@@ -302,7 +303,7 @@ if __name__ == "__main__":
 
         async def lazy_grad_get(coords, prompt):
             received.append(coords)
-            return f"lazy_{coords}"
+            return (f"lazy_{coords}", 1.0)
 
         grad = FutureTensor([3], tmpdir, lazy_grad_get)
         # Don't forward grad — backward should be lazy too
@@ -324,7 +325,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         async def lazy_2d_get(coords, prompt):
-            return f"g{coords}"
+            return (f"g{coords}", 1.0)
 
         grad = FutureTensor([2, 2], tmpdir, lazy_2d_get)
         r = slice_backward(grad, [4, 4], [slice(1, 3), slice(0, 2)])

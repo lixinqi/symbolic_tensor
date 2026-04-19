@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
-            return "unused"
+            return ("unused", 1.0)
         ft = FutureTensor(shape, tmpdir, dummy_get)
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
         async def tracking_get(coords, prompt):
             received.append(coords)
-            return f"val_{coords}"
+            return (f"val_{coords}", 1.0)
 
         ft = FutureTensor([3, 4], tmpdir, tracking_get)
         r = ft_unsqueeze(ft, 0)
@@ -283,7 +283,7 @@ if __name__ == "__main__":
 
         async def tracking_get2(coords, prompt):
             received2.append(coords)
-            return f"r{coords}"
+            return (f"r{coords}", 1.0)
 
         ft = FutureTensor([5], tmpdir, tracking_get2)
         r = ft_unsqueeze(ft, 1)
@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         async def mid_get(coords, prompt):
-            return f"m{coords}"
+            return (f"m{coords}", 1.0)
 
         ft = FutureTensor([2, 3], tmpdir, mid_get)
         r = ft_unsqueeze(ft, 1)
