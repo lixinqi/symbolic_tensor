@@ -7,8 +7,8 @@
 
 # torch.autograd.Function backward signature:
 #   backward(ctx, grad_output, grad_selected_indexes=None)
-#     -> (grad_input, grad_experience, None*6)
-# ctx saves: input, output, experience, selected_experience_qkv_indexes_list,
+#     -> (grad_input, grad_experience, None*7)
+# ctx saves: input, output, experience, context, selected_experience_qkv_indexes_list,
 #            grad_input_prompt, grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk
 
 default_prompt_for_grad_input :=
@@ -40,6 +40,7 @@ default_prompt_for_grad_input :=
           which used for calculate similarity between inputs and experience.
         - Key files contain source domain semantics.
         - Value files contain target domain semantics.
+        {if const_context_view: f"- Additional context provided during forward: {const_context_view}"}
 
         Compute and write:
         1. Input gradient in f"{mutable_grad_input_dir}":
@@ -75,6 +76,7 @@ default_prompt_for_grad_exp_key :=
           where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
         - Key files contain source domain content (same domain as input).
         - Value files contain target domain content (same domain as output).
+        {if const_context_view: f"- Additional context provided during forward: {const_context_view}"}
 
         IMPORTANT: You must write actual content, NOT diff/patch text.
 
@@ -115,6 +117,7 @@ default_prompt_for_grad_exp_value :=
           where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value
         - Key files contain source domain content (same domain as input).
         - Value files contain target domain content (same domain as output).
+        {if const_context_view: f"- Additional context provided during forward: {const_context_view}"}
 
         IMPORTANT: You must write actual content, NOT diff/patch text.
 
@@ -144,9 +147,9 @@ _force_todo_nested :=
 # (from st_attention output via TextMerger.pack).
 # Plain: single content string — use current single-LLM-call logic.
 # Merged: packed frames — unpack, per-frame LLM calls, repack, then diff.
-InputContentType := 
+InputContentType :=
     Oneof
-    | $content Plain[str] 
+    | $content Plain[str]
     | $frames Merged[list[Frame]]
 
 Frame := ($index int, $coefficient float, $content str)
@@ -166,6 +169,7 @@ st_moe_backward :=
     <- $input Symbolic[torch.Tensor]
     <- $output Symbolic[torch.Tensor]
     <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $context Symbolic[torch.Tensor] # default None, requires_grad=False, same shape as input
     <- $selected_experience_qkv_indexes_list NestedList[list[torch.Tensor[int]]]
     <- $grad_input_prompt BackwardPromptCallable # default None
     <- $grad_exp_key_prompt BackwardPromptCallable # default None
@@ -184,6 +188,7 @@ st_moe_backward_grad_input :=
     <- $input Symbolic[torch.Tensor]
     <- $output Symbolic[torch.Tensor]
     <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $context Symbolic[torch.Tensor] # default None, requires_grad=False
     <- $selected_experience_qkv_indexes_list NestedList[list[torch.Tensor[int]]]
     <- $grad_input_prompt BackwardPromptCallable # default None
     <- $task_prompt str # default ""
@@ -236,6 +241,9 @@ st_moe_backward_grad_input :=
     <- (void <- $dump_view <- $scalar_input <- f"{workspace_dir}/const_input_view")
     <- (void <- $dump_view <- $scalar_output <- f"{workspace_dir}/const_output_view")
     <- (void <- $dump_view <- $experience_sliced_view <- f"{workspace_dir}/const_experience_view")
+    # context: optional, dump if provided
+    <- (NestList[$scalar_context Symbolic[torch.Tensor]] <- NestList[$slice_view] <- $context <- If[$context is not None])
+    <- (void <- $dump_view <- $scalar_context <- f"{workspace_dir}/const_context_view" <- If[$context is not None])
 
     # ── Per-element mixed task construction + context ──
     # Each element is either Plain (1 AgentTask) or Merged (list[AgentTask] for frames).
@@ -341,6 +349,7 @@ st_moe_backward_grad_experience :=
     <- $input Symbolic[torch.Tensor]
     <- $output Symbolic[torch.Tensor]
     <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $context Symbolic[torch.Tensor] # default None, requires_grad=False
     <- NestedList[select_experience_query_indexes list[torch.Tensor[int]]]
     <- $grad_exp_key_prompt BackwardPromptCallable # default None
     <- $grad_exp_value_prompt BackwardPromptCallable # default None
@@ -390,6 +399,8 @@ st_moe_backward_grad_experience :=
     <- ($grad_output_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $grad_output <- $multi_grad_output_points)
     <- ($input_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $input <- $multi_grad_output_points)
     <- ($output_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $output <- $multi_grad_output_points)
+    # context: optional, slice if provided
+    <- ($context_sliced_view Symbolic[torch.Tensor] <- $slice_view <- $context <- $multi_grad_output_points <- If[$context is not None])
     # slice experience (const) and grad_experience (mutable) with same padded indexes
     <- ($experience_sliced_view ExperienceTensor[Symbolic[torch.Tensor]]
         <- $slice_view
@@ -425,6 +436,8 @@ st_moe_backward_grad_experience :=
     <- (void <- $dump_view <- $input_sliced_view <- f"{workspace_dir}/const_input_view")
     <- (void <- $dump_view <- $output_sliced_view <- f"{workspace_dir}/const_output_view")
     <- (void <- $dump_view <- $experience_sliced_view <- f"{workspace_dir}/const_experience_view")
+    # context: optional, dump if provided
+    <- (void <- $dump_view <- $context_sliced_view <- f"{workspace_dir}/const_context_view" <- If[$context is not None])
     # dump mutable views (LLM writes gradients here)
     <- (void <- $dump_view <- $grad_experience_sliced_value <- f"{workspace_dir}/mutable_grad_experience_dir")
     <- ($prompt <- $prompt_fn

@@ -26,6 +26,7 @@ class StMoe(torch.autograd.Function):
         ctx,
         input: torch.Tensor,
         experience: torch.Tensor,
+        context: Optional[torch.Tensor] = None,
         output_prompt: Optional[Callable[..., str]] = None,
         query_prompt: Optional[Callable[..., str]] = None,
         grad_input_prompt: Optional[Callable[..., str]] = None,
@@ -38,7 +39,8 @@ class StMoe(torch.autograd.Function):
         llm_env: Optional[Dict[str, str]] = None,
     ) -> Tuple[torch.Tensor, Any]:
         output, selected_experience_qkv_indexes_list = st_moe_forward(
-            input, experience, output_prompt, query_prompt, task_prompt, topk,
+            input, experience, context=context,
+            output_prompt=output_prompt, query_prompt=query_prompt, task_prompt=task_prompt, topk=topk,
             retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env
         )
 
@@ -52,6 +54,13 @@ class StMoe(torch.autograd.Function):
                 if hasattr(tensor, attr):
                     attrs[attr] = getattr(tensor, attr)
             ctx.st_attrs[name] = attrs
+        # Save context (optional, requires_grad=False, not in save_for_backward)
+        ctx.context = context
+        if context is not None:
+            ctx.context_st_attrs = {}
+            for attr in ("st_relative_to", "st_tensor_uid"):
+                if hasattr(context, attr):
+                    ctx.context_st_attrs[attr] = getattr(context, attr)
         # Save non-tensor state
         ctx.selected_experience_qkv_indexes_list = selected_experience_qkv_indexes_list
         ctx.grad_input_prompt = grad_input_prompt
@@ -72,6 +81,12 @@ class StMoe(torch.autograd.Function):
         for name, tensor in [("input", input), ("output", output), ("experience", experience)]:
             for attr, val in ctx.st_attrs[name].items():
                 setattr(tensor, attr, val)
+
+        # Restore context st_* attributes
+        context = ctx.context
+        if context is not None and hasattr(ctx, 'context_st_attrs'):
+            for attr, val in ctx.context_st_attrs.items():
+                setattr(context, attr, val)
 
         # Check if a symbolic gradient was registered by an upstream backward
         # (autograd strips st_* attrs when passing gradients between Function nodes)
@@ -98,6 +113,7 @@ class StMoe(torch.autograd.Function):
             ctx.topk,
             llm_method=ctx.llm_method,
             llm_env=ctx.llm_env,
+            context=context,
         )
 
         # Register symbolic grads keyed by the original parameter tensor uids
@@ -106,10 +122,10 @@ class StMoe(torch.autograd.Function):
             symbolic_grad_registry.register(input.st_tensor_uid, grad_input)
         symbolic_grad_registry.register(experience.st_tensor_uid, grad_experience)
 
-        # Return grads for (input, experience, output_prompt, query_prompt, grad_input_prompt,
+        # Return grads for (input, experience, context, output_prompt, query_prompt, grad_input_prompt,
         #                    grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk,
         #                    retrieval_method, llm_method, llm_env)
-        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None
+        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None, None
 
 
 st_moe = StMoe.apply
@@ -156,6 +172,7 @@ if __name__ == "__main__":
 
         output, selected_indexes = StMoe.apply(
             input_tensor, experience_tensor,
+            None,  # context
             None,  # output_prompt
             None,  # query_prompt
             None,  # grad_input_prompt
@@ -184,6 +201,7 @@ if __name__ == "__main__":
     print("\nTest 2: Forward + backward (direct call)")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_tensor = make_tensor(["Hello world in English"], tmpdir)
+        input_tensor.requires_grad_(True)
 
         experience_data = [
             ["greeting\nhello\nworld", "Hello world in English", "Bonjour le monde en francais"],

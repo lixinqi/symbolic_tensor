@@ -28,6 +28,8 @@ default_prompt_for_output :=
         please translate source semantic text f"{const_input_view}"
         to target semantic text f"{mutable_output_dir}".
 
+        {if const_context_view: f"Additional context: {const_context_view}"}
+
         Replace TODO in f"{mutable_output_dir}" with target semantic text.
     ''')
 
@@ -35,6 +37,7 @@ st_moe_forward :=
     ($output Symboilc[torch.Tensor], $selected_experience_qkv_indexes_list NestList[list[torch.Tensor[int]]])
     <- $input Symboilc[torch.Tensor]
     <- $experience ExperienceTensor[Symbolic[torch.Tensor]]
+    <- $context Symbolic[torch.Tensor] # default None, same shape as input, requires_grad=False
     <- $output_prompt $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_experience_view str <- $const_input_view str <- $mutable_output_dir str) # default None
     <- $query_prompt $func ($ret str <- $task_prompt str <- $input_view_dir str <- $mutable_output_dir str) # default None
     <- $task_prompt str # default ""
@@ -82,6 +85,13 @@ st_moe_forward :=
         <- $dump_view
         <- $scalar_input_view
         <- f"{workspace_dir}/const_input_view")
+    # context: optional, dump alongside input if provided
+    <- (NestList[$scalar_context_view Symbolic[torch.Tensor]] <- NestList[$slice_view] <- $context <- If[$context is not None])
+    <- (void
+        <- $dump_view
+        <- $scalar_context_view
+        <- f"{workspace_dir}/const_context_view"
+        <- If[$context is not None])
     <- (void
         <- $dump_view
         <- $scalar_output_value

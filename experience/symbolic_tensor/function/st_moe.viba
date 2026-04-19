@@ -16,6 +16,7 @@ StMoe := torch.autograd.Function[
     $forward Import[experience/symbolic_tensor/function/st_moe_forward.viba],
     $backward Import[experience/symbolic_tensor/function/st_moe_backward.viba],
     # ctx saves all prompt callables for backward
+    $ctx.context Symbolic[torch.Tensor] # default None, requires_grad=False, same shape as input
     $ctx.output_prompt OutputPromptCallable # default None
     $ctx.query_prompt QueryPromptCallable # default None
     $ctx.grad_input_prompt BackwardPromptCallable # default None

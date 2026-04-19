@@ -254,7 +254,12 @@ def default_prompt_for_grad_input(
         "- Each line in query files only contains one summary key word for current experience.\n"
         "  which used for calculate similarity between inputs and experience.\n"
         "- Key files contain source domain semantics.\n"
-        "- Value files contain target domain semantics.\n\n"
+        "- Value files contain target domain semantics.\n"
+        + (
+            f'- Additional context provided during forward: "{os.path.join(workspace_dir, "const_context_view")}"\n'
+            if os.path.isdir(os.path.join(workspace_dir, "const_context_view")) else ""
+        )
+        + "\n"
         "Compute and write:\n"
         f"1. Input gradient in \"{mutable_grad_input_dir}\":\n"
         "   How should the input text change to improve the output?\n"
@@ -315,7 +320,12 @@ def default_prompt_for_grad_exp_key(
         f"- Experience entries used during forward: \"{const_experience_view}\"\n"
         "  where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value\n"
         "- Key files contain source domain content (same domain as input).\n"
-        "- Value files contain target domain content (same domain as output).\n\n"
+        "- Value files contain target domain content (same domain as output).\n"
+        + (
+            f'- Additional context provided during forward: "{os.path.join(workspace_dir, "const_context_view")}"\n'
+            if os.path.isdir(os.path.join(workspace_dir, "const_context_view")) else ""
+        )
+        + "\n"
         "IMPORTANT: You must write actual content, NOT diff/patch text.\n"
         "- Key content should be in the SAME language/format as the input files.\n"
         "- Value content should be in the SAME language/format as the output files.\n"
@@ -354,7 +364,12 @@ def default_prompt_for_grad_exp_value(
         f"- Experience entries used during forward: \"{const_experience_view}\"\n"
         "  where .../0/data.xxx = query, .../1/data.xxx = key, .../2/data.xxx = value\n"
         "- Key files contain source domain content (same domain as input).\n"
-        "- Value files contain target domain content (same domain as output).\n\n"
+        "- Value files contain target domain content (same domain as output).\n"
+        + (
+            f'- Additional context provided during forward: "{os.path.join(workspace_dir, "const_context_view")}"\n'
+            if os.path.isdir(os.path.join(workspace_dir, "const_context_view")) else ""
+        )
+        + "\n"
         "IMPORTANT: You must write actual content, NOT diff/patch text.\n"
         "- Key content should be in the SAME language/format as the input files.\n"
         "- Value content should be in the SAME language/format as the output files.\n"
@@ -383,6 +398,7 @@ def st_moe_backward_grad_input(
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
     text_merger: Optional[Any] = None,
+    context: Optional[torch.Tensor] = None,
 ) -> Union[torch.Tensor, None]:
     """Compute grad_input by iterating per input scalar element.
 
@@ -450,6 +466,12 @@ def st_moe_backward_grad_input(
         dump_view(scalar_input, input_view_dir, "txt")
         dump_view(scalar_output, output_view_dir, "txt")
         dump_view(experience_sliced_view, experience_view_dir, "txt")
+
+        # context: optional, dump if provided
+        if context is not None:
+            scalar_context = slice_view(context, int_slices)
+            context_view_dir = os.path.join(workspace_dir, "const_context_view")
+            dump_view(scalar_context, context_view_dir, "txt")
 
         if content_type == _PLAIN:
             # Single AgentTask
@@ -560,6 +582,7 @@ def st_moe_backward_grad_experience(
     topk: int = 16,
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
+    context: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """Compute grad_experience by iterating per experience entry via transposed sparse coordinates.
 
@@ -616,6 +639,8 @@ def st_moe_backward_grad_experience(
             grad_output_sliced = slice_view(grad_output, multi_output_points)
             input_sliced = slice_view(input, multi_output_points)
             output_sliced = slice_view(output, multi_output_points)
+            # context: optional, slice if provided
+            context_sliced = slice_view(context, multi_output_points) if context is not None else None
             experience_sliced_view = slice_view(experience, select_experience_indexes)
             grad_experience_sliced_view = slice_view(grad_experience, select_experience_indexes)
             # Assign TODO to the selected portion of grad_experience (unselected stays "")
@@ -639,6 +664,10 @@ def st_moe_backward_grad_experience(
             dump_view(input_sliced, input_view_dir, "txt")
             dump_view(output_sliced, output_view_dir, "txt")
             dump_view(experience_sliced_view, experience_view_dir, "txt")
+            # context: optional, dump if provided
+            if context_sliced is not None:
+                context_view_dir = os.path.join(workspace_dir, "const_context_view")
+                dump_view(context_sliced, context_view_dir, "txt")
             dump_view(grad_experience_sliced_value, grad_experience_dir, "txt")
 
             prompt = prompt_fn(
@@ -682,6 +711,7 @@ def st_moe_backward(
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
     text_merger: Optional[Any] = None,
+    context: Optional[torch.Tensor] = None,
 ) -> Tuple[Union[torch.Tensor, None], torch.Tensor]:
     """Backward pass of the symbolic transform.
 
@@ -714,12 +744,14 @@ def st_moe_backward(
         selected_experience_qkv_indexes_list,
         grad_input_prompt, task_prompt, topk, llm_method, llm_env,
         text_merger=text_merger,
+        context=context,
     )
 
     grad_experience = st_moe_backward_grad_experience(
         grad_output, input, output, experience,
         selected_experience_qkv_indexes_list,
         grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk, llm_method, llm_env,
+        context=context,
     )
 
     return grad_input, grad_experience

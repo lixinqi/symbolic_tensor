@@ -1,0 +1,49 @@
+
+# Re-export prompt callables and types from st_moe for public API
+default_prompt_for_output := Import[{symbolic_tensor function st_moe_forward.viba}].default_prompt_for_output
+default_prompt_for_query := Import[{symbolic_tensor function get_query_tensor.viba}].default_prompt_for_query
+default_prompt_for_grad_input := Import[{symbolic_tensor function st_moe_backward.viba}].default_prompt_for_grad_input
+default_prompt_for_grad_exp_key := Import[{symbolic_tensor function st_moe_backward.viba}].default_prompt_for_grad_exp_key
+default_prompt_for_grad_exp_value := Import[{symbolic_tensor function st_moe_backward.viba}].default_prompt_for_grad_exp_value
+default_retrieval_method := Import[{symbolic_tensor function select_qkv_indexes.viba}].default_retrieval_method
+
+OutputPromptCallable := $func ($ret str <- $task_prompt str <- $workspace_dir str <- $const_experience_view str <- $const_input_view str <- $mutable_output_dir str)
+QueryPromptCallable := Import[{symbolic_tensor function get_query_tensor.viba}].QueryPromptCallable
+BackwardPromptCallable := Import[{symbolic_tensor function st_moe_backward.viba}].BackwardPromptCallable
+RetrievalMethodCallable := Import[{symbolic_tensor function select_qkv_indexes.viba}].RetrievalMethodCallable
+
+# Parameter mapping:
+#   ft_moe.input      <=> st_moe.input (direct, FutureTensor, requires_grad)
+#   ft_moe.prompt     <=> st_moe.context (from upstream ft_async_get, requires_grad=False)
+#   ft_moe.experience <=> st_moe.experience (direct)
+#
+# Forward: async FutureTensor version of st_moe_forward.
+#   Each element's ft_async_get receives a prompt from upstream.
+#   prompt becomes st_moe.context (requires_grad=False).
+#   If ft_moe.input is not None, input[coordinates] becomes st_moe.input.
+#
+# Backward: same as st_moe_backward with:
+#   st_moe.input      = input._tensor (requires_grad = input is not None)
+#   st_moe.context    = prompt_tensor._tensor (requires_grad=False)
+#   st_moe.experience = experience
+#   grad_input from st_moe → grad for ft_moe.input (if input is not None)
+#   grad_experience from st_moe → grad for ft_moe.experience
+
+FtMoe := torch.autograd.Function[
+    $forward Import[{future_tensor function ft_moe_forward.viba}],
+    $backward Import[{symbolic_tensor function st_moe_backward.viba}],
+    # ctx saves for backward
+    $ctx.context Symbolic[torch.Tensor] # prompt_tensor._tensor, requires_grad=False
+    $ctx.output_prompt OutputPromptCallable # default None
+    $ctx.query_prompt QueryPromptCallable # default None
+    $ctx.grad_input_prompt BackwardPromptCallable # default None
+    $ctx.grad_exp_key_prompt BackwardPromptCallable # default None
+    $ctx.grad_exp_value_prompt BackwardPromptCallable # default None
+    $ctx.task_prompt str # default ""
+    $ctx.topk int # default 16
+    $ctx.retrieval_method RetrievalMethodCallable # default None
+    $ctx.llm_method str # default "raw_llm_api"
+    $ctx.llm_env dict[str, str] # default None
+]
+
+ft_moe := FtMoe.apply
