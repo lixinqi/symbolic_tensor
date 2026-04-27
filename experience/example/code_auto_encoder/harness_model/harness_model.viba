@@ -1,0 +1,119 @@
+# Philosophy: grep is attention.
+# HarnessOps (grep/read/glob) = attention over codebase.
+# Inner reduce = attention phase (gather context, always scbf).
+# Outer reduce = generation phase (answer from context, confidence or scbf).
+
+HarnessModel[torch.nn.Module] :=
+    $output SymbolicTensor[($batch_size,)]
+    <- $worktree_tensor SymbolicTensor[($batch_size,)]
+    <- $experience ExperienceTensor[($num_exp, 3)]
+    <- $agent_main_loop_dim int # default 8
+    <- $max_tool_call_retries int # default 3
+    <- $topk int # default 4
+    <- $task_prompt str
+    <- $llm_method str # default "raw_llm_api"
+    <- $llm_env (dict[str, str] | None) # default None
+
+    # ── Architecture ──
+    #
+    #  worktree_tensor (batch,)
+    #         │
+    #         ▼  expand to 3D FutureTensor
+    #  ft_3d (batch, agent_main_loop_dim, max_tool_call_retries)
+    #    ft_async_get = agent_step
+    #    │  step < last: attention mode (grep/read/glob → scbf)
+    #    │  step == last: generation mode (answer from context → confidence)
+    #         │
+    #         ▼  ft_recurrent [inner — reduces max_tool_call_retries]
+    #  ft_after_attention (batch, agent_main_loop_dim)
+    #    │  Each element = context gathered + answer generated.
+    #         │
+    #         ▼  ft_recurrent [outer — reduces agent_main_loop_dim]
+    #  ft_final (batch,)
+    #    │  Best answer across main loop iterations.
+    #         │
+    #         ▼  ft_forward(trigger)
+    #  output._tensor (batch,)
+
+    # ── Step 1: Build 3D FutureTensor ──
+    <- ($ft_3d FutureTensor[($batch_size, $agent_main_loop_dim, $max_tool_call_retries)]
+        <- FutureTensor
+        <- [$batch_size, $agent_main_loop_dim, $max_tool_call_retries]
+        <- $worktree_tensor.st_relative_to
+        <- $agent_step_fn)
+
+    # ── Step 2: Inner reduce — attention (context gathering) ──
+    <- ($ft_after_attention FutureTensor[($batch_size, $agent_main_loop_dim)],
+        $inner_prompt_tensor FutureTensor[($batch_size, $agent_main_loop_dim, $max_tool_call_retries)])
+        <- Import[ft_recurrent]
+        <- $ft_3d
+
+    # ── Step 3: Outer reduce — generation (agent main loop) ──
+    <- ($ft_final FutureTensor[($batch_size,)],
+        $outer_prompt_tensor FutureTensor[($batch_size, $agent_main_loop_dim)])
+        <- Import[ft_recurrent]
+        <- $ft_after_attention
+
+    # ── Step 4: Materialize ──
+    <- (void <- $ft_final.ft_forward <- $trigger_tensor)
+    <- ($trigger_tensor SymbolicTensor[($batch_size,)]
+        <- Import[make_tensor]
+        <- [$task_prompt] * $batch_size
+        <- $worktree_tensor.st_relative_to)
+
+    <- $ft_final._tensor
+
+
+agent_step :=
+    ($output str, $status Status)
+    <- $coordinates list[int]  # [batch_idx, loop_idx, tool_step_idx]
+    <- $prompt str              # accumulated attention trace
+    <- $worktree_tensor SymbolicTensor[($batch_size,)]
+    <- $ops dict[str, HarnessOp]
+    <- $experience ExperienceTensor[($num_exp, 3)]
+    <- $max_tool_call_retries int
+    <- $topk int
+    <- $task_prompt str
+    <- $llm_method str
+    <- $llm_env (dict[str, str] | None)
+
+    # ── Read worktree path ──
+    <- ($worktree_path str
+        <- Import[future_tensor _read_element]
+        <- $worktree_tensor <- $coordinates[0])
+
+    # ── Read .cloze_task.json ──
+    <- ($task_json dict
+        <- json.load
+        <- os.path.join($worktree_path, ".cloze_task.json"))
+
+    # ── At tool_step_idx=0: retrieve experience few-shot examples ──
+    <- ($experience_context str
+        <- { if coordinates[2] == 0:
+               query task_json, retrieve topk experience via select_qkv_indexes,
+               format as few-shot examples prepended to system prompt
+             else: "" })
+
+    # ── Two modes ──
+    <- ($is_last_step bool <- { coordinates[2] == max_tool_call_retries - 1 })
+
+    # ── Generation mode (last step): answer from accumulated context ──
+    <- { if is_last_step:
+           system = build_generation_prompt(task_prompt, task_json)
+           # prompt already contains all attention traces from steps 0..N-2
+           response = call_raw_llm(system, prompt, llm_method, llm_env)
+           return (response, Status.confidence(0.9)) }
+
+    # ── Attention mode (non-last step): gather context via tool call ──
+    <- ($system_prompt str
+        <- { build from:
+             - task_prompt
+             - task_json (file, lines, masked_hint)
+             - tool schemas (ops.values())
+             - experience_context })
+    <- ($response str
+        <- call_raw_llm($system_prompt, $prompt, $llm_method, $llm_env))
+    <- ($action ToolCall <- parse_tool_call <- $response)
+    <- ($result str <- $ops[$action.tool].forward($worktree_path, **$action.args))
+    <- ($trace str <- f"[{action.tool}({action.args})]\n{result}")
+    <- ($trace, Status.self_confidence_but_failed(0.5))
