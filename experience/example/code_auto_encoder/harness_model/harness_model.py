@@ -452,16 +452,20 @@ class HarnessModel(nn.Module):
             try:
                 ast.parse(reconstructed)
             except SyntaxError as e:
-                # Try multiple indentation levels (0, 2, 4, 6, 8, 10, 12 spaces)
-                # The masked region may need different indentation than the line before it.
-                for indent_spaces in [0, 2, 4, 6, 8, 10, 12]:
+                # Normalize: strip the minimum leading indent so relative structure is preserved,
+                # then try re-indenting at each absolute level (handles models that output
+                # inconsistent first-line indentation, e.g. line0=0sp, line1+=8sp).
+                non_empty = [l for l in cleaned.splitlines() if l.strip()]
+                min_indent = min((len(l) - len(l.lstrip()) for l in non_empty), default=0)
+                normalized = "\n".join(
+                    line[min_indent:] if line.strip() else line
+                    for line in cleaned.splitlines()
+                )
+                for indent_spaces in [0, 2, 4, 6, 8, 10, 12, 16]:
                     indent = " " * indent_spaces
                     fixed_lines = []
-                    for line in cleaned.splitlines():
-                        if line.strip():
-                            fixed_lines.append(indent + line)
-                        else:
-                            fixed_lines.append(line)
+                    for line in normalized.splitlines():
+                        fixed_lines.append(indent + line if line.strip() else line)
                     fixed = "\n".join(fixed_lines)
                     fixed_reconstructed = file_content.replace("<AUTOENCODER-CLOZE-MASK-PLACEHOLDER>", fixed)
                     try:

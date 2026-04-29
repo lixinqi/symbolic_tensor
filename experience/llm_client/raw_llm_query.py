@@ -10,9 +10,12 @@ import os
 import re
 import sys
 from typing import Optional
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 from experience.llm_client.agent_config import RawLlmConfig
 from experience.llm_client.agent_config_factory import AgentConfigFactory
+
+_RATE_LIMIT_RETRIES = 5
+_RATE_LIMIT_BASE_DELAY = 10.0
 
 
 def _strip_think_tags(content: str) -> str:
@@ -64,14 +67,23 @@ async def raw_llm_query(
     )
     
     try:
-        response = await client.chat.completions.create(
-            model=config.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant. Output raw content only, no thinking process."},
-                {"role": "user", "content": prompt},
-            ],
-            stream=False
-        )
+        for attempt in range(_RATE_LIMIT_RETRIES):
+            try:
+                response = await client.chat.completions.create(
+                    model=config.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant. Output raw content only, no thinking process."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    stream=False
+                )
+                break
+            except RateLimitError:
+                if attempt == _RATE_LIMIT_RETRIES - 1:
+                    raise
+                delay = _RATE_LIMIT_BASE_DELAY * (2 ** attempt)
+                print(f"[raw_llm_query] 429 rate limit, retry {attempt+1}/{_RATE_LIMIT_RETRIES-1} in {delay:.0f}s", file=sys.stderr)
+                await asyncio.sleep(delay)
         
         # Handle different response formats
         if isinstance(response, str):

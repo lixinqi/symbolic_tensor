@@ -7,6 +7,7 @@ import ast as _ast
 import os
 import sys
 import tempfile
+import textwrap
 from collections import defaultdict
 from typing import Dict, List, Optional
 
@@ -59,7 +60,7 @@ def _compute_extra_metrics(
         mask_type = _parse_mask_type(file_info[i])
 
         try:
-            _ast.parse(actual)
+            _ast.parse(textwrap.dedent(actual))
             ast_pass.append(1)
         except SyntaxError:
             ast_pass.append(0)
