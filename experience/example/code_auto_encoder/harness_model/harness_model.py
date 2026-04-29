@@ -99,27 +99,68 @@ def _parse_tool_call(response: str) -> Tuple[str, dict]:
     return tool_name, kwargs
 
 
-def _concat_context(acc: str, cur: str) -> str:
-    """Accumulate clean read results, discarding grep/glob noise and errors."""
-    # Extract clean result from trace format "[header]\nresult"
+_CONTEXT_BUDGET_CHARS = 12000
+_MIDDLE_PIECE_KEEP_CHARS = 500
+
+
+def _extract_clean_read(cur: str) -> str:
+    """Return the clean file content from a tool trace, or '' if not a valid read result."""
     if cur.startswith("[") and "\n" in cur:
         header, result = cur.split("\n", 1)
-        # Only accumulate read results (clean file contents), skip grep/glob
         if not header.startswith("[read("):
-            return acc
-        if result.startswith("ERROR:") or result.startswith("(file not found") or result.startswith("(read error") or result.startswith("(no matches") or result.startswith("(empty") or result.startswith("(regex error"):
-            clean = ""
-        else:
-            clean = result
-    elif cur.startswith("[invalid tool"):
-        clean = ""
-    else:
-        clean = cur
+            return ""
+        _errors = ("ERROR:", "(file not found", "(read error", "(no matches", "(empty", "(regex error")
+        if any(result.startswith(e) for e in _errors):
+            return ""
+        return result
+    if cur.startswith("[invalid tool"):
+        return ""
+    return cur
+
+
+def _concat_context(acc: str, cur: str) -> str:
+    """Accumulate clean read results, discarding grep/glob noise and errors."""
+    clean = _extract_clean_read(cur)
     if not clean:
         return acc
     if not acc:
         return clean
     return acc + "\n\n---\n\n" + clean
+
+
+def _concat_context_weighted(acc: str, cur: str) -> str:
+    """Weight-decayed accumulation: adds [Step N] labels; compresses middle pieces when over budget.
+
+    Strategy when budget exceeded (len > _CONTEXT_BUDGET_CHARS):
+    - Keep first piece intact  (bootstrap = class structure / imports)
+    - Keep last piece intact   (most recent = most targeted)
+    - Truncate middle pieces to _MIDDLE_PIECE_KEEP_CHARS chars each
+    """
+    clean = _extract_clean_read(cur)
+    if not clean:
+        return acc
+
+    step_idx = acc.count("\n\n---\n\n") + 1 if acc else 0
+    labeled = f"[Step {step_idx}]\n{clean}"
+
+    if not acc:
+        return labeled
+
+    combined = acc + "\n\n---\n\n" + labeled
+
+    if len(combined) > _CONTEXT_BUDGET_CHARS:
+        pieces = combined.split("\n\n---\n\n")
+        if len(pieces) >= 3:
+            middle = [
+                p[:_MIDDLE_PIECE_KEEP_CHARS] + "\n...(truncated)" if len(p) > _MIDDLE_PIECE_KEEP_CHARS else p
+                for p in pieces[1:-1]
+            ]
+            combined = "\n\n---\n\n".join([pieces[0]] + middle + [pieces[-1]])
+        elif len(pieces) == 2:
+            keep = max(_CONTEXT_BUDGET_CHARS - len(pieces[-1]) - 20, 500)
+            combined = pieces[0][:keep] + "\n...(truncated)\n\n---\n\n" + pieces[-1]
+
+    return combined
 
 
 class HarnessModel(nn.Module):
@@ -133,6 +174,7 @@ class HarnessModel(nn.Module):
         task_prompt: str = "",
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
+        accumulate_mode: str = "naive",
     ):
         super().__init__()
         self.experience = experience
@@ -143,8 +185,10 @@ class HarnessModel(nn.Module):
         self.task_prompt = task_prompt
         self.llm_method = llm_method
         self.llm_env = llm_env
+        self.accumulate_mode = accumulate_mode
         self.ops = ALL_OPS
         self.validators = ALL_VALIDATORS
+        self.last_context_tensor = None
 
     def forward(self, worktree_tensor: torch.Tensor) -> torch.Tensor:
         batch_size = worktree_tensor.shape[0]
@@ -178,9 +222,13 @@ class HarnessModel(nn.Module):
         )
 
         # Outer recurrent: accumulate clean context across collection steps
+        accum_fn = (
+            _concat_context_weighted if self.accumulate_mode == "weighted"
+            else _concat_context
+        )
         context_ft, _ = ft_recurrent(
             ft_checked,
-            accumulate_output=_concat_context,
+            accumulate_output=accum_fn,
             task_prompt=self.task_prompt,
             llm_method=self.llm_method,
         )
@@ -189,6 +237,7 @@ class HarnessModel(nn.Module):
         context_prompts = make_tensor(["gather context"] * batch_size, tmpdir)
         context_ft.ft_forward(context_prompts)
         context_tensor = context_ft.ft_static_tensor
+        self.last_context_tensor = context_tensor
 
         # ── Stage 2: code_gen ──
         ft_gen = FutureTensor(

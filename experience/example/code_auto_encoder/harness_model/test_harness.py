@@ -42,17 +42,41 @@ def _parse_mask_type(file_info_entry: str) -> str:
     return mt if mt in ("short", "long", "structural") else "unknown"
 
 
+def _parse_mask_range(file_info_entry: str):
+    """Extract (mask_start, mask_end) from file_info entry, or (None, None) if unparseable."""
+    import re
+    m = re.search(r":(\d+)-(\d+)", file_info_entry)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None, None
+
+
+def _compute_noise_metric(context: str, mask_start: int, mask_end: int,
+                           window: int = 30):
+    """Parse line numbers from accumulated context, compute mask-proximity ratio."""
+    import re
+    line_nos = [int(m) for m in re.findall(r"^\s{0,6}(\d+)\t", context, re.MULTILINE)]
+    if not line_nos:
+        return None
+    lo, hi = mask_start - window, mask_end + window
+    relevant = sum(1 for n in line_nos if lo <= n <= hi)
+    return {"total": len(line_nos), "relevant": relevant, "ratio": relevant / len(line_nos)}
+
+
 def _compute_extra_metrics(
     output_tensor,
     gt_tensor,
     file_info: List[str],
     harness_loss: List[float],
     total_batch_size: int,
+    context_tensor=None,
 ) -> None:
-    """Compute and print AST pass rate, Exact Match, and per-mask-type loss."""
+    """Compute and print AST pass rate, Exact Match, per-mask-type loss, and noise metric."""
     ast_pass: List[int] = []
     exact_match: List[int] = []
     type_losses: Dict[str, List[float]] = defaultdict(list)
+    noise_ratios: List[float] = []
+    context_lens: List[int] = []
 
     for i in range(total_batch_size):
         actual = _read_storage(output_tensor, i)
@@ -68,9 +92,25 @@ def _compute_extra_metrics(
         exact_match.append(1 if actual == gt else 0)
         type_losses[mask_type].append(harness_loss[i])
 
+        if context_tensor is not None:
+            ctx = _read_storage(context_tensor, i)
+            context_lens.append(len(ctx))
+            mask_start, mask_end = _parse_mask_range(file_info[i])
+            if mask_start is not None:
+                nm = _compute_noise_metric(ctx, mask_start, mask_end)
+                if nm is not None:
+                    noise_ratios.append(nm["ratio"])
+
     n = len(ast_pass)
     print(f"\nAST pass rate:   {sum(ast_pass)/n:.2%}  ({sum(ast_pass)}/{n})")
     print(f"Exact match rate: {sum(exact_match)/n:.2%}  ({sum(exact_match)}/{n})")
+
+    if context_lens:
+        print(f"\nContext stats (accumulated context):")
+        print(f"  mean_len : {sum(context_lens)/len(context_lens):.0f} chars")
+        if noise_ratios:
+            print(f"  relevance: {sum(noise_ratios)/len(noise_ratios):.2%}  "
+                  f"(fraction of lines within ±30 of mask)")
 
     if any(k != "unknown" for k in type_losses):
         print(f"\nStratified loss by mask_type:")
@@ -91,6 +131,7 @@ def test_harness(
     dataset_dir: Optional[str] = None,
     split: Optional[str] = None,
     dataset_index_dir: Optional[str] = None,
+    accumulate_mode: str = "naive",
 ) -> List[float]:
     """Run harness model test.
 
@@ -123,13 +164,14 @@ def test_harness(
         gt_preview = _read_storage(gt_tensor, i)[:60].replace("\n", "\\n")
         print(f"  [{i}] {info} -> {gt_preview}...")
 
-    print(f"\nRunning HarnessModel (llm_method={llm_method})...")
+    print(f"\nRunning HarnessModel (llm_method={llm_method}, accumulate_mode={accumulate_mode})...")
     model = HarnessModel(
         max_codegen_steps=max_codegen_steps,
         max_context_collects=max_context_collects,
         max_tool_call_retries=max_tool_call_retries,
         topk=topk,
         llm_method=llm_method,
+        accumulate_mode=accumulate_mode,
     )
     output = model(worktree_tensor)
 
@@ -153,7 +195,8 @@ def test_harness(
     mean_loss = loss.float().mean().item()
     print(f"\nMean loss: {mean_loss:.4f}")
 
-    _compute_extra_metrics(output, gt_tensor, file_info, harness_loss, total_batch_size)
+    _compute_extra_metrics(output, gt_tensor, file_info, harness_loss, total_batch_size,
+                           context_tensor=model.last_context_tensor)
 
     return harness_loss
 
@@ -178,6 +221,10 @@ if __name__ == "__main__":
         "--dataset-index-dir", type=str, default=None,
         help="Path to dataset_index/ directory. Auto-detected if not specified.",
     )
+    parser.add_argument(
+        "--accumulate-mode", type=str, default="naive", choices=["naive", "weighted"],
+        help="Context accumulation mode: 'naive' (equal-weight concat) or 'weighted' (step labels + budget trimming).",
+    )
 
     args = parser.parse_args()
 
@@ -195,4 +242,5 @@ if __name__ == "__main__":
         topk=args.topk,
         split=args.split,
         dataset_index_dir=args.dataset_index_dir,
+        accumulate_mode=args.accumulate_mode,
     )
