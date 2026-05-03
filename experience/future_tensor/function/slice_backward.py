@@ -15,6 +15,8 @@ from typing import List, Union
 
 import torch
 
+import sympy
+
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.status import Status
 
@@ -65,7 +67,7 @@ def slice_backward(
             return ("", Status.confidence(0.0))  # Zero/empty for positions not in the slice
         return await grad_output.ft_async_get(out_coords, prompt)
 
-    result = FutureTensor(original_shape, grad_output.st_relative_to, scatter_async_get)
+    result = FutureTensor(grad_output.ft_static_tensor.st_relative_to, scatter_async_get, [sympy.Integer(s) for s in original_shape])
 
     # If grad_output is forwarded, materialize immediately
     if grad_output.ft_forwarded:
@@ -79,7 +81,7 @@ def _scatter_storage(grad_output, result, original_shape, per_dim):
     """Scatter grad_output storage back to result at original positions."""
     import shutil
 
-    out_shape = grad_output.shape
+    out_shape = grad_output.ft_capacity_shape
 
     for out_coords in itertools.product(*[range(s) for s in out_shape]) if out_shape else [()]:
         out_coords = list(out_coords) if out_shape else []
@@ -103,7 +105,7 @@ def _scatter_storage(grad_output, result, original_shape, per_dim):
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
             # Copy coefficient (confidence) from grad_output
-            result._tensor.data.flatten()[in_flat] = grad_output._tensor.data.flatten()[out_flat]
+            result.ft_static_tensor.data.flatten()[in_flat] = grad_output.ft_static_tensor.data.flatten()[out_flat]
 
 
 def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
@@ -118,12 +120,15 @@ def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
 def _storage_path(ft: FutureTensor, flat_index: int) -> str:
     digits = list(str(flat_index))
     return os.path.join(
-        ft.st_relative_to, ft.st_tensor_uid,
+        ft.ft_static_tensor.st_relative_to, ft.ft_static_tensor.st_tensor_uid,
         "storage", os.path.join(*digits), "data",
     )
 
 
 if __name__ == "__main__":
+    import sympy
+    import torch
+
     import tempfile
     import asyncio
 
@@ -156,10 +161,10 @@ if __name__ == "__main__":
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
             return ("unused", Status.confidence(1.0))
-        ft = FutureTensor(shape, tmpdir, dummy_get)
+        ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
-        assign_tensor(ft._tensor, result_tensor)
+        assign_tensor(ft.ft_static_tensor, result_tensor)
         ft.ft_forwarded = True
         return ft
 
@@ -182,7 +187,7 @@ if __name__ == "__main__":
         # Grad output from slicing [2:5] of a [10] tensor
         grad = make_forwarded_ft([3], ["g0", "g1", "g2"], tmpdir)
         r = slice_backward(grad, [10], [slice(2, 5)])
-        run_test("1D scatter shape", r.shape == [10])
+        run_test("1D scatter shape", r.ft_capacity_shape == [10])
         run_test("1D scatter forwarded", r.ft_forwarded is True)
         run_test("1D scatter [0] empty", read_ft_element(r, 0) is None)
         run_test("1D scatter [1] empty", read_ft_element(r, 1) is None)
@@ -193,14 +198,14 @@ if __name__ == "__main__":
         run_test("1D scatter [9] empty", read_ft_element(r, 9) is None)
 
         # Coeff check
-        run_test("1D coeff [2] = 1", r._tensor.data.flatten()[2].item() == 1.0)
-        run_test("1D coeff [0] = 0", r._tensor.data.flatten()[0].item() == 0.0)
+        run_test("1D coeff [2] = 1", r.ft_static_tensor.data.flatten()[2].item() == 1.0)
+        run_test("1D coeff [0] = 0", r.ft_static_tensor.data.flatten()[0].item() == 0.0)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Step slice backward
         grad = make_forwarded_ft([4], ["s0", "s1", "s2", "s3"], tmpdir)
         r = slice_backward(grad, [10], [slice(1, 9, 2)])
-        run_test("1D step scatter shape", r.shape == [10])
+        run_test("1D step scatter shape", r.ft_capacity_shape == [10])
         run_test("1D step [0] empty", read_ft_element(r, 0) is None)
         run_test("1D step [1] = s0", read_ft_element(r, 1) == "s0")
         run_test("1D step [2] empty", read_ft_element(r, 2) is None)
@@ -208,7 +213,7 @@ if __name__ == "__main__":
         run_test("1D step [5] = s2", read_ft_element(r, 5) == "s2")
         run_test("1D step [7] = s3", read_ft_element(r, 7) == "s3")
         run_test("1D step [9] empty", read_ft_element(r, 9) is None)
-        run_test("1D step coeff [1]", r._tensor.data.flatten()[1].item() == 1.0)
+        run_test("1D step coeff [1]", r.ft_static_tensor.data.flatten()[1].item() == 1.0)
 
     # === Group 2: 2D scatter (tests 21-45) ===
 
@@ -217,7 +222,7 @@ if __name__ == "__main__":
         grad_data = [f"g{i}{j}" for i in range(2) for j in range(5)]
         grad = make_forwarded_ft([2, 5], grad_data, tmpdir)
         r = slice_backward(grad, [4, 5], [slice(1, 3), slice(None)])
-        run_test("2D row scatter shape", r.shape == [4, 5])
+        run_test("2D row scatter shape", r.ft_capacity_shape == [4, 5])
         run_test("2D row [0,0] empty", read_ft_element(r, 0) is None)  # row 0
         run_test("2D row [1,0] = g00", read_ft_element(r, 5) == "g00")
         run_test("2D row [1,4] = g04", read_ft_element(r, 9) == "g04")
@@ -230,7 +235,7 @@ if __name__ == "__main__":
         grad_data = [f"g{i}{j}" for i in range(4) for j in range(2)]
         grad = make_forwarded_ft([4, 2], grad_data, tmpdir)
         r = slice_backward(grad, [4, 5], [slice(None), slice(2, 4)])
-        run_test("2D col scatter shape", r.shape == [4, 5])
+        run_test("2D col scatter shape", r.ft_capacity_shape == [4, 5])
         run_test("2D col [0,0] empty", read_ft_element(r, 0) is None)
         run_test("2D col [0,1] empty", read_ft_element(r, 1) is None)
         run_test("2D col [0,2] = g00", read_ft_element(r, 2) == "g00")
@@ -243,7 +248,7 @@ if __name__ == "__main__":
         # Int index on dim0: slice [2, :] from [4,3] -> grad shape [3]
         grad = make_forwarded_ft([3], ["ga", "gb", "gc"], tmpdir)
         r = slice_backward(grad, [4, 3], [2, slice(None)])
-        run_test("2D int dim0 scatter shape", r.shape == [4, 3])
+        run_test("2D int dim0 scatter shape", r.ft_capacity_shape == [4, 3])
         run_test("2D int [0,0] empty", read_ft_element(r, 0) is None)
         run_test("2D int [2,0] = ga", read_ft_element(r, 6) == "ga")
         run_test("2D int [2,1] = gb", read_ft_element(r, 7) == "gb")
@@ -254,7 +259,7 @@ if __name__ == "__main__":
         # Int index on dim1: slice [:,1] from [3,4] -> grad shape [3]
         grad = make_forwarded_ft([3], ["x", "y", "z"], tmpdir)
         r = slice_backward(grad, [3, 4], [slice(None), 1])
-        run_test("2D int dim1 scatter shape", r.shape == [3, 4])
+        run_test("2D int dim1 scatter shape", r.ft_capacity_shape == [3, 4])
         run_test("2D int dim1 [0,0] empty", read_ft_element(r, 0) is None)
         run_test("2D int dim1 [0,1] = x", read_ft_element(r, 1) == "x")
         run_test("2D int dim1 [1,1] = y", read_ft_element(r, 5) == "y")
@@ -268,7 +273,7 @@ if __name__ == "__main__":
         grad_data = [f"g{i}{j}" for i in range(4) for j in range(2)]
         grad = make_forwarded_ft([4, 2], grad_data, tmpdir)
         r = slice_backward(grad, [3, 4, 2], [0, slice(None), slice(None)])
-        run_test("3D dim0=0 scatter shape", r.shape == [3, 4, 2])
+        run_test("3D dim0=0 scatter shape", r.ft_capacity_shape == [3, 4, 2])
         run_test("3D [0,0,0] = g00", read_ft_element(r, 0) == "g00")
         run_test("3D [0,3,1] = g31", read_ft_element(r, 7) == "g31")
         run_test("3D [1,0,0] empty", read_ft_element(r, 8) is None)
@@ -279,7 +284,7 @@ if __name__ == "__main__":
         grad_data = [f"g{i}{j}" for i in range(2) for j in range(3)]
         grad = make_forwarded_ft([2, 3], grad_data, tmpdir)
         r = slice_backward(grad, [2, 3, 4], [slice(None), slice(None), 0])
-        run_test("3D dim2=0 scatter shape", r.shape == [2, 3, 4])
+        run_test("3D dim2=0 scatter shape", r.ft_capacity_shape == [2, 3, 4])
         run_test("3D [0,0,0] = g00", read_ft_element(r, 0) == "g00")
         run_test("3D [0,0,1] empty", read_ft_element(r, 1) is None)
         run_test("3D [0,1,0] = g01", read_ft_element(r, 4) == "g01")
@@ -290,7 +295,7 @@ if __name__ == "__main__":
         # Slice [1,2,:] from [3,4,5] -> scalar extraction -> grad shape [5]
         grad = make_forwarded_ft([5], [f"e{i}" for i in range(5)], tmpdir)
         r = slice_backward(grad, [3, 4, 5], [1, 2, slice(None)])
-        run_test("3D two-int scatter shape", r.shape == [3, 4, 5])
+        run_test("3D two-int scatter shape", r.ft_capacity_shape == [3, 4, 5])
         # Position [1,2,*] = flat indices: 1*20 + 2*5 + k = 30+k
         run_test("3D [1,2,0] = e0", read_ft_element(r, 30) == "e0")
         run_test("3D [1,2,4] = e4", read_ft_element(r, 34) == "e4")
@@ -306,10 +311,10 @@ if __name__ == "__main__":
             received.append(coords)
             return (f"lazy_{coords}", Status.confidence(1.0))
 
-        grad = FutureTensor([3], tmpdir, lazy_grad_get)
+        grad = FutureTensor(tmpdir, lazy_grad_get, [sympy.Integer(3)])
         # Don't forward grad — backward should be lazy too
         r = slice_backward(grad, [8], [slice(2, 5)])
-        run_test("lazy backward shape", r.shape == [8])
+        run_test("lazy backward shape", r.ft_capacity_shape == [8])
         run_test("lazy backward not forwarded", r.ft_forwarded is False)
 
         # Forward the result
@@ -328,7 +333,7 @@ if __name__ == "__main__":
         async def lazy_2d_get(coords, prompt):
             return (f"g{coords}", Status.confidence(1.0))
 
-        grad = FutureTensor([2, 2], tmpdir, lazy_2d_get)
+        grad = FutureTensor(tmpdir, lazy_2d_get, [sympy.Integer(2), sympy.Integer(2)])
         r = slice_backward(grad, [4, 4], [slice(1, 3), slice(0, 2)])
         prompt_t = st_make_tensor(["p"] * 16, tmpdir)
         r.ft_forward(prompt_t)
@@ -346,7 +351,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         grad = make_forwarded_ft([3], ["a", "b", "c"], tmpdir)
         r = slice_backward(grad, [5], [slice(-3, None)])
-        run_test("neg slice scatter shape", r.shape == [5])
+        run_test("neg slice scatter shape", r.ft_capacity_shape == [5])
         run_test("neg [0] empty", read_ft_element(r, 0) is None)
         run_test("neg [1] empty", read_ft_element(r, 1) is None)
         run_test("neg [2] = a", read_ft_element(r, 2) == "a")
@@ -356,7 +361,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         grad = make_forwarded_ft([2], ["m", "n"], tmpdir)
         r = slice_backward(grad, [6], [slice(4, 0, -2)])
-        run_test("neg step scatter shape", r.shape == [6])
+        run_test("neg step scatter shape", r.ft_capacity_shape == [6])
         # slice(4, 0, -2) on size 6 -> indices [4, 2]
         run_test("neg step [4] = m", read_ft_element(r, 4) == "m")
         run_test("neg step [2] = n", read_ft_element(r, 2) == "n")
@@ -367,7 +372,7 @@ if __name__ == "__main__":
         # Scalar backward: int index on all dims
         grad = make_forwarded_ft([], ["scalar_grad"], tmpdir)
         r = slice_backward(grad, [3, 4], [1, 2])
-        run_test("scalar backward shape", r.shape == [3, 4])
+        run_test("scalar backward shape", r.ft_capacity_shape == [3, 4])
         # Position [1,2] = flat 1*4+2 = 6
         run_test("scalar [1,2] = scalar_grad", read_ft_element(r, 6) == "scalar_grad")
         run_test("scalar [0,0] empty", read_ft_element(r, 0) is None)
@@ -376,7 +381,7 @@ if __name__ == "__main__":
         # Full slice backward (identity)
         grad = make_forwarded_ft([5], [f"f{i}" for i in range(5)], tmpdir)
         r = slice_backward(grad, [5], [slice(None)])
-        run_test("identity backward shape", r.shape == [5])
+        run_test("identity backward shape", r.ft_capacity_shape == [5])
         for i in range(5):
             run_test(f"identity [{i}] = f{i}", read_ft_element(r, i) == f"f{i}")
 
@@ -391,14 +396,14 @@ if __name__ == "__main__":
         # Forward slice
         slices_spec = [slice(3, 7)]
         fwd = slice_forward(ft, slices_spec)
-        run_test("roundtrip fwd shape", fwd.shape == [4])
+        run_test("roundtrip fwd shape", fwd.ft_capacity_shape == [4])
         run_test("roundtrip fwd [0]", read_ft_element(fwd, 0) == "orig_3")
 
         # Backward scatter
         grad_data = ["grad_0", "grad_1", "grad_2", "grad_3"]
         grad_ft = make_forwarded_ft([4], grad_data, tmpdir)
         bwd = slice_backward(grad_ft, [10], slices_spec)
-        run_test("roundtrip bwd shape", bwd.shape == [10])
+        run_test("roundtrip bwd shape", bwd.ft_capacity_shape == [10])
         run_test("roundtrip bwd [3] = grad_0", read_ft_element(bwd, 3) == "grad_0")
         run_test("roundtrip bwd [6] = grad_3", read_ft_element(bwd, 6) == "grad_3")
         run_test("roundtrip bwd [0] empty", read_ft_element(bwd, 0) is None)
@@ -411,12 +416,12 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([5, 5], data, tmpdir)
         slices_spec = [slice(1, 4), slice(2, 5)]
         fwd = slice_forward(ft, slices_spec)
-        run_test("roundtrip 2D fwd shape", fwd.shape == [3, 3])
+        run_test("roundtrip 2D fwd shape", fwd.ft_capacity_shape == [3, 3])
 
         grad_data = [f"g{i}{j}" for i in range(3) for j in range(3)]
         grad_ft = make_forwarded_ft([3, 3], grad_data, tmpdir)
         bwd = slice_backward(grad_ft, [5, 5], slices_spec)
-        run_test("roundtrip 2D bwd shape", bwd.shape == [5, 5])
+        run_test("roundtrip 2D bwd shape", bwd.ft_capacity_shape == [5, 5])
         # [1,2] = flat 7, should be g00
         run_test("roundtrip 2D [1,2] = g00", read_ft_element(bwd, 7) == "g00")
         # [3,4] = flat 19, should be g22

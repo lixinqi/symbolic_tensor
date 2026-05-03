@@ -1,24 +1,25 @@
 
 Status = Import[status].Status
 
-FutureTensor[$shape list[int]] :=
-    SymbolicTensor[$shape list[int]]
-    * $ft_forwarded bool
-    * $ft_forward (void <- $prompt_tensor SymbolicTensor[$shape list[int]])
-    * $ft_async_get (Awaitable[(str, $confidence Status)] <- $coordinates list[int] <- $prompt)
+# FutureTensor is an interface.
+# It is a plain scalar torch.Tensor (shape=(), dtype=bfloat16, value=1),
+# monkey-patched with ft_* attributes. Not a subclass of SymbolicTensor.
+# Status / coefficient semantics live inside ft_static_tensor and
+# ft_incremental_concated_tensors, not on the scalar itself.
 
-FutureTensor.ft_forward :=
-    void
-    <- $self
-    <- $prompt_tensor SymbolicTensor[$shape list[int]]
-    # inline
-    <- { early return if self.ft_forwarded }
-    <- { set self.ft_forwarded at the end of this function }
-    <- (AsyncList[$coordinates list[int]] <- $self.shape)
-    <- (AsyncList[$prompt str] <- $prompt_tensor)
-    <- Async[($sole_elem_output, $confidence Status)<- self.ft_async_get <- $coordinates <- $prompt]
-    <- (void
-        <- { self.data[coordinates] = Status.convert_status_to_float(confidence) }
-        <- $self.st_assign
-        <- Import[symbolic_tensor make_tensor]
-        <- list[$sole_elem_output])
+FutureTensor :=
+    torch.Tensor[(), bfloat16, value=1]
+    * $ft_static_tensor SymbolicTensor[...]
+    * $ft_incremental_concated_tensors list[($tensor SymbolicTensor[...], $concat_axis int)]
+    * $ft_shape_schema list[sympy.Symbol]
+    * $ft_capacity_shape list[int]
+    * $ft_forwarded bool
+    * $ft_forward (void <- $prompt FutureTensor)
+    * $ft_async_get (Awaitable[($output str, $status Status)] <- $coordinates list[int] <- $prompt str)
+    * $ft_get_materialized_value (($coefficient float, $element_file_path str) <- $coordinates list[int])
+    * $ft_reset_materialized_value (void <- $coordinates list[int] <- $coefficient float <- $filepath str <- $symlink bool)
+
+# The logical view tensor is always:
+#   concat(ft_static_tensor, *ft_incremental_concated_tensors)
+# ft_capacity_shape must equal the shape of the logical view tensor.
+# ft_shape_schema may contain symbolic dims (sympy.Symbol) for static shape annotation.

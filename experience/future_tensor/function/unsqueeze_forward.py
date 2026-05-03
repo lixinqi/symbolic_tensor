@@ -13,6 +13,8 @@ from typing import List
 
 import torch
 
+import sympy
+
 from experience.future_tensor.future_tensor import FutureTensor
 
 
@@ -26,7 +28,7 @@ def unsqueeze_forward(input: FutureTensor, dim: int) -> FutureTensor:
         dim: Position at which to insert the new dimension.
             Supports negative indexing.
     """
-    input_shape = input.shape
+    input_shape = input.ft_capacity_shape
     ndim = len(input_shape)
 
     # Normalize negative dim (allow dim in range [-(ndim+1), ndim])
@@ -46,7 +48,7 @@ def unsqueeze_forward(input: FutureTensor, dim: int) -> FutureTensor:
         original_coords = map_coords(coordinates)
         return await input.ft_async_get(original_coords, prompt)
 
-    result = FutureTensor(output_shape, input.st_relative_to, unsqueezed_async_get)
+    result = FutureTensor(input.ft_static_tensor.st_relative_to, unsqueezed_async_get, [sympy.Integer(s) for s in output_shape])
 
     # If input is already forwarded, copy storage directly
     if input.ft_forwarded:
@@ -61,7 +63,7 @@ def _copy_unsqueezed_storage(input, output, output_shape, dim):
     import shutil
     import itertools
 
-    input_shape = input.shape
+    input_shape = input.ft_capacity_shape
 
     for in_coords in itertools.product(*[range(s) for s in input_shape]) if input_shape else [()]:
         in_coords = list(in_coords) if input_shape else []
@@ -78,7 +80,7 @@ def _copy_unsqueezed_storage(input, output, output_shape, dim):
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
             # Copy coefficient (confidence) from input
-            output._tensor.data.flatten()[out_flat] = input._tensor.data.flatten()[in_flat]
+            output.ft_static_tensor.data.flatten()[out_flat] = input.ft_static_tensor.data.flatten()[in_flat]
 
 
 def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
@@ -93,12 +95,15 @@ def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
 def _storage_path(ft: FutureTensor, flat_index: int) -> str:
     digits = list(str(flat_index))
     return os.path.join(
-        ft.st_relative_to, ft.st_tensor_uid,
+        ft.ft_static_tensor.st_relative_to, ft.ft_static_tensor.st_tensor_uid,
         "storage", os.path.join(*digits), "data",
     )
 
 
 if __name__ == "__main__":
+    import sympy
+    import torch
+
     import tempfile
     import itertools
     import asyncio
@@ -132,10 +137,10 @@ if __name__ == "__main__":
     def make_forwarded_ft(shape, data_list, tmpdir):
         async def dummy_get(coords, prompt):
             return ("unused", Status.confidence(1.0))
-        ft = FutureTensor(shape, tmpdir, dummy_get)
+        ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
-        assign_tensor(ft._tensor, result_tensor)
+        assign_tensor(ft.ft_static_tensor, result_tensor)
         ft.ft_forwarded = True
         return ft
 
@@ -159,26 +164,26 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([5], data, tmpdir)
 
         r = unsqueeze_forward(ft, 0)
-        run_test("1D dim=0 shape", r.shape == [1, 5])
+        run_test("1D dim=0 shape", r.ft_capacity_shape == [1, 5])
         run_test("1D dim=0 forwarded", r.ft_forwarded is True)
         run_test("1D dim=0 [0,0]", read_ft_element(r, 0) == "e0")
         run_test("1D dim=0 [0,1]", read_ft_element(r, 1) == "e1")
         run_test("1D dim=0 [0,4]", read_ft_element(r, 4) == "e4")
 
         r = unsqueeze_forward(ft, 1)
-        run_test("1D dim=1 shape", r.shape == [5, 1])
+        run_test("1D dim=1 shape", r.ft_capacity_shape == [5, 1])
         run_test("1D dim=1 forwarded", r.ft_forwarded is True)
         run_test("1D dim=1 [0,0]", read_ft_element(r, 0) == "e0")
         run_test("1D dim=1 [1,0]", read_ft_element(r, 1) == "e1")
         run_test("1D dim=1 [4,0]", read_ft_element(r, 4) == "e4")
 
         r = unsqueeze_forward(ft, -1)
-        run_test("1D dim=-1 shape", r.shape == [5, 1])
+        run_test("1D dim=-1 shape", r.ft_capacity_shape == [5, 1])
         run_test("1D dim=-1 [0,0]", read_ft_element(r, 0) == "e0")
         run_test("1D dim=-1 [4,0]", read_ft_element(r, 4) == "e4")
 
         r = unsqueeze_forward(ft, -2)
-        run_test("1D dim=-2 shape", r.shape == [1, 5])
+        run_test("1D dim=-2 shape", r.ft_capacity_shape == [1, 5])
         run_test("1D dim=-2 [0,0]", read_ft_element(r, 0) == "e0")
 
     # === Group 2: 2D unsqueeze (tests 16-40) ===
@@ -189,14 +194,14 @@ if __name__ == "__main__":
 
         # dim=0: [3,4] -> [1,3,4]
         r = unsqueeze_forward(ft, 0)
-        run_test("2D dim=0 shape", r.shape == [1, 3, 4])
+        run_test("2D dim=0 shape", r.ft_capacity_shape == [1, 3, 4])
         run_test("2D dim=0 [0,0,0]", read_ft_element(r, 0) == "r0c0")
         run_test("2D dim=0 [0,1,2]", read_ft_element(r, 6) == "r1c2")
         run_test("2D dim=0 [0,2,3]", read_ft_element(r, 11) == "r2c3")
 
         # dim=1: [3,4] -> [3,1,4]
         r = unsqueeze_forward(ft, 1)
-        run_test("2D dim=1 shape", r.shape == [3, 1, 4])
+        run_test("2D dim=1 shape", r.ft_capacity_shape == [3, 1, 4])
         run_test("2D dim=1 [0,0,0]", read_ft_element(r, 0) == "r0c0")
         run_test("2D dim=1 [0,0,3]", read_ft_element(r, 3) == "r0c3")
         run_test("2D dim=1 [1,0,0]", read_ft_element(r, 4) == "r1c0")
@@ -204,7 +209,7 @@ if __name__ == "__main__":
 
         # dim=2: [3,4] -> [3,4,1]
         r = unsqueeze_forward(ft, 2)
-        run_test("2D dim=2 shape", r.shape == [3, 4, 1])
+        run_test("2D dim=2 shape", r.ft_capacity_shape == [3, 4, 1])
         run_test("2D dim=2 [0,0,0]", read_ft_element(r, 0) == "r0c0")
         run_test("2D dim=2 [0,1,0]", read_ft_element(r, 1) == "r0c1")
         run_test("2D dim=2 [1,0,0]", read_ft_element(r, 4) == "r1c0")
@@ -212,15 +217,15 @@ if __name__ == "__main__":
 
         # Negative dims
         r = unsqueeze_forward(ft, -1)
-        run_test("2D dim=-1 shape", r.shape == [3, 4, 1])
+        run_test("2D dim=-1 shape", r.ft_capacity_shape == [3, 4, 1])
         run_test("2D dim=-1 [0,0,0]", read_ft_element(r, 0) == "r0c0")
 
         r = unsqueeze_forward(ft, -2)
-        run_test("2D dim=-2 shape", r.shape == [3, 1, 4])
+        run_test("2D dim=-2 shape", r.ft_capacity_shape == [3, 1, 4])
         run_test("2D dim=-2 [0,0,0]", read_ft_element(r, 0) == "r0c0")
 
         r = unsqueeze_forward(ft, -3)
-        run_test("2D dim=-3 shape", r.shape == [1, 3, 4])
+        run_test("2D dim=-3 shape", r.ft_capacity_shape == [1, 3, 4])
         run_test("2D dim=-3 [0,0,0]", read_ft_element(r, 0) == "r0c0")
 
     # === Group 3: 3D unsqueeze (tests 41-60) ===
@@ -230,23 +235,23 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([2, 3, 4], data, tmpdir)
 
         r = unsqueeze_forward(ft, 0)
-        run_test("3D dim=0 shape", r.shape == [1, 2, 3, 4])
+        run_test("3D dim=0 shape", r.ft_capacity_shape == [1, 2, 3, 4])
         run_test("3D dim=0 [0,0,0,0]", read_ft_element(r, 0) == "v0")
         run_test("3D dim=0 [0,1,2,3]", read_ft_element(r, 23) == "v23")
 
         r = unsqueeze_forward(ft, 1)
-        run_test("3D dim=1 shape", r.shape == [2, 1, 3, 4])
+        run_test("3D dim=1 shape", r.ft_capacity_shape == [2, 1, 3, 4])
         run_test("3D dim=1 [0,0,0,0]", read_ft_element(r, 0) == "v0")
         run_test("3D dim=1 [1,0,0,0]", read_ft_element(r, 12) == "v12")
 
         r = unsqueeze_forward(ft, 2)
-        run_test("3D dim=2 shape", r.shape == [2, 3, 1, 4])
+        run_test("3D dim=2 shape", r.ft_capacity_shape == [2, 3, 1, 4])
         run_test("3D dim=2 [0,0,0,0]", read_ft_element(r, 0) == "v0")
         run_test("3D dim=2 [0,1,0,0]", read_ft_element(r, 4) == "v4")
         run_test("3D dim=2 [1,0,0,0]", read_ft_element(r, 12) == "v12")
 
         r = unsqueeze_forward(ft, 3)
-        run_test("3D dim=3 shape", r.shape == [2, 3, 4, 1])
+        run_test("3D dim=3 shape", r.ft_capacity_shape == [2, 3, 4, 1])
         run_test("3D dim=3 [0,0,0,0]", read_ft_element(r, 0) == "v0")
         run_test("3D dim=3 [0,0,1,0]", read_ft_element(r, 1) == "v1")
         run_test("3D dim=3 [0,1,0,0]", read_ft_element(r, 4) == "v4")
@@ -256,7 +261,7 @@ if __name__ == "__main__":
         # Double unsqueeze
         r = unsqueeze_forward(ft, 0)
         r2 = unsqueeze_forward(r, 0)
-        run_test("double unsqueeze shape", r2.shape == [1, 1, 2, 3, 4])
+        run_test("double unsqueeze shape", r2.ft_capacity_shape == [1, 1, 2, 3, 4])
         run_test("double unsqueeze [0,0,0,0,0]", read_ft_element(r2, 0) == "v0")
         run_test("double unsqueeze [0,0,1,2,3]", read_ft_element(r2, 23) == "v23")
 
@@ -269,9 +274,9 @@ if __name__ == "__main__":
             received.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 
-        ft = FutureTensor([4, 3], tmpdir, tracking_get)
+        ft = FutureTensor(tmpdir, tracking_get, [sympy.Integer(4), sympy.Integer(3)])
         r = unsqueeze_forward(ft, 0)
-        run_test("lazy unsqueeze shape", r.shape == [1, 4, 3])
+        run_test("lazy unsqueeze shape", r.ft_capacity_shape == [1, 4, 3])
         run_test("lazy unsqueeze not forwarded", r.ft_forwarded is False)
 
         # Forward the unsqueezed tensor
@@ -299,9 +304,9 @@ if __name__ == "__main__":
             received2.append(coords)
             return (f"r{coords}", Status.confidence(1.0))
 
-        ft = FutureTensor([5], tmpdir, tracking_get2)
+        ft = FutureTensor(tmpdir, tracking_get2, [sympy.Integer(5)])
         r = unsqueeze_forward(ft, 1)
-        run_test("lazy dim=1 shape", r.shape == [5, 1])
+        run_test("lazy dim=1 shape", r.ft_capacity_shape == [5, 1])
 
         prompt_flat = st_make_tensor([["p"]] * 5, tmpdir)
         r.ft_forward(prompt_flat)
@@ -314,9 +319,9 @@ if __name__ == "__main__":
         async def simple_get(coords, prompt):
             return (f"x{coords}", Status.confidence(1.0))
 
-        ft = FutureTensor([2, 3], tmpdir, simple_get)
+        ft = FutureTensor(tmpdir, simple_get, [sympy.Integer(2), sympy.Integer(3)])
         r = unsqueeze_forward(ft, 1)
-        run_test("lazy mid-dim shape", r.shape == [2, 1, 3])
+        run_test("lazy mid-dim shape", r.ft_capacity_shape == [2, 1, 3])
 
         prompt_flat = st_make_tensor([[["p"] * 3]] * 2, tmpdir)
         r.ft_forward(prompt_flat)
@@ -333,7 +338,7 @@ if __name__ == "__main__":
 
         r = unsqueeze_forward(ft, 0)
         r = unsqueeze_forward(r, 2)
-        run_test("chain [2,3]->dim0->dim2 shape", r.shape == [1, 2, 1, 3])
+        run_test("chain [2,3]->dim0->dim2 shape", r.ft_capacity_shape == [1, 2, 1, 3])
         run_test("chain [0,0,0,0]", read_ft_element(r, 0) == "d0")
         run_test("chain [0,0,0,2]", read_ft_element(r, 2) == "d2")
         run_test("chain [0,1,0,0]", read_ft_element(r, 3) == "d3")
@@ -346,7 +351,7 @@ if __name__ == "__main__":
         r = unsqueeze_forward(ft, 0)
         r = unsqueeze_forward(r, 0)
         r = unsqueeze_forward(r, 0)
-        run_test("triple unsqueeze shape", r.shape == [1, 1, 1, 3])
+        run_test("triple unsqueeze shape", r.ft_capacity_shape == [1, 1, 1, 3])
         run_test("triple [0,0,0,0]", read_ft_element(r, 0) == "a")
         run_test("triple [0,0,0,1]", read_ft_element(r, 1) == "b")
         run_test("triple [0,0,0,2]", read_ft_element(r, 2) == "c")
@@ -361,9 +366,9 @@ if __name__ == "__main__":
 
         # Unsqueeze then slice
         r = unsqueeze_forward(ft, 0)  # [1, 8]
-        run_test("unsqueeze+slice: after unsqueeze", r.shape == [1, 8])
+        run_test("unsqueeze+slice: after unsqueeze", r.ft_capacity_shape == [1, 8])
         r2 = slice_forward(r, [0, slice(2, 6)])  # int + slice -> [4]
-        run_test("unsqueeze+slice: after slice shape", r2.shape == [4])
+        run_test("unsqueeze+slice: after slice shape", r2.ft_capacity_shape == [4])
         run_test("unsqueeze+slice: [0]", read_ft_element(r2, 0) == "item_2")
         run_test("unsqueeze+slice: [3]", read_ft_element(r2, 3) == "item_5")
 
@@ -375,9 +380,9 @@ if __name__ == "__main__":
 
         # Slice then unsqueeze
         r = slice_forward(ft, [slice(1, 3), slice(None)])  # [2, 3]
-        run_test("slice+unsqueeze: after slice", r.shape == [2, 3])
+        run_test("slice+unsqueeze: after slice", r.ft_capacity_shape == [2, 3])
         r2 = unsqueeze_forward(r, 1)  # [2, 1, 3]
-        run_test("slice+unsqueeze: after unsqueeze shape", r2.shape == [2, 1, 3])
+        run_test("slice+unsqueeze: after unsqueeze shape", r2.ft_capacity_shape == [2, 1, 3])
         run_test("slice+unsqueeze: [0,0,0] = r1c0", read_ft_element(r2, 0) == "r1c0")
         run_test("slice+unsqueeze: [0,0,2] = r1c2", read_ft_element(r2, 2) == "r1c2")
         run_test("slice+unsqueeze: [1,0,0] = r2c0", read_ft_element(r2, 3) == "r2c0")

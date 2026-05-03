@@ -107,14 +107,14 @@ class FtMoe(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor, grad_prompt_tensor=None, grad_indexes=None):
-        # After forward + ft_forward, FutureTensors have materialized ._tensor
+        # After forward + ft_forward, FutureTensors have materialized .ft_static_tensor
         # New mapping:
-        #   st_moe.input   = input._tensor (requires_grad based on coefficients)
-        #   st_moe.context = prompt_tensor._tensor (requires_grad=False)
+        #   st_moe.input   = input.ft_static_tensor (requires_grad based on coefficients)
+        #   st_moe.context = prompt_tensor.ft_static_tensor (requires_grad=False)
         #   st_moe.experience = experience (direct)
 
-        output_st = ctx.output_ft._tensor
-        prompt_tensor_st = ctx.prompt_tensor_ft._tensor  # = st_moe.context
+        output_st = ctx.output_ft.ft_static_tensor
+        prompt_tensor_st = ctx.prompt_tensor_ft.ft_static_tensor  # = st_moe.context
         prompt_tensor_st.requires_grad_(False)
 
         # Restore experience st_* attrs
@@ -124,7 +124,7 @@ class FtMoe(torch.autograd.Function):
 
         # Build input_st (= st_moe.input)
         # input is always a FutureTensor (may be "none tensor" with zero coefficients)
-        input_st = ctx.input_ft._tensor
+        input_st = ctx.input_ft.ft_static_tensor
         # Check if any coefficient > 0 to decide requires_grad
         has_content = input_st.data.sum().item() > 0
         if has_content:
@@ -228,6 +228,9 @@ def ft_moe(
 
 
 if __name__ == "__main__":
+    import sympy
+    import torch
+
     import os
     import subprocess
     import tempfile
@@ -291,7 +294,7 @@ if __name__ == "__main__":
         async def simple_get(coords, prompt):
             return (f"result_{coords}", Status.confidence(0.9))
 
-        ft_input = FutureTensor([2], tmpdir, simple_get)
+        ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(2)])
         experience_data = [
             ["greeting\nhello", "Hello", "Bonjour"],
             ["farewell\ngoodbye", "Goodbye", "Au revoir"],
@@ -302,9 +305,9 @@ if __name__ == "__main__":
             ft_input, experience_tensor, topk=2,
         )
 
-        run_test("output is FutureTensor", isinstance(output, FutureTensor))
-        run_test("prompt_tensor is FutureTensor", isinstance(prompt_tensor, FutureTensor))
-        run_test("output shape matches input", output.shape == [2])
+        run_test("output is FutureTensor", isinstance(output, torch.Tensor))
+        run_test("prompt_tensor is FutureTensor", isinstance(prompt_tensor, torch.Tensor))
+        run_test("output shape matches input", output.ft_capacity_shape == [2])
         run_test("output not forwarded yet", output.ft_forwarded is False)
 
     # ── Tests 8-11: Forward + ft_forward materializes (real LLM) ──
@@ -320,7 +323,7 @@ if __name__ == "__main__":
         async def moe_get(coords, prompt):
             return ("Hello world in English", Status.confidence(0.9))
 
-        ft_input = FutureTensor([1], tmpdir, moe_get)
+        ft_input = FutureTensor(tmpdir, moe_get, [sympy.Integer(1)])
         output, prompt_tensor, indexes = ft_moe(
             ft_input, experience_tensor, topk=2,
             task_prompt="Translate English to French.",
@@ -334,7 +337,7 @@ if __name__ == "__main__":
         output.ft_forward(output_prompts)
 
         run_test("output forwarded", output.ft_forwarded is True)
-        content_0 = read_storage(output._tensor, 0)
+        content_0 = read_storage(output.ft_static_tensor, 0)
         run_test("output[0] has content",
                  content_0 is not None,
                  "not None", content_0)
@@ -342,7 +345,7 @@ if __name__ == "__main__":
                  content_0 is not None and content_0.strip() != "TODO",
                  "not TODO", content_0)
         run_test("output coeff > 0",
-                 output._tensor.data[0].item() > 0)
+                 output.ft_static_tensor.data[0].item() > 0)
 
     # ── Tests 12-14: ctx saves backward args ──
     print("Tests 12-14: ctx saves backward args")
@@ -350,7 +353,7 @@ if __name__ == "__main__":
         async def dummy_get(coords, prompt):
             return ("x", Status.confidence(1.0))
 
-        ft_input = FutureTensor([2], tmpdir, dummy_get)
+        ft_input = FutureTensor(tmpdir, dummy_get, [sympy.Integer(2)])
         experience_data = [["q", "k", "v"]]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
@@ -377,7 +380,7 @@ if __name__ == "__main__":
         async def prompt_cap_get(coords, prompt):
             return (f"out:{prompt[:10]}", Status.confidence(0.8))
 
-        ft_input = FutureTensor([2], tmpdir, prompt_cap_get)
+        ft_input = FutureTensor(tmpdir, prompt_cap_get, [sympy.Integer(2)])
         output, prompt_tensor, indexes = ft_moe(
             ft_input, experience_tensor, topk=1,
         )
@@ -389,8 +392,8 @@ if __name__ == "__main__":
         output_prompts = make_tensor(["context_A", "context_B"], tmpdir)
         output.ft_forward(output_prompts)
 
-        pt0 = read_storage(prompt_tensor._tensor, 0)
-        pt1 = read_storage(prompt_tensor._tensor, 1)
+        pt0 = read_storage(prompt_tensor.ft_static_tensor, 0)
+        pt1 = read_storage(prompt_tensor.ft_static_tensor, 1)
         run_test("prompt_tensor[0] stored", pt0 is not None)
         run_test("prompt_tensor[1] stored", pt1 is not None)
         run_test("prompt_tensor has content",
@@ -410,7 +413,7 @@ if __name__ == "__main__":
         async def bw_get(coords, prompt):
             return ("Hello world in English", Status.confidence(0.9))
 
-        ft_input = FutureTensor([1], tmpdir, bw_get)
+        ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(1)])
         output, prompt_tensor, indexes_map = ft_moe(
             ft_input, experience_tensor, topk=2,
             task_prompt="Translate English to French.",

@@ -14,6 +14,8 @@ from typing import List, Union
 
 import torch
 
+import sympy
+
 from experience.future_tensor.future_tensor import FutureTensor
 
 
@@ -39,7 +41,7 @@ def slice_forward(input: FutureTensor, slices: List[Union[int, slice]]) -> Futur
         input: Source FutureTensor.
         slices: List of int or slice objects, one per dimension.
     """
-    input_shape = input.shape
+    input_shape = input.ft_capacity_shape
 
     # Pad slices with slice(None) if fewer than ndim
     full_slices = list(slices)
@@ -73,7 +75,7 @@ def slice_forward(input: FutureTensor, slices: List[Union[int, slice]]) -> Futur
         original_coords = map_coords(coordinates)
         return await input.ft_async_get(original_coords, prompt)
 
-    result = FutureTensor(output_shape, input.st_relative_to, sliced_async_get)
+    result = FutureTensor(input.ft_static_tensor.st_relative_to, sliced_async_get, [sympy.Integer(s) for s in output_shape])
 
     # If input is already forwarded, slice the storage directly
     if input.ft_forwarded:
@@ -89,7 +91,7 @@ def _copy_sliced_storage(
     """Copy element storage from input to output based on slice mapping."""
     import shutil
 
-    input_shape = input.shape
+    input_shape = input.ft_capacity_shape
     out_ranges = [range(s) for s in output_shape] if output_shape else [()]
 
     for out_coords in itertools.product(*out_ranges) if output_shape else [()]:
@@ -116,7 +118,7 @@ def _copy_sliced_storage(
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
             # Copy coefficient (confidence) from input
-            output._tensor.data.flatten()[out_flat] = input._tensor.data.flatten()[in_flat]
+            output.ft_static_tensor.data.flatten()[out_flat] = input.ft_static_tensor.data.flatten()[in_flat]
 
 
 def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
@@ -131,12 +133,15 @@ def _coords_to_flat(coordinates: List[int], shape: List[int]) -> int:
 def _storage_path(ft: FutureTensor, flat_index: int) -> str:
     digits = list(str(flat_index))
     return os.path.join(
-        ft.st_relative_to, ft.st_tensor_uid,
+        ft.ft_static_tensor.st_relative_to, ft.ft_static_tensor.st_tensor_uid,
         "storage", os.path.join(*digits), "data",
     )
 
 
 if __name__ == "__main__":
+    import sympy
+    import torch
+
     import tempfile
     import asyncio
 
@@ -170,10 +175,10 @@ if __name__ == "__main__":
         """Create a FutureTensor that's already materialized with given data."""
         async def dummy_get(coords, prompt):
             return ("unused", Status.confidence(1.0))
-        ft = FutureTensor(shape, tmpdir, dummy_get)
+        ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
         result_tensor = st_make_tensor(nested, tmpdir)
-        assign_tensor(ft._tensor, result_tensor)
+        assign_tensor(ft.ft_static_tensor, result_tensor)
         ft.ft_forwarded = True
         return ft
 
@@ -198,15 +203,15 @@ if __name__ == "__main__":
 
         # Test 1-5: slice(start, stop)
         r = slice_forward(ft, [slice(0, 5)])
-        run_test("1D slice(0,5) shape", r.shape == [5])
+        run_test("1D slice(0,5) shape", r.ft_capacity_shape == [5])
         run_test("1D slice(0,5) elem0", read_ft_element(r, 0) == "elem_0")
         run_test("1D slice(0,5) elem4", read_ft_element(r, 4) == "elem_4")
         run_test("1D slice(0,5) forwarded", r.ft_forwarded is True)
-        run_test("1D slice(0,5) numel", r._tensor.numel() == 5)
+        run_test("1D slice(0,5) numel", r.ft_static_tensor.numel() == 5)
 
         # Test 6-10: slice(start, stop, step)
         r = slice_forward(ft, [slice(1, 9, 2)])
-        run_test("1D slice(1,9,2) shape", r.shape == [4])
+        run_test("1D slice(1,9,2) shape", r.ft_capacity_shape == [4])
         run_test("1D slice(1,9,2) elem0", read_ft_element(r, 0) == "elem_1")
         run_test("1D slice(1,9,2) elem1", read_ft_element(r, 1) == "elem_3")
         run_test("1D slice(1,9,2) elem2", read_ft_element(r, 2) == "elem_5")
@@ -214,24 +219,24 @@ if __name__ == "__main__":
 
         # Test 11-15: int index (collapse)
         r = slice_forward(ft, [3])
-        run_test("1D int[3] shape", r.shape == [])
+        run_test("1D int[3] shape", r.ft_capacity_shape == [])
         run_test("1D int[3] forwarded", r.ft_forwarded is True)
 
         # slice(None) = full
         r = slice_forward(ft, [slice(None)])
-        run_test("1D slice(None) shape", r.shape == [10])
+        run_test("1D slice(None) shape", r.ft_capacity_shape == [10])
         run_test("1D slice(None) elem0", read_ft_element(r, 0) == "elem_0")
         run_test("1D slice(None) elem9", read_ft_element(r, 9) == "elem_9")
 
         # Test 16-20: negative indexing
         r = slice_forward(ft, [slice(-3, None)])
-        run_test("1D slice(-3,None) shape", r.shape == [3])
+        run_test("1D slice(-3,None) shape", r.ft_capacity_shape == [3])
         run_test("1D slice(-3,None) elem0", read_ft_element(r, 0) == "elem_7")
         run_test("1D slice(-3,None) elem2", read_ft_element(r, 2) == "elem_9")
         r = slice_forward(ft, [-1])
-        run_test("1D int[-1] shape", r.shape == [])
+        run_test("1D int[-1] shape", r.ft_capacity_shape == [])
         r = slice_forward(ft, [-2])
-        run_test("1D int[-2] shape", r.shape == [])
+        run_test("1D int[-2] shape", r.ft_capacity_shape == [])
 
     # === Group 2: 2D slicing (tests 21-45) ===
 
@@ -241,7 +246,7 @@ if __name__ == "__main__":
 
         # Test 21-25: slice first dim
         r = slice_forward(ft, [slice(0, 2), slice(None)])
-        run_test("2D rows[0:2] shape", r.shape == [2, 5])
+        run_test("2D rows[0:2] shape", r.ft_capacity_shape == [2, 5])
         run_test("2D rows[0:2] [0,0]", read_ft_element(r, 0) == "r0c0")
         run_test("2D rows[0:2] [0,4]", read_ft_element(r, 4) == "r0c4")
         run_test("2D rows[0:2] [1,0]", read_ft_element(r, 5) == "r1c0")
@@ -249,7 +254,7 @@ if __name__ == "__main__":
 
         # Test 26-30: slice second dim
         r = slice_forward(ft, [slice(None), slice(1, 4)])
-        run_test("2D cols[1:4] shape", r.shape == [4, 3])
+        run_test("2D cols[1:4] shape", r.ft_capacity_shape == [4, 3])
         run_test("2D cols[1:4] [0,0]", read_ft_element(r, 0) == "r0c1")
         run_test("2D cols[1:4] [0,2]", read_ft_element(r, 2) == "r0c3")
         run_test("2D cols[1:4] [3,0]", read_ft_element(r, 9) == "r3c1")
@@ -257,7 +262,7 @@ if __name__ == "__main__":
 
         # Test 31-35: int index on first dim (row select)
         r = slice_forward(ft, [2, slice(None)])
-        run_test("2D row[2] shape", r.shape == [5])
+        run_test("2D row[2] shape", r.ft_capacity_shape == [5])
         run_test("2D row[2] elem0", read_ft_element(r, 0) == "r2c0")
         run_test("2D row[2] elem4", read_ft_element(r, 4) == "r2c4")
         r = slice_forward(ft, [0, slice(None)])
@@ -266,7 +271,7 @@ if __name__ == "__main__":
 
         # Test 36-40: int index on second dim (col select)
         r = slice_forward(ft, [slice(None), 3])
-        run_test("2D col[3] shape", r.shape == [4])
+        run_test("2D col[3] shape", r.ft_capacity_shape == [4])
         run_test("2D col[3] elem0", read_ft_element(r, 0) == "r0c3")
         run_test("2D col[3] elem1", read_ft_element(r, 1) == "r1c3")
         run_test("2D col[3] elem2", read_ft_element(r, 2) == "r2c3")
@@ -274,13 +279,13 @@ if __name__ == "__main__":
 
         # Test 41-45: both dims int (scalar)
         r = slice_forward(ft, [1, 2])
-        run_test("2D [1,2] shape", r.shape == [])
+        run_test("2D [1,2] shape", r.ft_capacity_shape == [])
         r = slice_forward(ft, [3, 4])
-        run_test("2D [3,4] shape", r.shape == [])
+        run_test("2D [3,4] shape", r.ft_capacity_shape == [])
         r = slice_forward(ft, [0, 0])
-        run_test("2D [0,0] shape", r.shape == [])
+        run_test("2D [0,0] shape", r.ft_capacity_shape == [])
         r = slice_forward(ft, [slice(1, 3), slice(2, 4)])
-        run_test("2D [1:3,2:4] shape", r.shape == [2, 2])
+        run_test("2D [1:3,2:4] shape", r.ft_capacity_shape == [2, 2])
         run_test("2D [1:3,2:4] [0,0]", read_ft_element(r, 0) == "r1c2")
 
     # === Group 3: 3D slicing (tests 46-60) ===
@@ -290,25 +295,25 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([3, 4, 2], data, tmpdir)
 
         r = slice_forward(ft, [0, slice(None), slice(None)])
-        run_test("3D dim0=0 shape", r.shape == [4, 2])
+        run_test("3D dim0=0 shape", r.ft_capacity_shape == [4, 2])
         run_test("3D dim0=0 [0,0]", read_ft_element(r, 0) == "d0r0c0")
         run_test("3D dim0=0 [3,1]", read_ft_element(r, 7) == "d0r3c1")
 
         r = slice_forward(ft, [slice(None), 2, slice(None)])
-        run_test("3D dim1=2 shape", r.shape == [3, 2])
+        run_test("3D dim1=2 shape", r.ft_capacity_shape == [3, 2])
         run_test("3D dim1=2 [0,0]", read_ft_element(r, 0) == "d0r2c0")
         run_test("3D dim1=2 [2,1]", read_ft_element(r, 5) == "d2r2c1")
 
         r = slice_forward(ft, [slice(None), slice(None), 1])
-        run_test("3D dim2=1 shape", r.shape == [3, 4])
+        run_test("3D dim2=1 shape", r.ft_capacity_shape == [3, 4])
         run_test("3D dim2=1 [0,0]", read_ft_element(r, 0) == "d0r0c1")
         run_test("3D dim2=1 [2,3]", read_ft_element(r, 11) == "d2r3c1")
 
         r = slice_forward(ft, [1, 2, 0])
-        run_test("3D scalar [1,2,0] shape", r.shape == [])
+        run_test("3D scalar [1,2,0] shape", r.ft_capacity_shape == [])
 
         r = slice_forward(ft, [slice(0, 2), slice(1, 3), slice(None)])
-        run_test("3D [0:2,1:3,:] shape", r.shape == [2, 2, 2])
+        run_test("3D [0:2,1:3,:] shape", r.ft_capacity_shape == [2, 2, 2])
         run_test("3D [0:2,1:3,:] [0,0,0]", read_ft_element(r, 0) == "d0r1c0")
         run_test("3D [0:2,1:3,:] [0,0,1]", read_ft_element(r, 1) == "d0r1c1")
         run_test("3D [0:2,1:3,:] [1,1,0]", read_ft_element(r, 6) == "d1r2c0")
@@ -323,10 +328,10 @@ if __name__ == "__main__":
             received.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 
-        ft = FutureTensor([6], tmpdir, tracking_get)
+        ft = FutureTensor(tmpdir, tracking_get, [sympy.Integer(6)])
         # NOT forwarded — slice should create lazy result
         r = slice_forward(ft, [slice(2, 5)])
-        run_test("lazy slice shape", r.shape == [3])
+        run_test("lazy slice shape", r.ft_capacity_shape == [3])
         run_test("lazy slice not forwarded", r.ft_forwarded is False)
 
         # Forward the sliced tensor
@@ -346,9 +351,9 @@ if __name__ == "__main__":
             received2.append(coords)
             return (f"v{coords}", Status.confidence(1.0))
 
-        ft = FutureTensor([4, 3], tmpdir, tracking_get2)
+        ft = FutureTensor(tmpdir, tracking_get2, [sympy.Integer(4), sympy.Integer(3)])
         r = slice_forward(ft, [1, slice(None)])
-        run_test("lazy 2D row select shape", r.shape == [3])
+        run_test("lazy 2D row select shape", r.ft_capacity_shape == [3])
 
         prompt_t = st_make_tensor(["a", "b", "c"], tmpdir)
         r.ft_forward(prompt_t)
@@ -360,9 +365,9 @@ if __name__ == "__main__":
         async def step_get(coords, prompt):
             return (str(coords), Status.confidence(1.0))
 
-        ft = FutureTensor([10], tmpdir, step_get)
+        ft = FutureTensor(tmpdir, step_get, [sympy.Integer(10)])
         r = slice_forward(ft, [slice(0, 10, 3)])
-        run_test("lazy step=3 shape", r.shape == [4])
+        run_test("lazy step=3 shape", r.ft_capacity_shape == [4])
         prompt_t = st_make_tensor(["p"] * 4, tmpdir)
         r.ft_forward(prompt_t)
         run_test("lazy step elem0 -> [0]", read_ft_element(r, 0) == "[0]")
@@ -376,20 +381,20 @@ if __name__ == "__main__":
         # Single element
         ft = make_forwarded_ft([1], ["only"], tmpdir)
         r = slice_forward(ft, [slice(None)])
-        run_test("single elem full slice shape", r.shape == [1])
+        run_test("single elem full slice shape", r.ft_capacity_shape == [1])
         run_test("single elem full slice val", read_ft_element(r, 0) == "only")
 
         r = slice_forward(ft, [0])
-        run_test("single elem int index shape", r.shape == [])
+        run_test("single elem int index shape", r.ft_capacity_shape == [])
 
         # Empty slice
         ft = make_forwarded_ft([5], [f"x{i}" for i in range(5)], tmpdir)
         r = slice_forward(ft, [slice(3, 3)])
-        run_test("empty slice shape", r.shape == [0])
+        run_test("empty slice shape", r.ft_capacity_shape == [0])
 
         # Reverse slice
         r = slice_forward(ft, [slice(4, 1, -1)])
-        run_test("reverse slice shape", r.shape == [3])
+        run_test("reverse slice shape", r.ft_capacity_shape == [3])
         run_test("reverse [0]", read_ft_element(r, 0) == "x4")
         run_test("reverse [1]", read_ft_element(r, 1) == "x3")
         run_test("reverse [2]", read_ft_element(r, 2) == "x2")
@@ -400,12 +405,12 @@ if __name__ == "__main__":
         data = [f"item_{i}" for i in range(n)]
         ft = make_forwarded_ft([n], data, tmpdir)
         r = slice_forward(ft, [slice(50, 60)])
-        run_test("large tensor slice shape", r.shape == [10])
+        run_test("large tensor slice shape", r.ft_capacity_shape == [10])
         run_test("large tensor [0]", read_ft_element(r, 0) == "item_50")
         run_test("large tensor [9]", read_ft_element(r, 9) == "item_59")
 
         r = slice_forward(ft, [slice(0, 100, 10)])
-        run_test("large step=10 shape", r.shape == [10])
+        run_test("large step=10 shape", r.ft_capacity_shape == [10])
         run_test("large step=10 [0]", read_ft_element(r, 0) == "item_0")
         run_test("large step=10 [5]", read_ft_element(r, 5) == "item_50")
         run_test("large step=10 [9]", read_ft_element(r, 9) == "item_90")
@@ -418,9 +423,9 @@ if __name__ == "__main__":
 
         # Slice then slice again
         r1 = slice_forward(ft, [slice(5, 15)])
-        run_test("chain: first slice shape", r1.shape == [10])
+        run_test("chain: first slice shape", r1.ft_capacity_shape == [10])
         r2 = slice_forward(r1, [slice(2, 7)])
-        run_test("chain: second slice shape", r2.shape == [5])
+        run_test("chain: second slice shape", r2.ft_capacity_shape == [5])
         run_test("chain: [0] = v7", read_ft_element(r2, 0) == "v7")
         run_test("chain: [4] = v11", read_ft_element(r2, 4) == "v11")
 
@@ -429,9 +434,9 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([6, 6], data, tmpdir)
 
         r1 = slice_forward(ft, [slice(1, 5), slice(None)])
-        run_test("chain 2D: first shape", r1.shape == [4, 6])
+        run_test("chain 2D: first shape", r1.ft_capacity_shape == [4, 6])
         r2 = slice_forward(r1, [slice(None), slice(2, 4)])
-        run_test("chain 2D: second shape", r2.shape == [4, 2])
+        run_test("chain 2D: second shape", r2.ft_capacity_shape == [4, 2])
         run_test("chain 2D: [0,0] = r1c2", read_ft_element(r2, 0) == "r1c2")
         run_test("chain 2D: [0,1] = r1c3", read_ft_element(r2, 1) == "r1c3")
         run_test("chain 2D: [3,0] = r4c2", read_ft_element(r2, 6) == "r4c2")

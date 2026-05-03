@@ -46,7 +46,7 @@ class FtRecurrent(torch.autograd.Function):
         output, prompt_tensor = recurrent_forward(input, accumulate_output=accumulate_output)
 
         # Save for backward — these are FutureTensors now, but backward will
-        # use their materialized ._tensor (symbolic tensor) after ft_forward.
+        # use their materialized .ft_static_tensor (symbolic tensor) after ft_forward.
         ctx.input_ft = input
         ctx.output_ft = output
         ctx.prompt_tensor_ft = prompt_tensor
@@ -61,10 +61,10 @@ class FtRecurrent(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor, grad_prompt_tensor=None):
         # After forward + ft_forward, the FutureTensors have materialized
-        # ._tensor attributes (symbolic tensors with st_* attrs).
-        input_st = ctx.input_ft._tensor
-        output_st = ctx.output_ft._tensor
-        prompt_tensor_st = ctx.prompt_tensor_ft._tensor
+        # ft_static_tensor attributes (symbolic tensors with st_* attrs).
+        input_st = ctx.input_ft.ft_static_tensor
+        output_st = ctx.output_ft.ft_static_tensor
+        prompt_tensor_st = ctx.prompt_tensor_ft.ft_static_tensor
 
         # If grad_output lacks st_* attrs (autograd strips them),
         # wrap as a TODO symbolic tensor with the numeric grad data.
@@ -127,6 +127,7 @@ def ft_recurrent(
 
 
 if __name__ == "__main__":
+    import sympy
     import os
     import subprocess
     import tempfile
@@ -185,13 +186,13 @@ if __name__ == "__main__":
         async def simple_get(coords, prompt):
             return (f"result_{coords}", Status.confidence(0.9))
 
-        ft_input = FutureTensor([2, 3], tmpdir, simple_get)
+        ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(s) for s in [2, 3]])
         output, prompt_tensor = ft_recurrent(ft_input)
 
         run_test("output shape is prefix [2]",
-                 output.shape == [2])
+                 output.ft_capacity_shape == [2])
         run_test("prompt_tensor shape is [2, 3]",
-                 prompt_tensor.shape == [2, 3])
+                 prompt_tensor.ft_capacity_shape == [2, 3])
         run_test("output not forwarded yet",
                  output.ft_forwarded is False)
         run_test("prompt_tensor not forwarded yet",
@@ -203,7 +204,7 @@ if __name__ == "__main__":
         async def confident_get(coords, prompt):
             return (f"ans_{coords}", Status.confidence(0.8))
 
-        ft_input = FutureTensor([3, 2], tmpdir, confident_get)
+        ft_input = FutureTensor(tmpdir, confident_get, [sympy.Integer(s) for s in [3, 2]])
         output, prompt_tensor = ft_recurrent(ft_input)
 
         # ft_forward the output
@@ -212,14 +213,14 @@ if __name__ == "__main__":
 
         run_test("output forwarded", output.ft_forwarded is True)
         run_test("output[0] has content",
-                 read_storage(output._tensor, 0) is not None)
-        content_0 = read_storage(output._tensor, 0)
+                 read_storage(output.ft_static_tensor, 0) is not None)
+        content_0 = read_storage(output.ft_static_tensor, 0)
         run_test("output[0] = ans for first iteration",
                  content_0 is not None and "ans_" in content_0,
                  "ans_*", content_0)
         # Confidence: first iteration wins, so only iteration 0 is called per prefix
         run_test("output coeff > 0",
-                 output._tensor.data[0].item() > 0)
+                 output.ft_static_tensor.data[0].item() > 0)
 
     # ── Tests 12-14: Forward with retry (scbf) ──
     print("Tests 12-14: Forward with retry")
@@ -233,14 +234,14 @@ if __name__ == "__main__":
                 return (f"bad_{coords}", Status.self_confidence_but_failed(0.3 + iteration * 0.2))
             return (f"good_{coords}", Status.confidence(0.95))
 
-        ft_input = FutureTensor([1, 4], tmpdir, retry_get)
+        ft_input = FutureTensor(tmpdir, retry_get, [sympy.Integer(s) for s in [1, 4]])
         output, prompt_tensor = ft_recurrent(ft_input)
 
         output_prompts = make_tensor(["start"], tmpdir)
         output.ft_forward(output_prompts)
 
         run_test("retry: output forwarded", output.ft_forwarded is True)
-        content = read_storage(output._tensor, 0)
+        content = read_storage(output.ft_static_tensor, 0)
         run_test("retry: output is from winning iteration",
                  content is not None and "good_" in content,
                  "good_*", content)
@@ -255,7 +256,7 @@ if __name__ == "__main__":
         async def dummy_get(coords, prompt):
             return ("x", Status.confidence(1.0))
 
-        ft_input = FutureTensor([2, 2], tmpdir, dummy_get)
+        ft_input = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in [2, 2]])
         # Call forward directly to inspect ctx
         ctx = type('Ctx', (), {})()
         FtRecurrent.forward(
@@ -275,7 +276,7 @@ if __name__ == "__main__":
         async def bw_get(coords, prompt):
             return ("Hello world", Status.confidence(0.9))
 
-        ft_input = FutureTensor([1, 2], tmpdir, bw_get)
+        ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(s) for s in [1, 2]])
         output, prompt_tensor = ft_recurrent(ft_input, task_prompt="Translate to French.")
 
         # Materialize forward
@@ -301,7 +302,7 @@ if __name__ == "__main__":
         grad_input = result[0]
 
         run_test("grad_input shape matches input",
-                 list(grad_input.shape) == [1, 2])
+                 list(grad_input.ft_capacity_shape) == [1, 2])
         # Check flat 0 = winning iteration [0,0]
         content = read_storage(grad_input, 0)
         # Diff can be None if LLM output matches input exactly (no change).

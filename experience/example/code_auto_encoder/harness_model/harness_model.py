@@ -17,6 +17,8 @@ import torch.nn as nn
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 
+import sympy
+
 from experience.future_tensor.future_tensor import FutureTensor, _read_element
 from experience.future_tensor.function.ft_recurrent import ft_recurrent
 from experience.future_tensor.status import Status
@@ -156,9 +158,9 @@ class HarnessModel(nn.Module):
         #   -> ft_unary(check context sufficiency)
         #   -> ft_recurrent(outer)  [batch]      # accumulate clean context across steps
         ft_raw = FutureTensor(
-            [batch_size, self.max_context_collects, self.max_tool_call_retries],
             tmpdir,
             self._make_tool_use(worktree_tensor),
+            [sympy.Integer(batch_size), sympy.Integer(self.max_context_collects), sympy.Integer(self.max_tool_call_retries)],
         )
         ft_validated = ft_unary(ft_raw, self._validate_tool_result)
 
@@ -186,13 +188,13 @@ class HarnessModel(nn.Module):
         # Materialize context
         context_prompts = make_tensor(["gather context"] * batch_size, tmpdir)
         context_ft.ft_forward(context_prompts)
-        context_tensor = context_ft._tensor
+        context_tensor = context_ft.ft_static_tensor
 
         # ── Stage 2: code_gen ──
         ft_gen = FutureTensor(
-            [batch_size, self.max_codegen_steps],
             tmpdir,
             self._make_code_gen(context_tensor, worktree_tensor),
+            [sympy.Integer(batch_size), sympy.Integer(self.max_codegen_steps)],
         )
 
         output_ft, _ = ft_recurrent(
@@ -204,7 +206,7 @@ class HarnessModel(nn.Module):
         # Materialize output
         gen_prompts = make_tensor(["generate code"] * batch_size, tmpdir)
         output_ft.ft_forward(gen_prompts)
-        return output_ft._tensor
+        return output_ft.ft_static_tensor
 
     def _make_tool_use(self, worktree_tensor: torch.Tensor):
         """Build ft_async_get for a single raw tool-use step.

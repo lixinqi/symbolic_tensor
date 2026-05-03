@@ -22,6 +22,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 
+import sympy
+
 from experience.future_tensor.future_tensor import FutureTensor, _read_element, _coords_to_flat
 from experience.future_tensor.status import Status
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
@@ -85,12 +87,13 @@ def ft_moe_forward(
             prompt_tensor: FutureTensor storing prompts (for backward as context).
             selected_experience_qkv_indexes_map: Dict mapping coordinates to indexes.
     """
-    input_shape = input.shape
+    input_shape = input.ft_capacity_shape
 
     # Create prompt_tensor: same shape as input, stores prompts for backward (= st_moe.context)
     prompt_tensor = FutureTensor(
-        input_shape, input.st_relative_to,
+        input.ft_static_tensor.st_relative_to,
         ft_async_get=None,  # not used — written directly via st_setitem
+        ft_shape_schema=[sympy.Integer(s) for s in input_shape],
     )
 
     # Mutable container for selected indexes (filled during ft_async_get)
@@ -109,23 +112,23 @@ def ft_moe_forward(
         outer event loop driving FutureTensor.ft_forward.
         """
         # 1. Store the prompt into prompt_tensor for backward (= st_moe.context)
-        st_setitem(prompt_tensor._tensor, coordinates, prompt)
+        st_setitem(prompt_tensor.ft_static_tensor, coordinates, prompt)
 
         # 2. Build scalar_input from input[coordinates] (= st_moe.input)
         #    Coefficient-based check: input is always a FutureTensor, but may be
         #    a "none tensor" with zero coefficients when first in chain.
-        if input._tensor.data[tuple(coordinates)].item() > 0:
-            flat_idx = sum(c * s for c, s in zip(coordinates, input._tensor.stride()))
-            input_content = _read_file_content(input._tensor, flat_idx)
+        if input.ft_static_tensor.data[tuple(coordinates)].item() > 0:
+            flat_idx = sum(c * s for c, s in zip(coordinates, input.ft_static_tensor.stride()))
+            input_content = _read_file_content(input.ft_static_tensor, flat_idx)
         else:
             input_content = ""
         scalar_input = make_tensor(
             [input_content] if input_content else ["TODO"],
-            input.st_relative_to,
+            input.ft_static_tensor.st_relative_to,
         )
 
         # 3. Build scalar_context from prompt (= st_moe.context, requires_grad=False)
-        scalar_context = make_tensor([prompt], input.st_relative_to)
+        scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
 
         # 4. Get query from scalar_input
         input_query = get_query_tensor(
@@ -208,7 +211,11 @@ def ft_moe_forward(
             None, _sync_moe_for_element, coordinates, prompt,
         )
 
-    output = FutureTensor(input_shape, input.st_relative_to, ft_moe_forward_async_get)
+    output = FutureTensor(
+        input.ft_static_tensor.st_relative_to,
+        ft_moe_forward_async_get,
+        ft_shape_schema=[sympy.Integer(s) for s in input_shape],
+    )
 
     return output, prompt_tensor, _selected_indexes_map
 
@@ -246,6 +253,9 @@ def build_nested_indexes_list(
 
 
 if __name__ == "__main__":
+    import sympy
+    import torch
+
     import subprocess
 
     # Source anthropic env vars
@@ -298,7 +308,7 @@ if __name__ == "__main__":
         async def simple_get(coords, prompt):
             return (f"result_{coords}", Status.confidence(0.9))
 
-        ft_input = FutureTensor([2], tmpdir, simple_get)
+        ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(2)])
 
         experience_data = [
             ["greeting\nhello", "Hello in English", "Bonjour en francais"],
@@ -310,9 +320,9 @@ if __name__ == "__main__":
             ft_input, experience_tensor, topk=2,
         )
 
-        run_test("output is FutureTensor", isinstance(output, FutureTensor))
-        run_test("prompt_tensor is FutureTensor", isinstance(prompt_tensor, FutureTensor))
-        run_test("output shape matches input", output.shape == [2])
+        run_test("output is FutureTensor", isinstance(output, torch.Tensor))
+        run_test("prompt_tensor is FutureTensor", isinstance(prompt_tensor, torch.Tensor))
+        run_test("output shape matches input", output.ft_capacity_shape == [2])
         run_test("indexes_map is dict", isinstance(indexes_map, dict))
 
     # ── Tests 5a-5c: Forward with none tensor (zero coefficients) ──
@@ -327,13 +337,13 @@ if __name__ == "__main__":
         async def none_get(coords, prompt):
             return ("", Status.self_confidence_but_failed(0.0))
 
-        ft_none_input = FutureTensor([1], tmpdir, none_get)
+        ft_none_input = FutureTensor(tmpdir, none_get, [sympy.Integer(1)])
 
         output, prompt_tensor, indexes_map = ft_moe_forward(
             ft_none_input, experience_tensor, topk=1,
         )
 
-        run_test("output shape is [1] with none tensor", output.shape == [1])
+        run_test("output shape is [1] with none tensor", output.ft_capacity_shape == [1])
         run_test("prompt_tensor shape is [1]", prompt_tensor.shape == [1])
         run_test("indexes_map is dict (none tensor)", isinstance(indexes_map, dict))
 
@@ -350,7 +360,7 @@ if __name__ == "__main__":
         async def moe_get(coords, prompt):
             return ("Hello world in English", Status.confidence(0.9))
 
-        ft_input = FutureTensor([1], tmpdir, moe_get)
+        ft_input = FutureTensor(tmpdir, moe_get, [sympy.Integer(1)])
 
         output, prompt_tensor, indexes_map = ft_moe_forward(
             ft_input, experience_tensor, topk=2,
@@ -367,11 +377,11 @@ if __name__ == "__main__":
         output.ft_forward(output_prompts)
 
         run_test("output forwarded", output.ft_forwarded is True)
-        content_0 = read_storage(output._tensor, 0)
+        content_0 = read_storage(output.ft_static_tensor, 0)
         run_test("output[0] has content",
                  content_0 is not None and content_0.strip() != "TODO",
                  "not TODO", content_0)
-        run_test("output coeff > 0", output._tensor.data[0].item() > 0)
+        run_test("output coeff > 0", output.ft_static_tensor.data[0].item() > 0)
 
     # ── Tests 12-14: Prompt tensor stores prompts (= context) ──
     print("Tests 12-14: Prompt tensor stores prompts (context)")
@@ -384,7 +394,7 @@ if __name__ == "__main__":
         async def prompt_capture_get(coords, prompt):
             return (f"captured:{prompt[:10]}", Status.confidence(0.8))
 
-        ft_input = FutureTensor([2], tmpdir, prompt_capture_get)
+        ft_input = FutureTensor(tmpdir, prompt_capture_get, [sympy.Integer(2)])
         output, prompt_tensor, indexes_map = ft_moe_forward(
             ft_input, experience_tensor, topk=1,
         )
@@ -397,8 +407,8 @@ if __name__ == "__main__":
         output.ft_forward(output_prompts)
 
         # prompt_tensor should have the prompts (= context) stored via st_setitem
-        pt0 = read_storage(prompt_tensor._tensor, 0)
-        pt1 = read_storage(prompt_tensor._tensor, 1)
+        pt0 = read_storage(prompt_tensor.ft_static_tensor, 0)
+        pt1 = read_storage(prompt_tensor.ft_static_tensor, 1)
         run_test("prompt_tensor[0] stored",
                  pt0 is not None,
                  "not None", pt0)
@@ -421,7 +431,7 @@ if __name__ == "__main__":
         async def idx_get(coords, prompt):
             return (f"result_{coords}", Status.confidence(0.9))
 
-        ft_input = FutureTensor([2], tmpdir, idx_get)
+        ft_input = FutureTensor(tmpdir, idx_get, [sympy.Integer(2)])
         output, prompt_tensor, indexes_map = ft_moe_forward(
             ft_input, experience_tensor, topk=2,
         )
@@ -456,7 +466,7 @@ if __name__ == "__main__":
         async def multi_get(coords, prompt):
             return (f"element_{coords[0]}: {prompt[:20]}", Status.confidence(0.85))
 
-        ft_input = FutureTensor([3], tmpdir, multi_get)
+        ft_input = FutureTensor(tmpdir, multi_get, [sympy.Integer(3)])
         output, prompt_tensor, indexes_map = ft_moe_forward(
             ft_input, experience_tensor, topk=2,
             task_prompt="Translate English to French.",
@@ -477,7 +487,7 @@ if __name__ == "__main__":
 
         run_test("3-element output forwarded", output.ft_forwarded is True)
         all_have_content = all(
-            read_storage(output._tensor, i) is not None
+            read_storage(output.ft_static_tensor, i) is not None
             for i in range(3)
         )
         run_test("all 3 elements have content", all_have_content)
