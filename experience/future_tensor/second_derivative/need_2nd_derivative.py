@@ -49,7 +49,7 @@ class _Need2ndDerivative(torch.autograd.Function):
 
 def need_2nd_derivative(
     input: torch.Tensor,
-    second_derivative_start: torch.nn.Parameter,
+    second_derivative_start: torch.Tensor,
 ) -> torch.Tensor:
     """Return input with a computational dependency on second_derivative_start.
 
@@ -62,8 +62,9 @@ def need_2nd_derivative(
 
     Args:
         input: FutureTensor or SymbolicTensor.  Must be scalar (shape ``()``).
-        second_derivative_start: Scalar ``nn.Parameter`` acting as the entry
-            point for the 2nd-derivative backward pass.
+        second_derivative_start: Scalar tensor (typically created with
+            ``torch.ones((), dtype=torch.bfloat16, requires_grad=True)``)
+            acting as the entry point for the 2nd-derivative backward pass.
 
     Returns:
         A tensor with the same value and monkey-patched attributes as ``input``,
@@ -75,6 +76,9 @@ def need_2nd_derivative(
     assert second_derivative_start.shape == torch.Size([]), (
         f"need_2nd_derivative: second_derivative_start must be scalar, "
         f"got shape {list(second_derivative_start.shape)}"
+    )
+    assert second_derivative_start.requires_grad, (
+        "need_2nd_derivative: second_derivative_start must have requires_grad=True"
     )
 
     result = _Need2ndDerivative.apply(input, second_derivative_start)

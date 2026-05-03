@@ -23,55 +23,75 @@ layer of corrective text. This enables meta-learning: learning how to reflect be
 
 ## Usage pattern
 
-### 1. Before the forward pass — enable gradient flow through the input
+### Natural PyTorch flow — end-to-end demo
 
 ```python
 import torch
-from experience.future_tensor.second_derivative import need_2nd_derivative
+import torch.nn as nn
 
-second_derivative_start = torch.nn.Parameter(torch.ones(()))  # scalar anchor
+from experience.future_tensor.second_derivative import (
+    need_2nd_derivative,
+    dispatch_policy,
+    TracePolicy,
+)
+from experience.future_tensor.function.ft_slice import ft_slice
+from experience.future_tensor.function.ft_unsqueeze import ft_unsqueeze
+from experience.future_tensor.function.ft_recurrent import ft_recurrent
+from experience.future_tensor.function.ft_mean import ft_mean
 
-input = need_2nd_derivative(input, second_derivative_start)
-```
 
-`need_2nd_derivative` returns `input` with `requires_grad=True`. Because `input` now
-participates in the autograd graph, gradients computed during `loss.backward()` flow
-through it and accumulate into `second_derivative_start.grad` via the placeholder
-scalars returned by each 2nd-derivative op.
+class ToyHarnessModel(nn.Module):
+    """Minimal harness: ft_unsqueeze → ft_slice → ft_recurrent."""
 
-### 2. Run the harness model normally
+    def forward(self, input_ft):
+        x = ft_unsqueeze(input_ft, dim=1)                     # (2, 1, 2)
+        x = ft_slice(x, [slice(None), 0, slice(None)])        # (2, 2)
+        output, _ = ft_recurrent(x, task_prompt="toy model")  # (2,)
+        return output
 
-```python
-output = model(input)
-loss = criterion(output, target)
-loss.backward()
+
+# ── 1. Create the scalar anchor OUTSIDE the model ──
+second_derivative_start = torch.ones(
+    (), dtype=torch.bfloat16, requires_grad=True
+)
+
+# ── 2. Forward pass ──
+model = ToyHarnessModel()
+input_ft = ...  # a FutureTensor with shape (2, 2)
+anchored = need_2nd_derivative(input_ft, second_derivative_start)
+output = model(anchored)
+loss = ft_mean(output)
+
+# ── 3. First backward (builds the graph for 2nd derivative) ──
+loss.backward(create_graph=True)
+
 # After this: second_derivative_start.grad holds the accumulated
-# scalar gradient from all 1st-derivative backward ops.
-```
+# scalar gradient from all 1st-derivative backward ops, AND its
+# grad_fn chain contains the full backward graph.
 
-### 3. After the first backward — introspect the LLM reflections
-
-```python
-from experience.future_tensor.second_derivative import dispatch_policy, TracePolicy
-
+# ── 4. Second backward — introspect LLM reflections ──
 llm_reflections = []
 with dispatch_policy(TracePolicy(llm_reflections)):
     second_derivative_start.grad.backward()
 
-# llm_reflections now contains one entry per backward op that fired:
+# llm_reflections now contains one entry per backward op that fired,
+# in backward-traversal order (closest to second_derivative_start first):
 # [
-#   ReflectionRecord(
-#       fn="recurrent_backward",
-#       inputs={"grad_output": ..., "input": ..., "output": ..., "prompt_tensor": ...},
-#       output=<placeholder scalar tensor, value=1>,
-#   ),
-#   ReflectionRecord(fn="moe_backward", inputs={...}, output=...),
-#   ...
+#   ReflectionRecord(fn=unsqueeze_forward,   inputs={"dim": 1, ...},               output=tensor(1.)),
+#   ReflectionRecord(fn=slice_backward,      inputs={"original_shape": [2,1,2], ...}, output=tensor(1.)),
+#   ReflectionRecord(fn=recurrent_backward,  inputs={"task_prompt": "toy model", ...}, output=tensor(1.)),
 # ]
 ```
 
 `TracePolicy` is the default policy. It records every 2nd-derivative op call without
 running any LLM — use it to inspect which reflections fired and what their inputs are.
+
+### `create_graph=True` is required
+
+Without `create_graph=True`, PyTorch discards the intermediate backward graph after
+computing `second_derivative_start.grad`. The subsequent
+`second_derivative_start.grad.backward()` would have no graph to traverse and would
+produce no 2nd-derivative records.
 
 ---
 
@@ -81,16 +101,26 @@ running any LLM — use it to inspect which reflections fired and what their inp
 
 ```python
 need_2nd_derivative(
-    input: torch.Tensor,                    # FutureTensor or SymbolicTensor
-    second_derivative_start: nn.Parameter,  # scalar anchor (shape=(), value=1)
-) -> torch.Tensor                           # input with requires_grad=True
+    input: torch.Tensor,              # FutureTensor or SymbolicTensor, must be scalar
+    second_derivative_start: torch.Tensor,  # scalar anchor with requires_grad=True
+) -> torch.Tensor                         # input with computational dependency on anchor
 ```
 
-Returns `input` with `requires_grad` set to `True`. Has no side effects beyond that —
-no thread-local registration, no graph edge insertion, no dispatcher interaction.
-Setting `requires_grad=True` ensures the autograd graph connects `input` to
-`second_derivative_start` through the placeholder scalars that each 2nd-derivative
-op returns, so `second_derivative_start.grad.backward()` can traverse them.
+Multiplies `input` by `second_derivative_start` to create a computational dependency.
+During `loss.backward(create_graph=True)`, the gradient for `second_derivative_start`
+includes the entire model backward graph. Calling
+`second_derivative_start.grad.backward()` then naturally traverses that graph and
+triggers the 2nd-derivative GradFn backward methods.
+
+If `input` carries FutureTensor monkey-patched attributes, they are copied to the
+result so downstream ops still see a valid FutureTensor.
+
+`second_derivative_start` must be scalar (`shape == ()`) and have
+`requires_grad=True`. Use:
+
+```python
+second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+```
 
 ### `get_2nd_dispatcher(function_name)`
 
@@ -179,34 +209,48 @@ with dispatch_policy(ExecutePolicy()):
 
 ---
 
-## How 2nd-derivative op functions are structured
+## How 2nd-derivative GradFns are structured
 
-Each backward function in `future_tensor/function/` that participates in 2nd
-differentiation has a corresponding thin wrapper in `second_derivative/function/`.
-The wrapper follows a fixed three-step pattern:
+Each FutureTensor op whose 1st derivative participates in 2nd differentiation wraps
+that 1st derivative inside a `torch.autograd.Function` (a *GradFn*). The GradFn's
+`forward` IS the 1st derivative; its `backward` dispatches to the active Policy.
 
 ```python
-# second_derivative/function/recurrent_2nd.py
+# future_tensor/function/recurrent_2nd.py
 
-from experience.future_tensor.function.ft_recurrent_backward import recurrent_backward
+import torch
+from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
 
-def recurrent_2nd_backward(grad_output, input, output, prompt_tensor, **kwargs):
-    from experience.future_tensor.second_derivative import get_2nd_dispatcher
+class RecurrentGradFn(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, grad_output, input, output, prompt_tensor, **kwargs):
+        from experience.future_tensor.function.ft_recurrent_backward import recurrent_backward
 
-    # 1. Get the dispatcher keyed on the 1st-derivative backward function object
-    dispatch = get_2nd_dispatcher(recurrent_backward)
+        ctx.save_for_backward(grad_output, input, output, prompt_tensor)
+        ctx._recurrent_backward_fn = recurrent_backward
 
-    # 2. Dispatch with named arguments
-    dispatch({
-        "grad_output":   grad_output,
-        "input":         input,
-        "output":        output,
-        "prompt_tensor": prompt_tensor,
-        **kwargs,
-    })
+        grad_input = recurrent_backward(grad_output, input, output, prompt_tensor, **kwargs)
+        ctx._grad_input = grad_input
+        return grad_input
 
-    # 3. Return placeholder scalar — the policy handles actual content
-    return torch.ones(())
+    @staticmethod
+    def backward(ctx, grad_grad_input):
+        grad_output, input, output, prompt_tensor = ctx.saved_tensors
+
+        # 1. Get the dispatcher keyed on the 1st-derivative backward function object
+        dispatch = get_2nd_dispatcher(ctx._recurrent_backward_fn)
+
+        # 2. Dispatch with named arguments
+        dispatch({
+            "grad_output":   grad_output,
+            "input":         input,
+            "output":        output,
+            "prompt_tensor": prompt_tensor,
+            "grad_input":    ctx._grad_input,
+        })
+
+        # 3. Return placeholder gradient for (grad_output, input, output, prompt_tensor, ...)
+        return None, None, None, None, None, None, None, None, None
 ```
 
 The `arg_name2inputs` dict mirrors the argument names of the *1st*-derivative backward
@@ -221,15 +265,19 @@ backward's source.
 second_derivative/
 ├── README.md
 ├── __init__.py              # exports: need_2nd_derivative, get_2nd_dispatcher,
-│                            #          dispatch_policy, TracePolicy
+│                            #          dispatch_policy, TracePolicy, Policy,
+│                            #          ReflectionRecord, PolicyConflictError
 ├── policy.py                # Policy base class, ReflectionRecord, PolicyConflictError
 ├── context.py               # dispatch_policy context manager + thread-local state
 ├── dispatcher.py            # get_2nd_dispatcher; per-function dispatcher registry
-├── need_2nd_derivative.py   # need_2nd_derivative: set requires_grad=True
-├── trace_policy.py          # TracePolicy: non-destructive collector (default)
-└── function/
-    ├── recurrent_2nd.py     # 2nd derivative wrapper for recurrent_backward
-    └── moe_2nd.py           # 2nd derivative wrapper for moe_backward
+├── need_2nd_derivative.py   # need_2nd_derivative: computational dependency anchor
+└── trace_policy.py          # TracePolicy: non-destructive collector (default)
+
+future_tensor/function/      # GradFn wrappers live next to their 1st-derivative ops
+├── recurrent_2nd.py         # RecurrentGradFn  (wraps recurrent_backward)
+├── moe_2nd.py               # MoeGradFn        (wraps st_moe_backward)
+├── slice_2nd.py             # SliceGradFn      (wraps slice_backward)
+└── unsqueeze_2nd.py         # UnsqueezeGradFn  (wraps unsqueeze squeeze-via-slice)
 ```
 
 ---
@@ -255,12 +303,14 @@ no cross-partial terms between different elements. Each element's 2nd derivative
 computed independently, in parallel, by the policy. This is what makes the mechanism
 tractable at scale.
 
-**`need_2nd_derivative` is minimal.**
-It only sets `requires_grad=True` on `input` and returns it. The second derivative
-machinery is entirely in the dispatch layer — `need_2nd_derivative` carries no
-side effects and does not know about policies, dispatchers, or `second_derivative_start`
-beyond receiving it as a parameter (currently unused beyond serving as a typed signal
-to the caller that a 2nd-derivative pass is intended).
+**`need_2nd_derivative` creates a computational dependency.**
+It multiplies `input * second_derivative_start` so that during
+`loss.backward(create_graph=True)` the gradient computation for
+`second_derivative_start` includes the entire backward graph of the model.
+FutureTensor monkey-patched attributes are copied to the result so downstream
+ops still see a valid FutureTensor. The second derivative machinery itself is
+entirely in the dispatch layer — `need_2nd_derivative` does not know about
+policies or dispatchers.
 
 **`TracePolicy` as default.**
 Making `TracePolicy` the default means a bare `second_derivative_start.grad.backward()`

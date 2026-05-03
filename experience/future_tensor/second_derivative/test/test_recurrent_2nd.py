@@ -100,10 +100,6 @@ def make_overflow_ft(shape, data_list, tmpdir):
 class RecurrentOnlyModel(nn.Module):
     """Minimal model containing only ft_recurrent."""
 
-    def __init__(self):
-        super().__init__()
-        self.second_derivative_start = nn.Parameter(torch.ones(()))
-
     def forward(self, input_ft):
         output, _ = ft_recurrent(input_ft, task_prompt="test")
         return output
@@ -119,7 +115,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = RecurrentOnlyModel()
-    anchored = need_2nd_derivative(input_ft, model.second_derivative_start)
+    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_2nd_derivative(input_ft, second_derivative_start)
     output = model(anchored)
 
     run_test("output ft_capacity_shape is [2]",
@@ -138,7 +135,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = RecurrentOnlyModel()
-    anchored = need_2nd_derivative(input_ft, model.second_derivative_start)
+    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_2nd_derivative(input_ft, second_derivative_start)
     output = model(anchored)
     loss = ft_mean(output)
 
@@ -149,14 +147,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
     loss.backward(create_graph=True)
 
     run_test("second_derivative_start.grad exists",
-             model.second_derivative_start.grad is not None)
+             second_derivative_start.grad is not None)
     run_test("second_derivative_start.grad has grad_fn",
-             model.second_derivative_start.grad.grad_fn is not None)
+             second_derivative_start.grad.grad_fn is not None)
 
     # 2nd backward with TracePolicy
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        model.second_derivative_start.grad.backward()
+        second_derivative_start.grad.backward()
 
     run_test("TracePolicy collected at least 1 record", len(coll) >= 1)
     if len(coll) >= 1:
@@ -179,14 +177,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = RecurrentOnlyModel()
-    anchored = need_2nd_derivative(input_ft, model.second_derivative_start)
+    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_2nd_derivative(input_ft, second_derivative_start)
     output = model(anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
 
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        model.second_derivative_start.grad.backward()
+        second_derivative_start.grad.backward()
 
     if len(coll) >= 1:
         rec = coll[0]
