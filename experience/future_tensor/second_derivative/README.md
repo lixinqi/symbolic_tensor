@@ -91,12 +91,15 @@ with dispatch_policy('default'):
 need_2nd_derivative(
     input: torch.Tensor,                    # FutureTensor or SymbolicTensor
     second_derivative_start: nn.Parameter,  # scalar anchor (shape=(), value=1)
-) -> torch.Tensor                           # transparent wrapper of input
+) -> torch.Tensor                           # input, unchanged
 ```
 
-Inserts a scalar-multiply-by-1 edge so that the gradient flowing back through `input`
-also flows into `second_derivative_start.grad`. This is the only place where the two
-autograd graphs (harness-model graph and 2nd-derivative graph) are joined.
+Returns `input` unchanged. Registers `second_derivative_start` in module-level
+thread-local state so that every subsequent `get_2nd_dispatcher` call within the
+same thread accumulates its placeholder scalar output into
+`second_derivative_start.grad` when `second_derivative_start.grad.backward()` is
+later called. No graph edge is inserted and the autograd graph of the harness
+model is not modified.
 
 ### `get_2nd_dispatcher(function_name)`
 
@@ -280,6 +283,15 @@ Because `FutureTensor` is 0D, the second derivative is a scalar functional — t
 no cross-partial terms between different elements. Each element's 2nd derivative is
 computed independently, in parallel, by the policy. This is what makes the mechanism
 tractable at scale.
+
+**`need_2nd_derivative` is a pass-through.**
+It returns `input` unchanged and does not touch the autograd graph. The connection
+between each dispatched op and `second_derivative_start` is established by the
+dispatcher: each 2nd-derivative op appends its placeholder scalar to a list stored
+under `second_derivative_start` in thread-local state. When
+`second_derivative_start.grad.backward()` is called, autograd traverses that list
+and fires each registered 2nd-derivative op. This keeps the harness-model graph
+fully unmodified.
 
 **Policy composability.**
 `TracePolicy` + manual promotion is the recommended pattern for production use:
