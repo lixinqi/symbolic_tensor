@@ -23,7 +23,7 @@ layer of corrective text. This enables meta-learning: learning how to reflect be
 
 ## Usage pattern
 
-### 1. Before the forward pass — mark the 2nd derivative entry point
+### 1. Before the forward pass — enable gradient flow through the input
 
 ```python
 import torch
@@ -34,10 +34,10 @@ second_derivative_start = torch.nn.Parameter(torch.ones(()))  # scalar anchor
 input = need_2nd_derivative(input, second_derivative_start)
 ```
 
-`need_2nd_derivative` inserts a transparent edge in the autograd graph that routes the
-1st-derivative results (LLM reflections) back through `second_derivative_start`. When
-`second_derivative_start.grad.backward()` is later called, autograd propagates through
-the reflection tensors.
+`need_2nd_derivative` returns `input` with `requires_grad=True`. Because `input` now
+participates in the autograd graph, gradients computed during `loss.backward()` flow
+through it and accumulate into `second_derivative_start.grad` via the placeholder
+scalars returned by each 2nd-derivative op.
 
 ### 2. Run the harness model normally
 
@@ -46,10 +46,10 @@ output = model(input)
 loss = criterion(output, target)
 loss.backward()
 # After this: second_derivative_start.grad holds the accumulated
-# symbolic gradient from all 1st-derivative backward ops.
+# scalar gradient from all 1st-derivative backward ops.
 ```
 
-### 3. After the first backward — introspect or compute the 2nd derivative
+### 3. After the first backward — introspect the LLM reflections
 
 ```python
 from experience.future_tensor.second_derivative import dispatch_policy, TracePolicy
@@ -70,16 +70,8 @@ with dispatch_policy(TracePolicy(llm_reflections)):
 # ]
 ```
 
-`TracePolicy` is non-destructive — it records every 2nd-derivative op call without
-actually running any LLM. Use it to inspect *which* reflections would be differentiated
-and *what* their inputs are, before committing to a full 2nd-derivative run.
-
-To actually execute the 2nd derivative (reflection of reflection):
-
-```python
-with dispatch_policy('default'):
-    second_derivative_start.grad.backward()
-```
+`TracePolicy` is the default policy. It records every 2nd-derivative op call without
+running any LLM — use it to inspect which reflections fired and what their inputs are.
 
 ---
 
@@ -91,15 +83,14 @@ with dispatch_policy('default'):
 need_2nd_derivative(
     input: torch.Tensor,                    # FutureTensor or SymbolicTensor
     second_derivative_start: nn.Parameter,  # scalar anchor (shape=(), value=1)
-) -> torch.Tensor                           # input, unchanged
+) -> torch.Tensor                           # input with requires_grad=True
 ```
 
-Returns `input` unchanged. Registers `second_derivative_start` in module-level
-thread-local state so that every subsequent `get_2nd_dispatcher` call within the
-same thread accumulates its placeholder scalar output into
-`second_derivative_start.grad` when `second_derivative_start.grad.backward()` is
-later called. No graph edge is inserted and the autograd graph of the harness
-model is not modified.
+Returns `input` with `requires_grad` set to `True`. Has no side effects beyond that —
+no thread-local registration, no graph edge insertion, no dispatcher interaction.
+Setting `requires_grad=True` ensures the autograd graph connects `input` to
+`second_derivative_start` through the placeholder scalars that each 2nd-derivative
+op returns, so `second_derivative_start.grad.backward()` can traverse them.
 
 ### `get_2nd_dispatcher(function_name)`
 
@@ -112,11 +103,11 @@ dispatch(arg_name2inputs)                    # fires the active policy
 
 Called inside each 2nd-derivative backward function. Looks up the dispatcher registered
 for `function_name` in the currently active `dispatch_policy`. If no policy is active,
-raises `NoPolicyError`.
+uses `TracePolicy` with a module-level default collector.
 
 Every 2nd-derivative op function returns a **placeholder scalar tensor** (`value=1`)
 rather than a meaningful tensor — consistent with FutureTensor being 0D. The actual
-derivative content is produced asynchronously by the policy.
+derivative content is recorded by the policy.
 
 ### `dispatch_policy(policy)` — context manager
 
@@ -127,9 +118,8 @@ with dispatch_policy(policy):
 
 Sets the thread-local active policy for all `get_2nd_dispatcher` calls inside the block.
 
-`policy` is one of:
-- The string `'default'` — uses `DefaultPolicy`
-- A `Policy` instance — e.g. `TracePolicy(collector)`, or a custom subclass
+`policy` is a `Policy` instance — e.g. `TracePolicy(collector)`, or a custom subclass.
+`TracePolicy` is the default when no `dispatch_policy` block is active.
 
 Policies are **not** reentrant by default. Nesting two `dispatch_policy` blocks raises
 `PolicyConflictError` unless the inner policy explicitly allows nesting.
@@ -138,23 +128,7 @@ Policies are **not** reentrant by default. Nesting two `dispatch_policy` blocks 
 
 ## Dispatch policies
 
-### `DefaultPolicy`
-
-Runs the actual 2nd derivative: for each backward op, invokes an LLM to reflect on the
-reflection. The LLM receives:
-
-- The 1st-derivative output (the reflection text) as the "gradient to differentiate"
-- The original inputs to the 1st-derivative backward (forward output, input, prompt)
-- A system prompt explaining that it is reflecting on a reflection
-
-Produces a `SymbolicTensor` element containing "how should this reflection change?"
-
-```python
-with dispatch_policy('default'):
-    second_derivative_start.grad.backward()
-```
-
-### `TracePolicy(collector: list)`
+### `TracePolicy(collector: list)` — default
 
 Non-destructive. Records every dispatch call into `collector` without running any LLM.
 Each record is a `ReflectionRecord`:
@@ -170,7 +144,7 @@ class ReflectionRecord:
 
 Use `TracePolicy` to:
 - Audit which backward functions fired and with what arguments
-- Dry-run before committing to an expensive 2nd-derivative LLM pass
+- Inspect the LLM reflections (1st-derivative outputs) before deciding what to do
 - Build custom schedulers that selectively promote trace records to full execution
 
 ```python
@@ -189,22 +163,16 @@ Subclass `Policy` and implement `dispatch`:
 ```python
 from experience.future_tensor.second_derivative.policy import Policy, ReflectionRecord
 
-class SelectivePolicy(Policy):
-    """Only run 2nd derivative for recurrent backward ops; trace the rest."""
-
-    def __init__(self, trace_collector):
-        self._trace = trace_collector
-        self._default = DefaultPolicy()
+class ExecutePolicy(Policy):
+    """Run an LLM to reflect on each reflection."""
 
     def dispatch(self, fn: str, arg_name2inputs: dict) -> torch.Tensor:
-        if fn == "recurrent_backward":
-            return self._default.dispatch(fn, arg_name2inputs)
-        record = ReflectionRecord(fn=fn, inputs=arg_name2inputs,
-                                  output=torch.ones(()))
-        self._trace.append(record)
-        return record.output
+        # call LLM with arg_name2inputs["grad_output"] (the 1st-derivative text)
+        # and the original forward inputs to produce the 2nd derivative
+        ...
+        return torch.ones(())
 
-with dispatch_policy(SelectivePolicy(trace)):
+with dispatch_policy(ExecutePolicy()):
     second_derivative_start.grad.backward()
 ```
 
@@ -250,13 +218,12 @@ backward's source.
 second_derivative/
 ├── README.md
 ├── __init__.py              # exports: need_2nd_derivative, get_2nd_dispatcher,
-│                            #          dispatch_policy, TracePolicy, DefaultPolicy
+│                            #          dispatch_policy, TracePolicy
 ├── policy.py                # Policy base class, ReflectionRecord, PolicyConflictError
 ├── context.py               # dispatch_policy context manager + thread-local state
 ├── dispatcher.py            # get_2nd_dispatcher; per-function dispatcher registry
-├── need_2nd_derivative.py   # need_2nd_derivative: graph edge insertion
-├── default_policy.py        # DefaultPolicy: runs LLM reflection-of-reflection
-├── trace_policy.py          # TracePolicy: non-destructive collector
+├── need_2nd_derivative.py   # need_2nd_derivative: set requires_grad=True
+├── trace_policy.py          # TracePolicy: non-destructive collector (default)
 └── function/
     ├── recurrent_2nd.py     # 2nd derivative wrapper for recurrent_backward
     └── moe_2nd.py           # 2nd derivative wrapper for moe_backward
@@ -270,13 +237,13 @@ second_derivative/
 `second_derivative_start` has shape `()` — matching FutureTensor's scalar shape. This
 keeps the 2nd derivative graph homogeneous: every node is a scalar, every edge carries
 a scalar gradient. The "value" of the gradient is not a float but a `SymbolicTensor`
-element (a text diff), dispatched by the policy.
+element (a text diff), recorded by the policy.
 
 **Why `__function__` as the dispatcher key?**
 Each 2nd-derivative wrapper is defined inside a specific backward function file, so
 `__function__` (the module-level `__name__`) uniquely identifies which backward op is
 being differentiated. Policies can branch on this name to apply different strategies
-per op — for example, running LLM for `recurrent_backward` but tracing `moe_backward`.
+per op.
 
 **No Hessian.**
 Because `FutureTensor` is 0D, the second derivative is a scalar functional — there are
@@ -284,29 +251,14 @@ no cross-partial terms between different elements. Each element's 2nd derivative
 computed independently, in parallel, by the policy. This is what makes the mechanism
 tractable at scale.
 
-**`need_2nd_derivative` is a pass-through.**
-It returns `input` unchanged and does not touch the autograd graph. The connection
-between each dispatched op and `second_derivative_start` is established by the
-dispatcher: each 2nd-derivative op appends its placeholder scalar to a list stored
-under `second_derivative_start` in thread-local state. When
-`second_derivative_start.grad.backward()` is called, autograd traverses that list
-and fires each registered 2nd-derivative op. This keeps the harness-model graph
-fully unmodified.
+**`need_2nd_derivative` is minimal.**
+It only sets `requires_grad=True` on `input` and returns it. The second derivative
+machinery is entirely in the dispatch layer — `need_2nd_derivative` carries no
+side effects and does not know about policies, dispatchers, or `second_derivative_start`
+beyond receiving it as a parameter (currently unused beyond serving as a typed signal
+to the caller that a 2nd-derivative pass is intended).
 
-**Policy composability.**
-`TracePolicy` + manual promotion is the recommended pattern for production use:
-
-```python
-# Phase 1: trace cheaply
-records = []
-with dispatch_policy(TracePolicy(records)):
-    second_derivative_start.grad.backward()
-
-# Phase 2: selectively execute expensive records
-important = [r for r in records if should_run_2nd(r)]
-for r in important:
-    DefaultPolicy().dispatch(r.fn, r.inputs)
-```
-
-This separates graph traversal (cheap) from LLM calls (expensive) and gives full
-control over budget, priority, and batching.
+**`TracePolicy` as default.**
+Making `TracePolicy` the default means a bare `second_derivative_start.grad.backward()`
+without any `dispatch_policy` block is safe and useful: it collects all reflection
+records into the module-level default collector. No LLM is ever invoked unexpectedly.
