@@ -754,6 +754,18 @@ def st_moe_backward(
         context=context,
     )
 
+    # ── 2nd derivative dispatch ──
+    from experience.future_tensor.second_derivative.function.moe_2nd import moe_2nd_backward
+    moe_2nd_backward(
+        grad_output, input, output, experience,
+        selected_experience_qkv_indexes_list,
+        context=context,
+        task_prompt=task_prompt,
+        topk=topk,
+        llm_method=llm_method,
+        llm_env=llm_env,
+    )
+
     return grad_input, grad_experience
 
 
