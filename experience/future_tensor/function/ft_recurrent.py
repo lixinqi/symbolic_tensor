@@ -22,6 +22,7 @@ from experience.future_tensor.function.ft_recurrent_backward import (
     default_prompt_for_recurrent_grad_input,
     BackwardPromptCallable,
 )
+from experience.future_tensor.second_derivative.function.recurrent_2nd import RecurrentGradFn
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 
 
@@ -73,16 +74,16 @@ class FtRecurrent(torch.autograd.Function):
             symbolic_grad_output.data.copy_(grad_output.data)
             grad_output = symbolic_grad_output
 
-        grad_input = recurrent_backward(
+        grad_input = RecurrentGradFn.apply(
             grad_output,
             input_st,
             output_st,
             prompt_tensor_st,
-            topk_self_confidence_but_failed=ctx.topk_self_confidence_but_failed,
-            grad_input_prompt=ctx.grad_input_prompt,
-            task_prompt=ctx.task_prompt,
-            llm_method=ctx.llm_method,
-            llm_env=ctx.llm_env,
+            ctx.topk_self_confidence_but_failed,
+            ctx.grad_input_prompt,
+            ctx.task_prompt,
+            ctx.llm_method,
+            ctx.llm_env,
         )
 
         # Return grads for (input, topk_scbf, grad_input_prompt, task_prompt,

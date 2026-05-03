@@ -37,6 +37,7 @@ from experience.symbolic_tensor.function.st_moe_backward import (
 from experience.symbolic_tensor.function.select_qkv_indexes import default_retrieval_method
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 from experience.symbolic_tensor.function import symbolic_grad_registry
+from experience.future_tensor.second_derivative.function.moe_2nd import MoeGradFn
 
 
 OutputPromptCallable = Callable[..., str]
@@ -150,20 +151,20 @@ class FtMoe(torch.autograd.Function):
         #   input = input_st (ft_moe.input)
         #   context = prompt_tensor_st (ft_moe.prompt)
         #   experience = experience (ft_moe.experience)
-        grad_input, grad_experience = st_moe_backward(
+        grad_input, grad_experience = MoeGradFn.apply(
             grad_output,
-            input_st,             # st_moe.input = ft_moe.input._tensor
+            input_st,
             output_st,
             experience,
+            ctx.task_prompt,
+            ctx.topk,
+            ctx.llm_method,
+            ctx.llm_env,
+            prompt_tensor_st,    # context
+            ctx.grad_input_prompt,
+            ctx.grad_exp_key_prompt,
+            ctx.grad_exp_value_prompt,
             selected_experience_qkv_indexes_list,
-            grad_input_prompt=ctx.grad_input_prompt,
-            grad_exp_key_prompt=ctx.grad_exp_key_prompt,
-            grad_exp_value_prompt=ctx.grad_exp_value_prompt,
-            task_prompt=ctx.task_prompt,
-            topk=ctx.topk,
-            llm_method=ctx.llm_method,
-            llm_env=ctx.llm_env,
-            context=prompt_tensor_st,  # st_moe.context = ft_moe.prompt
         )
 
         # Register symbolic grads keyed by tensor uids

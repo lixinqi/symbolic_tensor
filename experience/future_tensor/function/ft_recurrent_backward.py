@@ -248,18 +248,6 @@ def recurrent_backward(
         assign_tensor(gi_view, diff)
         shutil.rmtree(ws_dir)
 
-    # ── 2nd derivative dispatch ──
-    from experience.future_tensor.second_derivative.function.recurrent_2nd import (
-        recurrent_2nd_backward,
-    )
-    recurrent_2nd_backward(
-        grad_output, input, output, prompt_tensor,
-        topk_self_confidence_but_failed=topk_self_confidence_but_failed,
-        task_prompt=task_prompt,
-        llm_method=llm_method,
-        llm_env=llm_env,
-    )
-
     return grad_input
 
 
