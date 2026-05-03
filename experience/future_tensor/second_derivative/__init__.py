@@ -11,6 +11,13 @@ Public API:
     Policy (base class)
     ReflectionRecord (dataclass)
     PolicyConflictError
+
+autograd.Function wrappers (1st-backward → 2nd-derivative dispatch):
+
+    RecurrentGradFn   (wraps recurrent_backward)
+    MoeGradFn         (wraps st_moe_backward)
+    SliceGradFn       (wraps slice_backward)
+    UnsqueezeGradFn   (wraps unsqueeze squeeze-via-slice_forward)
 """
 
 from experience.future_tensor.second_derivative.need_2nd_derivative import need_2nd_derivative

@@ -232,6 +232,34 @@ def FutureTensor(
     return ft
 
 
+def _tensor_to_future(tensor: torch.Tensor, reference_ft) -> torch.Tensor:
+    """Convert a plain torch.Tensor into a FutureTensor using reference for metadata.
+
+    The autograd engine passes plain torch.Tensor as grad_output to backward().
+    This helper wraps it back into a FutureTensor so that backward functions
+    (slice_backward, unsqueeze_forward, etc.) receive the type they expect.
+
+    Args:
+        tensor: Plain torch.Tensor (usually grad_output from autograd engine).
+        reference_ft: A FutureTensor to borrow relative_to and metadata from.
+
+    Returns:
+        A FutureTensor with the same shape and data coefficients as ``tensor``.
+    """
+    from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
+
+    shape = list(tensor.shape)
+    relative_to = reference_ft.ft_static_tensor.st_relative_to
+
+    async def dummy_get(coords, prompt):
+        return ("", Status.confidence(0.0))
+
+    ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
+    ft.ft_static_tensor.data.copy_(tensor.data)
+    ft.ft_forwarded = True
+    return ft
+
+
 if __name__ == "__main__":
     import tempfile
 
@@ -336,5 +364,23 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         ft = FutureTensor(tmpdir, None, [sympy.Integer(3)])
         run_test("ft_incremental_concated_tensors is []", ft.ft_incremental_concated_tensors == [])
+
+    # ── Test 5: FtMean ───────────────────────────────────────────────────
+
+    print("Test 5: FtMean")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        async def dummy_get(coords, prompt):
+            return ("unused", Status.confidence(1.0))
+
+        ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(4)])
+        ft.ft_static_tensor.data[0] = 1.0
+        ft.ft_static_tensor.data[1] = 2.0
+        ft.ft_static_tensor.data[2] = 3.0
+        ft.ft_static_tensor.data[3] = 4.0
+        ft.ft_forwarded = True
+
+        m = ft_mean(ft)
+        run_test("FtMean returns scalar", m.shape == torch.Size([]))
+        run_test("FtMean value correct", abs(m.item() - 2.5) < 0.01)
 
     print("\nAll tests completed.")

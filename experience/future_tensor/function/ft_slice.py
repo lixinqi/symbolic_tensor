@@ -11,11 +11,13 @@ ft_slice = FtSlice.apply
 
 from typing import List, Union
 
+import sympy
 import torch
 
-from experience.future_tensor.future_tensor import FutureTensor
+from experience.future_tensor.future_tensor import FutureTensor, _tensor_to_future
 from experience.future_tensor.function.slice_forward import slice_forward
 from experience.future_tensor.function.slice_backward import slice_backward
+from experience.future_tensor.function.slice_2nd import SliceGradFn
 
 
 class FtSlice(torch.autograd.Function):
@@ -30,14 +32,45 @@ class FtSlice(torch.autograd.Function):
         ctx.original_shape = input.ft_capacity_shape
         ctx.slices = slices
         ctx.input_ft = input
-        return slice_forward(input, slices)
+        result = slice_forward(input, slices)
+        ctx.output_shape = result.ft_capacity_shape
+        return result
 
     @staticmethod
     def backward(ctx, grad_output: FutureTensor):
-        grad_input = slice_backward(
-            grad_output, ctx.original_shape, ctx.slices
-        )
-        return grad_input, None
+        # grad_output from the autograd engine may be a plain torch.Tensor
+        # (it strips FutureTensor monkey-patched attributes).
+        if not hasattr(grad_output, "ft_static_tensor"):
+            # Reconstruct FutureTensor attributes on the EXISTING tensor so
+            # that any grad_fn chain (e.g. RecurrentGradFnBackward) is
+            # preserved rather than severed by creating a new tensor object.
+            shape = getattr(ctx, "output_shape", list(grad_output.shape))
+            relative_to = ctx.input_ft.ft_static_tensor.st_relative_to
+            async def dummy_get(coords, prompt):
+                return ("", Status.confidence(0.0))
+            ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
+            if grad_output.numel() == 1:
+                if shape:
+                    ref_ft.ft_static_tensor.data.flatten().fill_(grad_output.item())
+                else:
+                    ref_ft.ft_static_tensor.data.fill_(grad_output.item())
+            else:
+                ref_ft.ft_static_tensor.data.copy_(grad_output.data.view(ref_ft.ft_static_tensor.shape))
+            ref_ft.ft_forwarded = True
+
+            # Monkey-patch attributes onto the existing grad_output tensor
+            grad_output.ft_static_tensor = ref_ft.ft_static_tensor
+            grad_output.ft_capacity_shape = ref_ft.ft_capacity_shape
+            grad_output.ft_async_get = ref_ft.ft_async_get
+            grad_output.ft_forwarded = ref_ft.ft_forwarded
+            grad_output.ft_shape_schema = ref_ft.ft_shape_schema
+            grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
+
+        # Enable 2nd-derivative graph recording by requiring grad on the tensor
+        # that is fed into the 2nd-derivative GradFn.
+        if not grad_output.requires_grad:
+            grad_output.requires_grad_(True)
+        return SliceGradFn.apply(grad_output, ctx.original_shape, ctx.slices), None
 
 
 def ft_slice(input: FutureTensor, slices: List[Union[int, slice]]) -> FutureTensor:

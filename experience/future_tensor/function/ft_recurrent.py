@@ -22,7 +22,7 @@ from experience.future_tensor.function.ft_recurrent_backward import (
     default_prompt_for_recurrent_grad_input,
     BackwardPromptCallable,
 )
-from experience.future_tensor.second_derivative.function.recurrent_2nd import RecurrentGradFn
+from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 
 
@@ -73,6 +73,10 @@ class FtRecurrent(torch.autograd.Function):
             symbolic_grad_output = todo_tensor_like(output_st)
             symbolic_grad_output.data.copy_(grad_output.data)
             grad_output = symbolic_grad_output
+
+        # Enable 2nd-derivative graph recording.
+        if not grad_output.requires_grad:
+            grad_output.requires_grad_(True)
 
         grad_input = RecurrentGradFn.apply(
             grad_output,

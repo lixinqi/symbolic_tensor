@@ -37,7 +37,7 @@ from experience.symbolic_tensor.function.st_moe_backward import (
 from experience.symbolic_tensor.function.select_qkv_indexes import default_retrieval_method
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 from experience.symbolic_tensor.function import symbolic_grad_registry
-from experience.future_tensor.second_derivative.function.moe_2nd import MoeGradFn
+from experience.future_tensor.function.moe_2nd import MoeGradFn
 
 
 OutputPromptCallable = Callable[..., str]

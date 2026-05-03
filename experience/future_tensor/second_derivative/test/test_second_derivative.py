@@ -14,7 +14,7 @@ Tests are grouped by scenario:
  10. ReflectionRecord fields
 
 Run:
-    python -m experience.future_tensor.second_derivative.test_second_derivative
+    python -m experience.future_tensor.second_derivative.test.test_second_derivative
 """
 
 import os
@@ -53,14 +53,8 @@ from experience.future_tensor.second_derivative import (
     ReflectionRecord,
     PolicyConflictError,
 )
-from experience.future_tensor.second_derivative.function.recurrent_2nd import (
-    RecurrentGradFn,
-    recurrent_2nd_backward,
-)
-from experience.future_tensor.second_derivative.function.moe_2nd import (
-    MoeGradFn,
-    moe_2nd_backward,
-)
+from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
+from experience.future_tensor.function.moe_2nd import MoeGradFn
 
 run_test("need_2nd_derivative callable", callable(need_2nd_derivative))
 run_test("get_2nd_dispatcher callable", callable(get_2nd_dispatcher))
@@ -73,27 +67,36 @@ run_test("RecurrentGradFn is autograd.Function subclass",
          issubclass(RecurrentGradFn, torch.autograd.Function))
 run_test("MoeGradFn is autograd.Function subclass",
          issubclass(MoeGradFn, torch.autograd.Function))
-run_test("recurrent_2nd_backward callable", callable(recurrent_2nd_backward))
-run_test("moe_2nd_backward callable", callable(moe_2nd_backward))
 
 # ── Group 2: need_2nd_derivative ─────────────────────────────────────────────
 print("\nGroup 2: need_2nd_derivative")
 
 anchor = torch.nn.Parameter(torch.ones(()))
 
-t = torch.zeros(3)
+t = torch.zeros(())
 result = need_2nd_derivative(t, anchor)
-run_test("returns same tensor object", result is t)
+run_test("returns tensor with same value", result.item() == t.item())
+run_test("input is scalar", result.shape == torch.Size([]))
 run_test("requires_grad set to True", result.requires_grad is True)
 
-t2 = torch.ones(2, 3)
-result2 = need_2nd_derivative(t2, anchor)
-run_test("works on 2D tensor", result2 is t2 and result2.requires_grad)
-
 # Already requires_grad — idempotent
-t3 = torch.zeros(4, requires_grad=True)
-result3 = need_2nd_derivative(t3, anchor)
-run_test("idempotent when already requires_grad", result3.requires_grad is True)
+t2 = torch.zeros((), requires_grad=True)
+result2 = need_2nd_derivative(t2, anchor)
+run_test("idempotent when already requires_grad", result2.requires_grad is True)
+
+# Non-scalar second_derivative_start raises
+try:
+    need_2nd_derivative(torch.zeros(()), torch.nn.Parameter(torch.ones(3)))
+    run_test("non-scalar second_derivative_start raises AssertionError", False)
+except AssertionError:
+    run_test("non-scalar second_derivative_start raises AssertionError", True)
+
+# Non-scalar input raises
+try:
+    need_2nd_derivative(torch.zeros(3), anchor)
+    run_test("non-scalar input raises AssertionError", False)
+except AssertionError:
+    run_test("non-scalar input raises AssertionError", True)
 
 # ── Group 3: dispatch_policy context manager ─────────────────────────────────
 print("\nGroup 3: dispatch_policy context manager")
@@ -228,7 +231,8 @@ print("\nGroup 7: MoeGradFn — autograd.Function structure")
 
 run_test("MoeGradFn is autograd.Function subclass",
          issubclass(MoeGradFn, torch.autograd.Function))
-run_test("moe_2nd_backward callable", callable(moe_2nd_backward))
+from experience.symbolic_tensor.function.st_moe_backward import st_moe_backward as _st_moe_backward
+run_test("st_moe_backward callable", callable(_st_moe_backward))
 
 # ── Group 8: Integration — RecurrentGradFn.backward() dispatches ───────────────
 print("\nGroup 8: Integration — RecurrentGradFn.backward() → TracePolicy")
@@ -275,6 +279,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
                  coll8[0].inputs.get("prompt_tensor") is prompt8)
         run_test("task_prompt forwarded",
                  coll8[0].inputs.get("task_prompt") == "no llm needed")
+        run_test("grad_input in inputs", "grad_input" in coll8[0].inputs)
+        run_test("topk_self_confidence_but_failed in inputs",
+                 "topk_self_confidence_but_failed" in coll8[0].inputs)
 
 # ── Group 9: Integration — MoeGradFn.backward() dispatches ────────────────────
 print("\nGroup 9: Integration — MoeGradFn.backward() → TracePolicy")
@@ -339,6 +346,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
         run_test("experience in inputs", coll9[0].inputs.get("experience") is exp9)
         run_test("task_prompt forwarded",
                  coll9[0].inputs.get("task_prompt") == "Translate English to French.")
+        run_test("grad_input in inputs", "grad_input" in coll9[0].inputs)
+        run_test("grad_experience in inputs", "grad_experience" in coll9[0].inputs)
+        run_test("context in inputs", "context" in coll9[0].inputs)
+        run_test("topk in inputs", "topk" in coll9[0].inputs)
 
 # ── Group 10: ReflectionRecord fields ────────────────────────────────────────
 print("\nGroup 10: ReflectionRecord fields")

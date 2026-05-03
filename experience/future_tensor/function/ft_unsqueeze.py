@@ -11,11 +11,13 @@ ft_unsqueeze = FtUnsequeeze.apply
 
 from typing import List
 
+import sympy
 import torch
 
-from experience.future_tensor.future_tensor import FutureTensor
+from experience.future_tensor.future_tensor import FutureTensor, _tensor_to_future
 from experience.future_tensor.function.unsqueeze_forward import unsqueeze_forward
 from experience.future_tensor.function.slice_forward import slice_forward
+from experience.future_tensor.function.unsqueeze_2nd import UnsqueezeGradFn
 
 
 class FtUnsqueeze(torch.autograd.Function):
@@ -29,21 +31,49 @@ class FtUnsqueeze(torch.autograd.Function):
     def forward(ctx, input: FutureTensor, dim: int):
         ctx.dim = dim
         ctx.input_ft = input
-        return unsqueeze_forward(input, dim)
+        result = unsqueeze_forward(input, dim)
+        ctx.output_shape = result.ft_capacity_shape
+        return result
 
     @staticmethod
     def backward(ctx, grad_output: FutureTensor):
+        # grad_output from the autograd engine may be a plain torch.Tensor.
+        if not hasattr(grad_output, "ft_static_tensor"):
+            # Reconstruct FutureTensor attributes on the EXISTING tensor so
+            # that any grad_fn chain is preserved rather than severed.
+            shape = getattr(ctx, "output_shape", list(grad_output.shape))
+            relative_to = ctx.input_ft.ft_static_tensor.st_relative_to
+            async def dummy_get(coords, prompt):
+                return ("", Status.confidence(0.0))
+            ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
+            if grad_output.numel() == 1:
+                if shape:
+                    ref_ft.ft_static_tensor.data.flatten().fill_(grad_output.item())
+                else:
+                    ref_ft.ft_static_tensor.data.fill_(grad_output.item())
+            else:
+                ref_ft.ft_static_tensor.data.copy_(grad_output.data.view(ref_ft.ft_static_tensor.shape))
+            ref_ft.ft_forwarded = True
+
+            # Monkey-patch attributes onto the existing grad_output tensor
+            grad_output.ft_static_tensor = ref_ft.ft_static_tensor
+            grad_output.ft_capacity_shape = ref_ft.ft_capacity_shape
+            grad_output.ft_async_get = ref_ft.ft_async_get
+            grad_output.ft_forwarded = ref_ft.ft_forwarded
+            grad_output.ft_shape_schema = ref_ft.ft_shape_schema
+            grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
+
         # Backward of unsqueeze is squeeze (slice with int index at dim)
-        # Slicing with int at the unsqueezed dim removes it
         dim = ctx.dim
         ndim_output = len(grad_output.ft_capacity_shape)
-        # Normalize dim
         if dim < 0:
             dim = ndim_output + dim
         slices = [slice(None)] * ndim_output
         slices[dim] = 0  # int index collapses the dim
-        grad_input = slice_forward(grad_output, slices)
-        return grad_input, None
+
+        if not grad_output.requires_grad:
+            grad_output.requires_grad_(True)
+        return UnsqueezeGradFn.apply(grad_output, dim, slices), None
 
 
 def ft_unsqueeze(input: FutureTensor, dim: int) -> FutureTensor:
