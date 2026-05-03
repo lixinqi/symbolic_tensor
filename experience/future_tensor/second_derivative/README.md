@@ -97,13 +97,14 @@ op returns, so `second_derivative_start.grad.backward()` can traverse them.
 ```python
 from experience.future_tensor.second_derivative import get_2nd_dispatcher
 
-dispatch = get_2nd_dispatcher(__function__)  # __function__ = current backward fn name
-dispatch(arg_name2inputs)                    # fires the active policy
+dispatch = get_2nd_dispatcher(recurrent_backward)  # pass the 1st-derivative fn object
+dispatch(arg_name2inputs)                           # fires the active policy
 ```
 
-Called inside each 2nd-derivative backward function. Looks up the dispatcher registered
-for `function_name` in the currently active `dispatch_policy`. If no policy is active,
-uses `TracePolicy` with a module-level default collector.
+Called inside each 2nd-derivative backward function. Receives the actual 1st-derivative
+backward function object as the key. Looks up the dispatcher in the currently active
+`dispatch_policy`. If no policy is active, uses `TracePolicy` with a module-level
+default collector.
 
 Every 2nd-derivative op function returns a **placeholder scalar tensor** (`value=1`)
 rather than a meaningful tensor — consistent with FutureTensor being 0D. The actual
@@ -136,7 +137,7 @@ Each record is a `ReflectionRecord`:
 ```python
 @dataclass
 class ReflectionRecord:
-    fn: str                        # backward function name, e.g. "recurrent_backward"
+    fn: Callable                   # the 1st-derivative backward function object
     inputs: dict[str, Any]         # arg_name -> tensor/value passed to dispatch
     output: torch.Tensor           # placeholder scalar (value=1)
     timestamp: float               # time.monotonic() at dispatch time
@@ -153,7 +154,7 @@ with dispatch_policy(TracePolicy(records)):
     second_derivative_start.grad.backward()
 
 for r in records:
-    print(r.fn, list(r.inputs.keys()))
+    print(r.fn.__name__, list(r.inputs.keys()))
 ```
 
 ### Custom policy
@@ -166,7 +167,7 @@ from experience.future_tensor.second_derivative.policy import Policy, Reflection
 class ExecutePolicy(Policy):
     """Run an LLM to reflect on each reflection."""
 
-    def dispatch(self, fn: str, arg_name2inputs: dict) -> torch.Tensor:
+    def dispatch(self, fn: Callable, arg_name2inputs: dict) -> torch.Tensor:
         # call LLM with arg_name2inputs["grad_output"] (the 1st-derivative text)
         # and the original forward inputs to produce the 2nd derivative
         ...
@@ -187,11 +188,13 @@ The wrapper follows a fixed three-step pattern:
 ```python
 # second_derivative/function/recurrent_2nd.py
 
+from experience.future_tensor.function.ft_recurrent_backward import recurrent_backward
+
 def recurrent_2nd_backward(grad_output, input, output, prompt_tensor, **kwargs):
     from experience.future_tensor.second_derivative import get_2nd_dispatcher
 
-    # 1. Get the dispatcher for this backward function
-    dispatch = get_2nd_dispatcher("recurrent_backward")
+    # 1. Get the dispatcher keyed on the 1st-derivative backward function object
+    dispatch = get_2nd_dispatcher(recurrent_backward)
 
     # 2. Dispatch with named arguments
     dispatch({
@@ -239,11 +242,12 @@ keeps the 2nd derivative graph homogeneous: every node is a scalar, every edge c
 a scalar gradient. The "value" of the gradient is not a float but a `SymbolicTensor`
 element (a text diff), recorded by the policy.
 
-**Why `__function__` as the dispatcher key?**
-Each 2nd-derivative wrapper is defined inside a specific backward function file, so
-`__function__` (the module-level `__name__`) uniquely identifies which backward op is
-being differentiated. Policies can branch on this name to apply different strategies
-per op.
+**Why the 1st-derivative function object as the dispatcher key?**
+Passing the actual function object (e.g. `recurrent_backward`) rather than a string
+means policies can branch on identity (`fn is recurrent_backward`) or inspect the
+function's own attributes (`fn.__name__`, `fn.__module__`) without relying on
+string conventions. It also avoids name collisions across modules and makes
+refactoring safe — renaming the function updates the key automatically.
 
 **No Hessian.**
 Because `FutureTensor` is 0D, the second derivative is a scalar functional — there are
