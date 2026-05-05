@@ -36,6 +36,8 @@ def switch_forward(
         raise ValueError("switch_forward: cases list is empty")
 
     symbols = [case[0] for case in cases]
+    summaries = [case[1] for case in cases]
+    descriptions = [case[2] for case in cases]
     branches = [case[3] for case in cases]
 
     # Validate uniform shape across all branches
@@ -50,7 +52,15 @@ def switch_forward(
     async def switch_async_get(coordinates: List[int], prompt: str):
         # Pull the condition at the first element coordinates.
         cond_coords = [0] * len(condition.ft_capacity_shape) if condition.ft_capacity_shape else []
-        condition_result = await condition.ft_async_get(cond_coords, "")
+        condition_result = await condition.ft_async_get(
+            cond_coords,
+            {
+                "prompt": prompt,
+                "symbols": symbols,
+                "summaries": summaries,
+                "descriptions": descriptions,
+            },
+        )
         condition_symbol = condition_result[0]
 
         selected_branch = branches[0]

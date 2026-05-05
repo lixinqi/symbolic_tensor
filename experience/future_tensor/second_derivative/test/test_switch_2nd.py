@@ -235,6 +235,60 @@ with tempfile.TemporaryDirectory() as tmpdir:
         run_test("branches in inputs", "branches" in rec.inputs)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Group 4: Strict selected_index verification — different symbols
+# ══════════════════════════════════════════════════════════════════════════════
+print("\nGroup 4: Strict selected_index verification — different symbols")
+
+for expected_symbol, expected_index in [("A", 0), ("B", 1)]:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        condition = make_condition_ft(expected_symbol, tmpdir)
+        branch_a = make_overflow_ft([2], ["a0", "a1"], tmpdir)
+        branch_b = make_overflow_ft([2], ["b0", "b1"], tmpdir)
+        branch_a.requires_grad_(True)
+        branch_b.requires_grad_(True)
+
+        second_derivative_start = torch.ones(
+            (), dtype=torch.bfloat16, requires_grad=True
+        )
+
+        # Anchor need_2nd_derivative on the branch that WILL be selected
+        if expected_index == 0:
+            anchored_a = need_2nd_derivative(branch_a, second_derivative_start)
+            cases = [
+                ("A", "case A", "desc A", anchored_a),
+                ("B", "case B", "desc B", branch_b),
+            ]
+        else:
+            anchored_b = need_2nd_derivative(branch_b, second_derivative_start)
+            cases = [
+                ("A", "case A", "desc A", branch_a),
+                ("B", "case B", "desc B", anchored_b),
+            ]
+
+        output = ft_switch(condition, cases)
+        loss = ft_mean(output)
+        loss.backward(create_graph=True)
+
+        coll = []
+        with dispatch_policy(TracePolicy(coll)):
+            second_derivative_start.grad.backward()
+
+        run_test(
+            f"symbol {expected_symbol} collected 1 record",
+            len(coll) == 1,
+            expected=1,
+            actual=len(coll),
+        )
+        if len(coll) == 1:
+            run_test(
+                f"symbol {expected_symbol} selected_index is {expected_index}",
+                coll[0].inputs.get("selected_index") == expected_index,
+                expected=expected_index,
+                actual=coll[0].inputs.get("selected_index"),
+            )
+
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 print(f"\n  Passed: {passed}, Failed: {failed}, Total: {passed + failed}")
 if failed == 0:
