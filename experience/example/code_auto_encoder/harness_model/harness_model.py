@@ -19,8 +19,9 @@ if __name__ == "__main__":
 
 import sympy
 
-from experience.future_tensor.future_tensor import FutureTensor, _read_element
+from experience.future_tensor.future_tensor import FutureTensor, _read_element, _coords_to_flat
 from experience.future_tensor.function.ft_recurrent import ft_recurrent
+from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes
 from experience.future_tensor.status import Status
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
@@ -51,6 +52,8 @@ If you have gathered enough context, output:
 
 Important: when reading the target file, read a range that includes the masked line and
 several lines before and after it (e.g., offset=mask_line-5, limit=15) to get sufficient context.
+
+Past successful tool traces for similar tasks may be provided for reference.
 """
 
 _SYSTEM_GENERATION = """\
@@ -163,6 +166,51 @@ def _concat_context_weighted(acc: str, cur: str) -> str:
     return combined
 
 
+def _build_context_query(task: dict, target_lines: list) -> str:
+    """Extract newline-separated keywords from filename + class/def names in first 60 lines.
+
+    Used as the query string for Jaccard similarity retrieval against experience tensor.
+    """
+    import re
+    stem = os.path.splitext(os.path.basename(task.get("target_file", "")))[0]
+    keywords = [p for p in stem.replace("-", "_").split("_") if p]
+    for line in target_lines[:60]:
+        m = re.match(r'\s*(class|def)\s+(\w+)', line)
+        if m:
+            keywords.append(m.group(2))
+    return "\n".join(keywords)
+
+
+def _fetch_experience_snippets(
+    experience: Optional[torch.Tensor], query_str: str, topk: int
+) -> str:
+    """Retrieve top-k value entries from experience tensor and format as few-shot prompt.
+
+    Returns "" when experience is None, all entries are TODO, or any error occurs.
+    """
+    if experience is None:
+        return ""
+    try:
+        idx_tensors = select_qkv_indexes(experience, query_str, topk=topk, random_noise=True)
+        if not idx_tensors:
+            return ""
+        row_indices = idx_tensors[0].tolist()
+        exp_shape = list(experience.shape)
+        snippets = []
+        for i, row in enumerate(row_indices):
+            flat = _coords_to_flat([row, 2], exp_shape)
+            val = _read_element(experience, flat)
+            if not val.strip() or "TODO" in val:
+                continue
+            snippets.append(f"[Example {i + 1}]\n{val}")
+        if not snippets:
+            return ""
+        return "=== Similar past tool traces ===\n" + "\n".join(snippets)
+    except Exception as e:
+        print(f"[DEBUG experience retrieval error: {e}]")
+        return ""
+
+
 class HarnessModel(nn.Module):
     def __init__(
         self,
@@ -264,6 +312,7 @@ class HarnessModel(nn.Module):
         No validation, no context sufficiency check. Returns scbf(0.5) for all
         non-confidence outputs so the caller can decide what to do next.
         """
+        _experience_cache: Dict[int, str] = {}
 
         async def tool_use(coords: List[int], prompt: str) -> Tuple[str, Status]:
             batch_idx = coords[0]
@@ -299,6 +348,25 @@ class HarnessModel(nn.Module):
                 f"{read_hint}\n"
                 f"Decide the next action."
             )
+
+            # Inject experience snippets at first non-bootstrap step (collect_idx >= 1).
+            # Cache per batch_idx so retrieval runs at most once per sample per forward pass.
+            if self.experience is not None and collect_idx >= 1 and retry_idx == 0 \
+                    and batch_idx not in _experience_cache:
+                target_path = os.path.join(worktree_path, task["target_file"])
+                try:
+                    with open(target_path, "r", encoding="utf-8") as fh:
+                        target_lines = [line.rstrip() for line in fh.readlines()]
+                except (OSError, UnicodeDecodeError):
+                    target_lines = []
+                query_str = _build_context_query(task, target_lines)
+                _experience_cache[batch_idx] = _fetch_experience_snippets(
+                    self.experience, query_str, self.topk
+                )
+                print(f"[DEBUG exp b{batch_idx} c{collect_idx}] snippets_len={len(_experience_cache[batch_idx])}")
+            exp_snippets = _experience_cache.get(batch_idx, "")
+            if exp_snippets:
+                user_prompt = exp_snippets + "\n\n" + user_prompt
 
             # Bootstrap: on first collect step, first retry, auto-read target file
             if collect_idx == 0 and retry_idx == 0:
