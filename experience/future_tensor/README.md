@@ -119,7 +119,11 @@ future_tensor/
     ├── switch_forward.py     # switch_forward: lazy control-flow selection
     ├── switch_backward.py    # switch_backward: route grad to selected branch
     ├── switch_2nd.py         # SwitchGradFn: 2nd-derivative wrapper for switch
-    └── ft_switch.py          # FtSwitch: autograd Function for switch/match control flow
+    ├── ft_switch.py          # FtSwitch: autograd Function for switch/match control flow
+    ├── sequential_forward.py # sequential_forward: lazy sequential evaluation
+    ├── sequential_backward.py# sequential_backward: route grad to all inputs
+    ├── sequential_2nd.py     # SequentialGradFn: 2nd-derivative wrapper for sequential
+    └── ft_sequential.py      # FtSequential: autograd Function for sequential control flow
 ```
 
 ---
@@ -205,6 +209,25 @@ Branches must have uniform `ft_capacity_shape`.
 
 Backward: routes `grad_output` to the selected branch only; non-selected
 branches receive `None`. Supports 2nd-derivative tracing via `SwitchGradFn`.
+
+### `ft_sequential(*inputs)` — Sequential evaluation
+
+```python
+from experience.future_tensor.function.ft_sequential import ft_sequential
+
+output = ft_sequential(ft_a, ft_b, ft_c)
+```
+
+Lazy sequential: at `ft_async_get` pull time, each input's generator is called
+in order for the same coordinates. If any input returns a non-confidence status
+(e.g. `self_confidence_but_failed` or `kContextOverflow`), that result is
+returned early and subsequent inputs are skipped. Otherwise the last input's
+result is returned.
+
+All inputs must have the same `ft_capacity_shape`. Inputs must not be empty.
+
+Backward routes `grad_output` to all inputs. Supports 2nd-derivative tracing
+via `SequentialGradFn`.
 
 ---
 

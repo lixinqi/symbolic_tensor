@@ -18,6 +18,7 @@ autograd.Function wrappers (1st-backward → 2nd-derivative dispatch):
     ExpertGradFn      (wraps st_moe_backward)
     SliceGradFn       (wraps slice_backward)
     UnsqueezeGradFn   (wraps unsqueeze squeeze-via-slice_forward)
+    SequentialGradFn  (wraps sequential_backward)
 """
 
 from experience.future_tensor.second_derivative.need_2nd_derivative import need_2nd_derivative
