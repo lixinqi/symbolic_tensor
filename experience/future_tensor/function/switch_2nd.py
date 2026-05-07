@@ -9,6 +9,7 @@ directly so that second_derivative_start.grad.backward() naturally triggers
 SwitchGradFn.backward() (the 2nd-derivative dispatch).
 """
 
+import sympy
 import torch
 from typing import List
 
@@ -21,6 +22,35 @@ class SwitchGradFn(torch.autograd.Function):
     @staticmethod
     def forward(ctx, grad_output, selected_index: int, branches: List):
         from experience.future_tensor.function.switch_backward import switch_backward
+        from experience.future_tensor.future_tensor import FutureTensor
+        from experience.future_tensor.status import Status
+
+        # Reconstruct FutureTensor attributes if stripped by autograd
+        if not hasattr(grad_output, "ft_static_tensor"):
+            selected_branch = branches[selected_index]
+            shape = selected_branch.ft_capacity_shape
+            relative_to = selected_branch.ft_static_tensor.st_relative_to
+
+            async def dummy_get(coords, prompt):
+                return ("", Status.confidence(0.0))
+
+            ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
+            if grad_output.numel() == 1:
+                if shape:
+                    ref_ft.ft_static_tensor.data.flatten().fill_(grad_output.item())
+                else:
+                    ref_ft.ft_static_tensor.data.fill_(grad_output.item())
+            else:
+                ref_ft.ft_static_tensor.data.copy_(grad_output.data.view(ref_ft.ft_static_tensor.shape))
+            ref_ft.ft_forwarded = True
+
+            # Monkey-patch attributes onto the existing grad_output tensor
+            grad_output.ft_static_tensor = ref_ft.ft_static_tensor
+            grad_output.ft_capacity_shape = ref_ft.ft_capacity_shape
+            grad_output.ft_async_get = ref_ft.ft_async_get
+            grad_output.ft_forwarded = ref_ft.ft_forwarded
+            grad_output.ft_shape_schema = ref_ft.ft_shape_schema
+            grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
 
         ctx.save_for_backward(grad_output)
         ctx.selected_index = selected_index

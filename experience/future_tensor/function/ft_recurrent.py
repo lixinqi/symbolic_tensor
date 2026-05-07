@@ -23,7 +23,6 @@ from experience.future_tensor.function.ft_recurrent_backward import (
     BackwardPromptCallable,
 )
 from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
-from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 
 
 class FtRecurrent(torch.autograd.Function):
@@ -67,17 +66,12 @@ class FtRecurrent(torch.autograd.Function):
         output_st = ctx.output_ft.ft_static_tensor
         prompt_tensor_st = ctx.prompt_tensor_ft.ft_static_tensor
 
-        # If grad_output lacks st_* attrs (autograd strips them),
-        # wrap as a TODO symbolic tensor with the numeric grad data.
-        if not hasattr(grad_output, "st_relative_to"):
-            symbolic_grad_output = todo_tensor_like(output_st)
-            symbolic_grad_output.data.copy_(grad_output.data)
-            grad_output = symbolic_grad_output
-
         # Enable 2nd-derivative graph recording.
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
 
+        # RecurrentGradFn.forward handles st_* attribute reconstruction
+        # and calls recurrent_backward internally.
         grad_input = RecurrentGradFn.apply(
             grad_output,
             input_st,

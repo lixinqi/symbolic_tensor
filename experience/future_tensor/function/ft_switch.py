@@ -73,38 +73,11 @@ class FtSwitch(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        # Reconstruct FutureTensor attributes if stripped by autograd
-        if not hasattr(grad_output, "ft_static_tensor"):
-            selected_branch = ctx.branches[ctx.selected_index]
-            shape = selected_branch.ft_capacity_shape
-            relative_to = selected_branch.ft_static_tensor.st_relative_to
-
-            async def dummy_get(coords, prompt):
-                from experience.future_tensor.status import Status
-                return ("", Status.confidence(0.0))
-
-            ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
-            if grad_output.numel() == 1:
-                if shape:
-                    ref_ft.ft_static_tensor.data.flatten().fill_(grad_output.item())
-                else:
-                    ref_ft.ft_static_tensor.data.fill_(grad_output.item())
-            else:
-                ref_ft.ft_static_tensor.data.copy_(grad_output.data.view(ref_ft.ft_static_tensor.shape))
-            ref_ft.ft_forwarded = True
-
-            # Monkey-patch attributes onto the existing grad_output tensor
-            grad_output.ft_static_tensor = ref_ft.ft_static_tensor
-            grad_output.ft_capacity_shape = ref_ft.ft_capacity_shape
-            grad_output.ft_async_get = ref_ft.ft_async_get
-            grad_output.ft_forwarded = ref_ft.ft_forwarded
-            grad_output.ft_shape_schema = ref_ft.ft_shape_schema
-            grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
-
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
 
-        # Call SwitchGradFn for 2nd-derivative tracking
+        # SwitchGradFn.forward handles FutureTensor attribute reconstruction
+        # and calls switch_backward internally.
         grad_for_selected = SwitchGradFn.apply(grad_output, ctx.selected_index, list(ctx.branches))
 
         # Return grads for (condition, symbols, summaries, descriptions, *branches)
