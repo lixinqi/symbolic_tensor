@@ -100,10 +100,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # Steps: type each character
     for ch in CODE_TO_TYPE:
-        steps.append(ft_tmux_send_text(id_ft, lambda coords, c=ch: c))
+        ch_ft = ft_make_forwarded(tmpdir, [1], [ch])
+        steps.append(ft_tmux_send_text(ch_ft, id_ft))
 
     # Step: send Enter
-    steps.append(ft_tmux_send_ctrl(id_ft, lambda coords: "Enter"))
+    enter_ft = ft_make_forwarded(tmpdir, [1], ["Enter"])
+    steps.append(ft_tmux_send_ctrl(enter_ft, id_ft))
 
     # Step: delay for command to execute
     steps.append(ft_sleep(id_ft, 0.5))
@@ -162,7 +164,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # Type each char, capture after each — last capture becomes pipeline output
     FRAME_CODE = "echo hi"
     for ch in FRAME_CODE:
-        steps2.append(ft_tmux_send_text(id_ft2, lambda coords, c=ch: c))
+        ch_ft = ft_make_forwarded(tmpdir, [1], [ch])
+        steps2.append(ft_tmux_send_text(ch_ft, id_ft2))
         steps2.append(ft_sleep(id_ft2, 0.05))
         steps2.append(ft_tmux_capture_pane(id_ft2))
 
@@ -188,7 +191,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     steps3 = []
     # Send Enter after "echo hi" (already typed above in the session)
-    steps3.append(ft_tmux_send_ctrl(id_ft2, lambda coords: "Enter"))
+    enter_ft2 = ft_make_forwarded(tmpdir, [1], ["Enter"])
+    steps3.append(ft_tmux_send_ctrl(enter_ft2, id_ft2))
     steps3.append(ft_sleep(id_ft2, 0.5))
     steps3.append(ft_tmux_capture_pane(id_ft2))
 

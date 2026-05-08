@@ -281,7 +281,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     ft9 = make_forwarded_ft([2], ["sid0", "sid1"], tmpdir)
     ft9.requires_grad_(True)
 
-    output9 = ft_tmux_send_text(ft9, lambda coords: f"text_{coords[0]}")
+    text_input9 = make_forwarded_ft([2], ["text_0", "text_1"], tmpdir)
+    output9 = ft_tmux_send_text(text_input9, ft9)
     run_test("forward shape [2]", output9.ft_capacity_shape == [2])
 
     grad9 = make_forwarded_ft([2], ["g0", "g1"], tmpdir)
@@ -311,7 +312,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     ft10 = make_forwarded_ft([2], ["sid0", "sid1"], tmpdir)
     ft10.requires_grad_(True)
 
-    output10 = ft_tmux_send_ctrl(ft10, lambda coords: f"ctrl_{coords[0]}")
+    ctrl_input10 = make_forwarded_ft([2], ["ctrl_0", "ctrl_1"], tmpdir)
+    output10 = ft_tmux_send_ctrl(ctrl_input10, ft10)
     run_test("forward shape [2]", output10.ft_capacity_shape == [2])
 
     grad10 = make_forwarded_ft([2], ["g0", "g1"], tmpdir)

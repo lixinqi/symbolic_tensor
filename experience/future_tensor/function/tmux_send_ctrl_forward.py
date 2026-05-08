@@ -2,13 +2,17 @@
 tmux_send_ctrl_forward :=
     FutureTensor
     <- $input FutureTensor
-    <- $get_ctrl Callable[[list[int]], str]
+    <- $session_name FutureTensor  # broadcastable to $input
     # inline
 
 Send control characters to a tmux pane via libtmux with literal=False, enter=False.
+$input elements contain the control sequence to send.
+$session_name elements contain the instance_id for session lookup.
+$session_name shape is broadcastable to $input shape (size-1 dims broadcast).
+Output shape = $input shape.
 """
 
-from typing import Callable, List
+from typing import List
 
 import libtmux
 import sympy
@@ -16,26 +20,37 @@ import sympy
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.status import Status
 from experience.future_tensor.function.tmux_session import tmux_session_prefix
+from experience.future_tensor.function.tmux_send_text_forward import _broadcast_coords
 
 
 def tmux_send_ctrl_forward(
     input_ft: FutureTensor,
-    get_ctrl: Callable[[List[int]], str],
+    session_name_ft: FutureTensor,
 ) -> FutureTensor:
     """Forward: create a lazy FutureTensor whose ft_async_get sends ctrl to tmux."""
     shape = input_ft.ft_capacity_shape
     relative_to = input_ft.ft_static_tensor.st_relative_to
+    session_shape = session_name_ft.ft_capacity_shape
 
     async def send_async_get(coordinates: List[int], prompt: str):
+        # Read ctrl sequence from input_ft
         if input_ft.ft_forwarded:
             _coeff, filepath = input_ft.ft_get_materialized_value(coordinates)
             with open(filepath, "r", encoding="utf-8") as f:
+                ctrl = f.read()
+        else:
+            ctrl, _status = await input_ft.ft_async_get(coordinates, prompt)
+
+        # Read instance_id from session_name_ft (broadcast coordinates)
+        session_coords = _broadcast_coords(coordinates, session_shape, shape)
+        if session_name_ft.ft_forwarded:
+            _coeff, filepath = session_name_ft.ft_get_materialized_value(session_coords)
+            with open(filepath, "r", encoding="utf-8") as f:
                 instance_id = f.read().strip()
         else:
-            content, _status = await input_ft.ft_async_get(coordinates, prompt)
+            content, _status = await session_name_ft.ft_async_get(session_coords, prompt)
             instance_id = content.strip()
 
-        ctrl = get_ctrl(coordinates)
         session_name = f"{tmux_session_prefix}{instance_id}"
 
         try:

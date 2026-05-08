@@ -104,15 +104,26 @@ def build_flex_pipeline(id_ft: FutureTensor, action_plan: list, tmpdir: str):
     get_action = FutureTensor(relative_to, get_action_fn, [sympy.Integer(1)])
     get_action.ft_capacity_shape = [1]
 
-    # ── Branches: real ops ──
-    send_text_branch = ft_tmux_send_text(
-        id_ft,
-        lambda coords: action_plan[step[0]][1] if step[0] < plan_len else "",
-    )
-    send_ctrl_branch = ft_tmux_send_ctrl(
-        id_ft,
-        lambda coords: action_plan[step[0]][1] if step[0] < plan_len else "",
-    )
+    # ── Input FutureTensors: provide text/ctrl payload per step ──
+    async def text_payload_fn(coords, prompt):
+        i = step[0]
+        payload = action_plan[i][1] if i < plan_len else ""
+        return (payload, Status.confidence(1.0))
+
+    text_input = FutureTensor(relative_to, text_payload_fn, [sympy.Integer(1)])
+    text_input.ft_capacity_shape = [1]
+
+    async def ctrl_payload_fn(coords, prompt):
+        i = step[0]
+        payload = action_plan[i][1] if i < plan_len else ""
+        return (payload, Status.confidence(1.0))
+
+    ctrl_input = FutureTensor(relative_to, ctrl_payload_fn, [sympy.Integer(1)])
+    ctrl_input.ft_capacity_shape = [1]
+
+    # ── Branches: real ops (session_name_ft=id_ft broadcasts to input shape) ──
+    send_text_branch = ft_tmux_send_text(text_input, id_ft)
+    send_ctrl_branch = ft_tmux_send_ctrl(ctrl_input, id_ft)
 
     # ── ft_switch: route action ──
     switched = ft_switch(get_action, [
