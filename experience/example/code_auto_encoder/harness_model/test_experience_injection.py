@@ -162,9 +162,12 @@ class TestFetchExperienceSnippets(unittest.TestCase):
 
 class TestInjectionLogic(unittest.TestCase):
 
-    def _make_model(self, experience, topk=1):
+    def _make_model(self, experience=None, topk=1):
         from experience.example.code_auto_encoder.harness_model.harness_model import HarnessModel
-        return HarnessModel(experience=experience, topk=topk)
+        model = HarnessModel(n_experience=0, topk=topk)
+        if experience is not None:
+            model.experience = experience
+        return model
 
     def _run_tool_use(self, model, worktree_tensor, coords, prompt):
         """Invoke _make_tool_use's inner async function with given coords."""
@@ -387,7 +390,7 @@ class TestRegressionNoExperience(unittest.TestCase):
             from experience.example.code_auto_encoder.harness_model.harness_model import HarnessModel
             import experience.example.code_auto_encoder.harness_model.harness_model as hm_mod
 
-            model = HarnessModel(experience=None)
+            model = HarnessModel(n_experience=0)
             fn = model._make_tool_use(wt)
             original = hm_mod._call_llm
             hm_mod._call_llm = fake_llm
