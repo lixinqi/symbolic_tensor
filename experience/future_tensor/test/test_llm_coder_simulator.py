@@ -245,14 +245,6 @@ def make_parsed_decision(
             action_type, payload = cache[i]
             return (f"{action_type}:{payload}", Status.confidence(1.0))
 
-        # Auto-Enter: capture pane live, check if text on command line
-        pane_text, _ = await capture_op.ft_async_get(coords, prompt)
-        cmdline = get_current_cmdline_from_text(pane_text)
-        if cmdline and i > 0:
-            cache[i] = ("ctrl", "Enter")
-            print(f"  [step {i}] ctrl:'Enter' (auto)")
-            return ("ctrl:Enter", Status.confidence(1.0))
-
         # Materialize decision_input (writes to disk for ft_expert)
         await decision_input.ft_async_get(coords, prompt)
 
