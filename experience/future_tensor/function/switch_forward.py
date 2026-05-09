@@ -69,11 +69,11 @@ def switch_forward(
                 "descriptions": descriptions,
             },
         )
-        condition_symbol = condition_result[0]
+        condition_symbol = condition_result[0].strip() if condition_result[0] else ""
 
         selected_branch = branches[0]
         for i, sym in enumerate(symbols):
-            if sym == condition_symbol:
+            if condition_symbol == sym or condition_symbol.startswith(sym):
                 selected_branch = branches[i]
                 break
 

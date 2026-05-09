@@ -1,26 +1,21 @@
 """
 test_llm_coder_simulator: LLM-powered coder simulator using ft_expert + ft_recurrent.
 
-Architecture (all composed at pipeline level, no ops inside ft_async_get):
+Architecture (all composed at pipeline level):
 
-  workspace_ft[1]             — tmux instance ID (broadcasts to [1, max_iters])
-  decision_input[1, 30]      — builds context per iteration, writes to disk
-  decision_output[1, 30]     = ft_expert(decision_input, experience)
-  action_condition[1, 30]    — returns "text"|"ctrl" per iteration
-  payload_slot[1, 30]        — returns payload per iteration
-  send_text_op[1, 30]        = ft_tmux_send_text(payload_slot, ft_expand(workspace_ft, [1, 30]))
-  send_ctrl_op[1, 30]        = ft_tmux_send_ctrl(payload_slot, ft_expand(workspace_ft, [1, 30]))
-  switched_send[1, 30]       = ft_switch(action_condition, [("text",send_text_op),("ctrl",send_ctrl_op)])
+  workspace_ft[1]             — tmux instance ID
   capture_op[1, 30]          = ft_tmux_capture_pane(ft_expand(workspace_ft, [1, 30]))
-  validator[30]              = ft_coder_validator(decision_input, decision_output, switched_send, capture_op)
-  output[1]                  = ft_recurrent(validator[30])
+  decision_expert[1, 30]     = ft_expert(capture_op, decision_exp)   → "text:hint"|"ctrl:hint"
+  cmd_expert[1, 30]          = ft_expert(decision_expert, cmd_exp)   → "echo hello"|"Enter"
+  send_text_op[1, 30]        = ft_tmux_send_text(cmd_expert, workspace_expanded)
+  send_ctrl_op[1, 30]        = ft_tmux_send_ctrl(cmd_expert, workspace_expanded)
+  switched_send[1, 30]       = ft_switch(decision_expert, [("text",send_text_op),("ctrl",send_ctrl_op)])
+  validator[1, 30]           = ft_coder_validator(ft_sequential(switched_send, sleep, capture))
+  output[1]                  = ft_recurrent(validator)
 
-  ft_recurrent calls validator.ft_async_get([i], prompt).
-  Validator calls child ops at [0, i] — each iteration has its own coordinate slot.
-  No shared mutable state — coordination is through tensor coordinates.
-
-Only Chinese prompts allowed for ft_forward (anti-hack).
-No CLI commands exposed in prompts — LLM decides everything.
+  Expert 1 decides WHAT (action_type + hint). Expert 2 knows HOW (hint → real cmd).
+  Extensible: new action types don't require changing cmd_expert.
+  No shared mutable state — coordination through tensor coordinates.
 """
 
 import os
@@ -66,11 +61,7 @@ MAX_ITERS = 30
 # ─── Termination check ───
 
 def check_terminator_last_line(captured_text: str) -> bool:
-    """Check if terminal shows command completion: fresh EMPTY prompt on last line.
-
-    Returns True only when the prompt is empty (no command typed after it).
-    Prompt format: (base) λ <hostname> <path> [<command>...]
-    """
+    """Check if terminal shows command completion: fresh EMPTY prompt on last line."""
     lines = [l for l in captured_text.split("\n") if l.strip()]
     if len(lines) < 3:
         return False
@@ -78,20 +69,16 @@ def check_terminator_last_line(captured_text: str) -> bool:
     if "λ" in last_line:
         after_lambda = last_line.split("λ", 1)[1].strip()
         parts = after_lambda.split()
-        # Find path token (starts with / or ~), then check if anything follows
         path_idx = -1
         for idx, p in enumerate(parts):
             if p.startswith("/") or p.startswith("~"):
                 path_idx = idx
                 break
         if path_idx == -1:
-            # No path found — unusual prompt, not termination
             return False
-        # Anything after the path is a typed command
         return len(parts) == path_idx + 1
     if "$ " in last_line:
-        after_dollar = last_line.split("$ ", 1)[1].strip()
-        return after_dollar == ""
+        return last_line.split("$ ", 1)[1].strip() == ""
     if last_line.rstrip().endswith("$"):
         return True
     return False
@@ -99,214 +86,40 @@ def check_terminator_last_line(captured_text: str) -> bool:
 
 # ─── Experience ───
 
-def make_experience(tmpdir: str):
-    """Experience for terminal decisions — concrete task→command examples."""
+def make_decision_experience(tmpdir: str):
+    """Experience for decision expert: input is raw terminal text, output is action_type:hint."""
     return st_make_tensor([
-        ["任务\n列出当前目录文件\n终端\n命令行为空",
-         "任务是列出文件，对应的shell命令是ls",
-         "text:ls"],
-        ["任务\n在终端中打印一段文字\n终端\n命令行为空",
-         "任务是打印文字，对应的shell命令是echo加内容",
-         "text:echo hello"],
-        ["任务\n执行命令\n终端\n命令行已有内容",
-         "命令行已有内容，只需按回车执行",
-         "ctrl:Enter"],
+        ["(base) λ hostname /workspace\n提示符后面没有其他文字",
+         "提示符后面没有命令文字，命令行为空",
+         "text:输入shell命令"],
+        ["(base) λ hostname /workspace echo hello world\n提示符后面有echo命令",
+         "提示符后面有命令文字，命令行已有内容",
+         "ctrl:按回车执行"],
     ], tmpdir)
 
 
-# ─── Helpers ───
-
-def get_current_cmdline_from_text(pane_text: str) -> str:
-    """Extract what's currently typed on the command line (after last prompt)."""
-    if not pane_text:
-        return ""
-    lines = [l for l in pane_text.split("\n") if l.strip()]
-    if not lines:
-        return ""
-    last_line = lines[-1]
-    if "λ" in last_line:
-        after_lambda = last_line.split("λ", 1)[1].strip()
-        parts = after_lambda.split()
-        path_ended = False
-        result_parts = []
-        for p in parts:
-            if path_ended:
-                result_parts.append(p)
-            elif p.startswith("/") or p.startswith("~"):
-                path_ended = True
-        return " ".join(result_parts)
-    elif "$ " in last_line:
-        return last_line.split("$ ", 1)[1].strip()
-    return ""
+def make_cmd_experience(tmpdir: str):
+    """Experience for cmd expert: input is decision hint, output is actual command."""
+    return st_make_tensor([
+        ["text:输入shell命令\n任务是列出目录",
+         "需要ls",
+         "ls"],
+        ["text:输入shell命令\n任务是输出hello world",
+         "需要echo",
+         "echo hello world"],
+        ["ctrl:按回车执行",
+         "按Enter",
+         "Enter"],
+    ], tmpdir)
 
 
-# ─── Parse ───
-
-def _parse_decision(raw: str) -> str:
-    """Extract first text:/ctrl: line from LLM output."""
-    if not raw:
-        return ""
-    for line in raw.strip().split("\n"):
-        line = line.strip()
-        if line.startswith("text:") or line.startswith("ctrl:"):
-            return line
-    for line in raw.strip().split("\n"):
-        line = line.strip()
-        if line:
-            return line
-    return ""
-
-
-def parse_action(decision_result: str):
-    """Parse decision string into (action_type, payload)."""
-    if not decision_result:
-        return ("text", " ")
-    if ":" in decision_result:
-        parts = decision_result.split(":", 1)
-        kind = parts[0].strip().lower()
-        payload = parts[1].strip()
-        if kind == "ctrl":
-            return ("ctrl", payload if payload else "Enter")
-        else:
-            return ("text", payload if payload else " ")
-    if decision_result.lower() in ("enter", "tab", "escape", "backspace"):
-        return ("ctrl", decision_result.capitalize())
-    return ("text", decision_result if decision_result else " ")
-
-
-# ─── Pipeline builders ───
-
-def make_decision_input(tmpdir: str, capture_op: FutureTensor, max_iters: int) -> FutureTensor:
-    """FutureTensor[1, max_iters]: builds context per iteration, writes to disk.
-
-    ft_capacity_shape: [1, max_iters]
-    Captures the live pane via capture_op to show current terminal state to LLM.
-    Write-through: materializes to disk so ft_expert can read it.
-    """
-    ft = FutureTensor(tmpdir, None, [sympy.Integer(1), sympy.Integer(max_iters)])
-    ft.ft_capacity_shape = [1, max_iters]
-
-    async def _get(coords, prompt):
-        # Capture current terminal state
-        pane_text, _ = await capture_op.ft_async_get(coords, prompt)
-        cmdline = get_current_cmdline_from_text(pane_text)
-
-        context = (
-            f"任务目标：{prompt}\n"
-            f"当前终端内容：\n{pane_text}\n"
-            f"当前命令行已输入的内容：「{cmdline}」\n"
-            f"你是一个终端用户，只能通过text:和ctrl:两种方式操作终端。\n"
-            f"text:后面必须是一个合法的shell命令（如echo、ls、cat等），绝对不能是任务描述。\n"
-        )
-        if cmdline:
-            context += f"命令行已经有内容「{cmdline}」，不要重复输入！直接回答：ctrl:Enter\n"
-        else:
-            context += f"命令行为空。根据任务目标，输入对应的shell命令。只回答一行，格式：text:shell命令\n"
-
-        # Write-through to disk so ft_expert can read it
-        flat_idx = sum(c * s for c, s in zip(coords, ft.ft_static_tensor.stride()))
-        digits = list(str(flat_idx))
-        path = os.path.join(
-            ft.ft_static_tensor.st_relative_to, ft.ft_static_tensor.st_tensor_uid,
-            "storage", os.path.join(*digits), "data",
-        )
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            f.write(context)
-        ft.ft_static_tensor.data[tuple(coords)] = 1.0
-
-        return (context, Status.confidence(1.0))
-
-    ft.ft_async_get = _get
-    return ft
-
-
-def make_parsed_decision(
-    decision_input: FutureTensor,
-    decision_output: FutureTensor,
-    capture_op: FutureTensor,
-    max_iters: int,
-) -> FutureTensor:
-    """FutureTensor[1, max_iters]: calls decision_input + decision_output, parses, caches.
-
-    ft_capacity_shape: [1, max_iters]
-    Returns parsed string "text:payload" or "ctrl:payload" per iteration.
-    Caches results so action_condition and payload_slot can read without re-calling LLM.
-    """
-    relative_to = decision_input.ft_static_tensor.st_relative_to
-    cache = {}  # cache[i] = (action_type, payload)
-
-    async def _get(coords, prompt):
-        # ft_switch passes dict prompt; extract string
-        if isinstance(prompt, dict):
-            prompt = prompt.get("prompt", "")
-        i = coords[-1]
-        if i in cache:
-            action_type, payload = cache[i]
-            return (f"{action_type}:{payload}", Status.confidence(1.0))
-
-        # Materialize decision_input (writes to disk for ft_expert)
-        await decision_input.ft_async_get(coords, prompt)
-
-        # Call ft_expert
-        raw_result, _ = await decision_output.ft_async_get(coords, prompt)
-        decision_result = _parse_decision(raw_result)
-        action_type, payload = parse_action(decision_result)
-        cache[i] = (action_type, payload)
-        print(f"  [step {i}] {action_type}:{repr(payload)}")
-        return (f"{action_type}:{payload}", Status.confidence(1.0))
-
-    ft = FutureTensor(relative_to, _get, [sympy.Integer(1), sympy.Integer(max_iters)])
-    ft.ft_capacity_shape = [1, max_iters]
-    return ft
-
-
-def make_action_condition(parsed_decision: FutureTensor, max_iters: int) -> FutureTensor:
-    """FutureTensor[1, max_iters]: pulls parsed_decision, returns "text"|"ctrl".
-
-    ft_capacity_shape: [1, max_iters]
-    """
-    relative_to = parsed_decision.ft_static_tensor.st_relative_to
-
-    async def _get(coords, prompt):
-        result, _ = await parsed_decision.ft_async_get(coords, prompt)
-        action_type = result.split(":", 1)[0] if ":" in result else "text"
-        return (action_type, Status.confidence(1.0))
-
-    ft = FutureTensor(relative_to, _get, [sympy.Integer(1), sympy.Integer(max_iters)])
-    ft.ft_capacity_shape = [1, max_iters]
-    return ft
-
-
-def make_payload_slot(parsed_decision: FutureTensor, max_iters: int) -> FutureTensor:
-    """FutureTensor[1, max_iters]: pulls parsed_decision, returns payload.
-
-    ft_capacity_shape: [1, max_iters]
-    """
-    relative_to = parsed_decision.ft_static_tensor.st_relative_to
-
-    async def _get(coords, prompt):
-        result, _ = await parsed_decision.ft_async_get(coords, prompt)
-        payload = result.split(":", 1)[1] if ":" in result else ""
-        return (payload if payload else " ", Status.confidence(1.0))
-
-    ft = FutureTensor(relative_to, _get, [sympy.Integer(1), sympy.Integer(max_iters)])
-    ft.ft_capacity_shape = [1, max_iters]
-    return ft
-
-
-# ─── ft_coder_validator: termination check ───
+# ─── ft_coder_validator ───
 
 def ft_coder_validator(
     iteration_body: FutureTensor,
     max_iters: int = 30,
 ) -> FutureTensor:
-    """Validator: run iteration body, check if terminal shows command completion.
-
-    ft_capacity_shape: [1, max_iters]
-
-    At coords [0, i]: pull iteration_body → check_terminator_last_line on result.
-    """
+    """Validator: run iteration body, check if terminal shows command completion."""
     relative_to = iteration_body.ft_static_tensor.st_relative_to
 
     async def _validator_async_get(coords, prompt):
@@ -356,49 +169,45 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # ── Compose entire pipeline ──
 
-    # 1. Expand workspace_ft[1] → [1, 30] for all ops
+    # 1. Expand workspace_ft[1] → [1, 30]
     workspace_expanded = ft_expand(workspace_ft, [1, MAX_ITERS])  # [1, 30]
 
-    # 2. capture_op[1, 30]: live pane observation (used by decision + iteration body)
+    # 2. capture_op[1, 30]: live terminal observation
     capture_op = ft_tmux_capture_pane(workspace_expanded)  # [1, 30]
 
-    # 3. decision_input[1, 30]: captures pane, builds context, writes to disk
-    decision_input = make_decision_input(tmpdir, capture_op, MAX_ITERS)
-
-    # 4. decision_output[1, 30]: ft_expert reads from disk, asks LLM
-    experience = make_experience(tmpdir)
-    decision_output = ft_expert(
-        decision_input, experience,
-        task_prompt="你是终端操作员。根据任务目标生成对应的shell命令。只输出一行：text:shell命令 或 ctrl:键名。text:后面必须是合法shell命令（如echo、ls、cat），绝对不能把任务描述当命令输入。",
+    # 3. decision_expert[1, 30]: reads terminal → "text:hint" or "ctrl:hint"
+    decision_experience = make_decision_experience(tmpdir)
+    decision_expert = ft_expert(
+        capture_op, decision_experience,
+        task_prompt="观察终端最后一行。如果提示符(λ或$)后面只有路径没有其他文字，输出：text:输入shell命令。如果提示符后面有命令文字（如echo、ls等），输出：ctrl:按回车执行。只输出一行，格式必须是text:或ctrl:开头。",
         topk=2,
     )
 
-    # 5. parsed_decision[1, 30]: drives decision_input + decision_output, parses, caches
-    parsed_decision = make_parsed_decision(
-        decision_input, decision_output, capture_op, MAX_ITERS,
+    # 4. cmd_expert[1, 30]: reads decision_expert output → real command
+    cmd_experience = make_cmd_experience(tmpdir)
+    cmd_expert = ft_expert(
+        decision_expert, cmd_experience,
+        task_prompt="根据输入的动作描述，输出实际要执行的内容。如果输入以text:开头，输出对应的shell命令（如echo hello world）。如果输入以ctrl:开头，输出键名Enter。只输出命令本身一行，不要加text:或ctrl:前缀，不要解释。",
+        topk=2,
     )
 
-    # 6. action_condition[1, 30] + payload_slot[1, 30]: derive from parsed_decision
-    action_condition = make_action_condition(parsed_decision, MAX_ITERS)
-    payload_slot = make_payload_slot(parsed_decision, MAX_ITERS)
+    # 5. send ops[1, 30]: cmd_expert provides payload
+    send_text_op = ft_tmux_send_text(cmd_expert, workspace_expanded)   # [1, 30]
+    send_ctrl_op = ft_tmux_send_ctrl(cmd_expert, workspace_expanded)   # [1, 30]
 
-    # 7. send ops[1, 30]: payload_slot[1,30] broadcasts with workspace[1,30]
-    send_text_op = ft_tmux_send_text(payload_slot, workspace_expanded)   # [1, 30]
-    send_ctrl_op = ft_tmux_send_ctrl(payload_slot, workspace_expanded)   # [1, 30]
-
-    # 8. switched_send[1, 30]: routes based on action_condition
-    switched_send = ft_switch(action_condition, [
+    # 6. switched_send[1, 30]: routes based on decision_expert prefix
+    switched_send = ft_switch(decision_expert, [
         ("text", "type", "send text to terminal", send_text_op),
         ("ctrl", "ctrl", "send control key to terminal", send_ctrl_op),
     ])
 
-    # 9. sleep_op[1, 30]
+    # 7. sleep_op[1, 30]
     sleep_op = ft_sleep(workspace_expanded, 0.5)  # [1, 30]
 
-    # 10. iteration_body[1, 30] = ft_sequential(switched_send, sleep, capture)
+    # 8. iteration_body = ft_sequential(switched_send, sleep, capture)
     iteration_body = ft_sequential(switched_send, sleep_op, capture_op)  # [1, 30]
 
-    # 11. validator[1, 30]: check termination on iteration_body result
+    # 9. validator + recurrent
     validator = ft_coder_validator(iteration_body, max_iters=MAX_ITERS)
     output = ft_recurrent(validator)  # output[1]
 

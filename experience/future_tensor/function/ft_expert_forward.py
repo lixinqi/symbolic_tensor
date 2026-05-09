@@ -112,6 +112,8 @@ def ft_expert_forward(
         outer event loop driving FutureTensor.ft_forward.
         """
         # 1. Store the prompt into prompt_tensor for backward (= st_moe.context)
+        if isinstance(prompt, dict):
+            prompt = prompt.get("prompt", "")
         st_setitem(prompt_tensor.ft_static_tensor, coordinates, prompt)
 
         # 2. Build scalar_input from input[coordinates] (= st_moe.input)
@@ -205,11 +207,35 @@ def ft_expert_forward(
     async def ft_expert_forward_async_get(
         coordinates: List[int], prompt: str
     ) -> Tuple[str, Status]:
+        # If output already computed at this coordinate, return from disk
+        if output.ft_static_tensor.data[tuple(coordinates)].item() > 0:
+            flat_idx = sum(c * s for c, s in zip(coordinates, output.ft_static_tensor.stride()))
+            content = _read_file_content(output.ft_static_tensor, flat_idx)
+            if content is not None:
+                return (content, Status.confidence(1.0))
+
+        # Ensure input is materialized at this coordinate (lazy pull + write-through)
+        if isinstance(prompt, dict):
+            actual_prompt = prompt.get("prompt", "")
+        else:
+            actual_prompt = prompt
+        if not input.ft_forwarded and input.ft_static_tensor.data[tuple(coordinates)].item() == 0:
+            input_content, input_status = await input.ft_async_get(coordinates, actual_prompt)
+            if input_content:
+                st_setitem(input.ft_static_tensor, coordinates, input_content,
+                           coefficient=Status.convert_status_to_float(input_status))
+
         import asyncio
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
+        result_content, result_status = await loop.run_in_executor(
             None, _sync_expert_for_element, coordinates, prompt,
         )
+
+        # Write-through: persist output so downstream ops can read from this tensor
+        if result_content:
+            st_setitem(output.ft_static_tensor, coordinates, result_content,
+                       coefficient=Status.convert_status_to_float(result_status))
+        return (result_content, result_status)
 
     output = FutureTensor(
         input.ft_static_tensor.st_relative_to,
