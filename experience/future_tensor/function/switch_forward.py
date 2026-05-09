@@ -50,8 +50,16 @@ def switch_forward(
             )
 
     async def switch_async_get(coordinates: List[int], prompt: str):
-        # Pull the condition at the first element coordinates.
-        cond_coords = [0] * len(condition.ft_capacity_shape) if condition.ft_capacity_shape else []
+        # Pull the condition at coordinates (broadcast to condition's shape).
+        cond_shape = condition.ft_capacity_shape or []
+        if len(cond_shape) == len(coordinates):
+            cond_coords = coordinates
+        elif len(cond_shape) < len(coordinates):
+            # Condition is lower-rank: use trailing coordinates
+            cond_coords = coordinates[len(coordinates) - len(cond_shape):]
+        else:
+            # Condition higher-rank: pad with zeros
+            cond_coords = [0] * (len(cond_shape) - len(coordinates)) + list(coordinates)
         condition_result = await condition.ft_async_get(
             cond_coords,
             {
