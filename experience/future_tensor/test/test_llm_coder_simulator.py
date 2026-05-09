@@ -70,10 +70,10 @@ def make_experience(tmpdir: str):
     """Experience for human-level terminal decisions — format examples only."""
     return st_make_tensor([
         ["格式\n示例\ntext\n输入文本\n命令",
-         "输入文本格式示例",
-         "text:ls"],
+         "输入文本到终端的格式是text:后接要输入的内容",
+         "text:（此处替换为实际要输入的命令）"],
         ["格式\n示例\nctrl\n控制键\nenter",
-         "发送控制键格式示例",
+         "发送控制键的格式是ctrl:后接键名",
          "ctrl:Enter"],
     ], tmpdir)
 
@@ -133,12 +133,42 @@ def ft_coder_validator(
     def _format_trajectory():
         if not pane_trajectory:
             return "（终端刚启动，尚无观察记录）"
-        recent = pane_trajectory[-5:]
+        recent = pane_trajectory[-3:]
         parts = []
         start_idx = len(pane_trajectory) - len(recent)
         for j, pane in enumerate(recent):
             parts.append(f"--- 第{start_idx + j}步后的终端 ---\n{pane}")
         return "\n".join(parts)
+
+    def _get_current_cmdline():
+        """Extract what's currently typed on the command line (after last prompt)."""
+        if not pane_trajectory:
+            return ""
+        last_pane = pane_trajectory[-1]
+        lines = [l for l in last_pane.split("\n") if l.strip()]
+        if not lines:
+            return ""
+        last_line = lines[-1]
+        # Prompt format: "(base) λ hostname /path/to/dir TYPED_CONTENT"
+        # or "user@host:path$ TYPED_CONTENT"
+        if "λ" in last_line:
+            # Find content after the path — path starts with /
+            after_lambda = last_line.split("λ", 1)[1].strip()
+            # Format: "hostname /path TYPED" — find content after the path
+            parts = after_lambda.split()
+            # Skip hostname, then skip path (starts with /)
+            path_ended = False
+            result_parts = []
+            for p in parts:
+                if path_ended:
+                    result_parts.append(p)
+                elif p.startswith("/"):
+                    path_ended = True
+            return " ".join(result_parts)
+        elif "$ " in last_line:
+            after_dollar = last_line.split("$ ", 1)[1].strip()
+            return after_dollar
+        return ""
 
     async def _validator_async_get(coords, prompt):
         import asyncio
@@ -146,18 +176,42 @@ def ft_coder_validator(
         i = step[0]
         traj = _format_trajectory()
 
+        # Short-circuit: if previous pane shows text was typed (not executed yet),
+        # just press Enter — no LLM call needed
+        if pane_trajectory and i > 0:
+            last_pane = pane_trajectory[-1]
+            lines = [l for l in last_pane.split("\n") if l.strip()]
+            if lines:
+                last_line = lines[-1]
+                # If last line has prompt marker + content (something typed)
+                # and doesn't end with a fresh prompt (no termination yet)
+                if ("λ" in last_line or "$ " in last_line) and not check_terminator_last_line(last_pane):
+                    # Something is on the command line — press Enter
+                    payload_forwarded = ft_make_forwarded(tmpdir, [1], ["Enter"])
+                    op = ft_tmux_send_ctrl(payload_forwarded, workspace_ft)
+                    await op.ft_async_get([0], "执行")
+                    await asyncio.sleep(0.5)
+                    step[0] += 1
+                    captured_text, _ = await capture_op.ft_async_get([0], "观察")
+                    pane_trajectory.append(captured_text)
+                    print(f"  [step {i}] ctrl:'Enter' (auto)")
+                    if check_terminator_last_line(captured_text):
+                        return (captured_text, Status.confidence(1.0))
+                    else:
+                        return ("", Status.self_confidence_but_failed(0.9))
+
         # 1. Decision context — prompt carries the task from ft_forward
+        cmdline = _get_current_cmdline()
         decision_context = (
             f"任务目标：{prompt}\n"
-            f"操作轨迹（终端观察序列）：\n{traj}\n"
-            f"这是第{i}步。你是一个人类用户在操作终端。\n"
-            f"规则：\n"
-            f"1. 观察终端最后一行（提示符后面的内容）——那是当前已输入但未执行的命令\n"
-            f"2. 如果当前命令行已经有内容，说明你之前已经输入过了，不要重复输入\n"
-            f"3. 如果命令行的内容就是你想执行的命令，直接按回车：ctrl:Enter\n"
-            f"4. 如果命令行为空，输入你想执行的命令：text:你的命令\n"
-            f"回答格式（只输出一行）：text:内容 或 ctrl:键名\n"
+            f"当前命令行已输入的内容：「{cmdline}」\n"
+            f"操作轨迹：\n{traj}\n"
+            f"第{i}步。你是人类终端用户。\n"
         )
+        if cmdline:
+            decision_context += f"命令行已经有内容「{cmdline}」，不要重复输入！直接回答：ctrl:Enter\n"
+        else:
+            decision_context += f"命令行为空，输入命令。回答格式：text:你的命令\n"
 
         # 2. ft_expert: materialized input → LLM decision
         input_ft = ft_make_forwarded(tmpdir, [1], [decision_context])
@@ -199,7 +253,7 @@ def ft_coder_validator(
             op = ft_tmux_send_ctrl(payload_forwarded, workspace_ft)
 
         await op.ft_async_get([0], "执行")
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.5)
 
         step[0] += 1
 
@@ -246,7 +300,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
     workspace_ft = ft_make_forwarded(tmpdir, [1], [INSTANCE_ID])
 
     # Setup: create session (or clear if exists) + delay
-    setup = ft_sequential(ft_tmux_create_session(workspace_ft), ft_sleep(workspace_ft, 0.5))
+    setup = ft_sequential(
+        ft_tmux_create_session(workspace_ft),
+        ft_sleep(workspace_ft, 0.5))
     setup.ft_forward(st_make_tensor(["启动终端会话"], tmpdir))
 
     # Build pipeline: ft_recurrent(ft_coder_validator(...))
