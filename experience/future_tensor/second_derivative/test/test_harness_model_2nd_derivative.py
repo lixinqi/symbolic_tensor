@@ -134,7 +134,7 @@ class ToyHarnessModel(nn.Module):
     def forward(self, input_ft: FutureTensor) -> FutureTensor:
         x = ft_unsqueeze(input_ft, dim=1)                      # (2, 1, 2)
         x = ft_slice(x, [slice(None), 0, slice(None)])         # (2, 2)
-        output, _ = ft_recurrent(x, task_prompt="toy model")   # (2,)
+        output = ft_recurrent(x, task_prompt="toy model")   # (2,)
         return output
 
 

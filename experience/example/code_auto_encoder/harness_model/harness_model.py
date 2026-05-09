@@ -165,7 +165,7 @@ class HarnessModel(nn.Module):
         ft_validated = ft_unary(ft_raw, self._validate_tool_result)
 
         # Inner recurrent: retry individual tool call until valid
-        ft_tool_result, _ = ft_recurrent(
+        ft_tool_result = ft_recurrent(
             ft_validated,
             task_prompt=self.task_prompt,
             llm_method=self.llm_method,
@@ -178,7 +178,7 @@ class HarnessModel(nn.Module):
         )
 
         # Outer recurrent: accumulate clean context across collection steps
-        context_ft, _ = ft_recurrent(
+        context_ft = ft_recurrent(
             ft_checked,
             accumulate_output=_concat_context,
             task_prompt=self.task_prompt,
@@ -197,7 +197,7 @@ class HarnessModel(nn.Module):
             [sympy.Integer(batch_size), sympy.Integer(self.max_codegen_steps)],
         )
 
-        output_ft, _ = ft_recurrent(
+        output_ft = ft_recurrent(
             ft_gen,
             task_prompt=self.task_prompt,
             llm_method=self.llm_method,

@@ -192,7 +192,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # Build: ft_recurrent(check_terminator(capture_pane(ft_switch(action, [text, ctrl]))))
     plan = make_action_plan("echo hello")
-    output, _ = build_flex_pipeline(id_ft, plan, tmpdir)
+    output = build_flex_pipeline(id_ft, plan, tmpdir)
     output.ft_forward(st_make_tensor("execute", tmpdir))
 
     # Verify

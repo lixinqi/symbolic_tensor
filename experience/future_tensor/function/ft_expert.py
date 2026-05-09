@@ -73,7 +73,7 @@ class FtExpert(torch.autograd.Function):
         retrieval_method: Optional[RetrievalMethodCallable] = None,
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
-    ) -> Tuple[FutureTensor, FutureTensor, Any]:
+    ) -> FutureTensor:
         output, prompt_tensor, indexes_map = ft_expert_forward(
             input, experience, output_prompt, query_prompt, task_prompt, topk,
             retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env,
@@ -104,10 +104,10 @@ class FtExpert(torch.autograd.Function):
         ctx.llm_method = llm_method
         ctx.llm_env = llm_env
 
-        return output, prompt_tensor, indexes_map
+        return output
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor, grad_prompt_tensor=None, grad_indexes=None):
+    def backward(ctx, grad_output: torch.Tensor):
         # After forward + ft_forward, FutureTensors have materialized .ft_static_tensor
         # New mapping:
         #   st_moe.input   = input.ft_static_tensor (requires_grad based on coefficients)
@@ -195,7 +195,7 @@ def ft_expert(
     retrieval_method: Optional[RetrievalMethodCallable] = None,
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
-) -> Tuple[FutureTensor, FutureTensor, Any]:
+) -> FutureTensor:
     """FutureTensor Expert with autograd support.
 
     Async forward: each element receives a prompt (context), queries experience
@@ -219,7 +219,7 @@ def ft_expert(
         llm_env: Optional environment variables for LLM.
 
     Returns:
-        (output, prompt_tensor, selected_experience_qkv_indexes_map)
+        FutureTensor output.
     """
     return FtExpert.apply(
         input, experience, output_prompt, query_prompt,
@@ -302,12 +302,11 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        output, prompt_tensor, indexes = ft_expert(
+        output = ft_expert(
             ft_input, experience_tensor, topk=2,
         )
 
         run_test("output is FutureTensor", isinstance(output, torch.Tensor))
-        run_test("prompt_tensor is FutureTensor", isinstance(prompt_tensor, torch.Tensor))
         run_test("output shape matches input", output.ft_capacity_shape == [2])
         run_test("output not forwarded yet", output.ft_forwarded is False)
 
@@ -325,7 +324,7 @@ if __name__ == "__main__":
             return ("Hello world in English", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, expert_get, [sympy.Integer(1)])
-        output, prompt_tensor, indexes = ft_expert(
+        output = ft_expert(
             ft_input, experience_tensor, topk=2,
             task_prompt="Translate English to French.",
         )
@@ -382,7 +381,7 @@ if __name__ == "__main__":
             return (f"out:{prompt[:10]}", Status.confidence(0.8))
 
         ft_input = FutureTensor(tmpdir, prompt_cap_get, [sympy.Integer(2)])
-        output, prompt_tensor, indexes = ft_expert(
+        output = ft_expert(
             ft_input, experience_tensor, topk=1,
         )
 
@@ -415,7 +414,7 @@ if __name__ == "__main__":
             return ("Hello world in English", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(1)])
-        output, prompt_tensor, indexes_map = ft_expert(
+        output = ft_expert(
             ft_input, experience_tensor, topk=2,
             task_prompt="Translate English to French.",
         )

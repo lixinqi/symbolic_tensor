@@ -375,7 +375,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # 4. decision_output[1, 30]: ft_expert reads from disk, asks LLM
     experience = make_experience(tmpdir)
-    decision_output, _, _ = ft_expert(
+    decision_output = ft_expert(
         decision_input, experience,
         task_prompt="你是终端操作员。根据任务目标生成对应的shell命令。只输出一行：text:shell命令 或 ctrl:键名。text:后面必须是合法shell命令（如echo、ls、cat），绝对不能把任务描述当命令输入。",
         topk=2,
@@ -408,7 +408,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # 11. validator[1, 30]: check termination on iteration_body result
     validator = ft_coder_validator(iteration_body, max_iters=MAX_ITERS)
-    output, _ = ft_recurrent(validator)  # output[1]
+    output = ft_recurrent(validator)  # output[1]
 
     # ONE ft_forward — the prompt IS the task
     output.ft_forward(st_make_tensor(["在终端中输出问候语hello world"], tmpdir))

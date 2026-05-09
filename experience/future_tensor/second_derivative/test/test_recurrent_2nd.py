@@ -101,7 +101,7 @@ class RecurrentOnlyModel(nn.Module):
     """Minimal model containing only ft_recurrent."""
 
     def forward(self, input_ft):
-        output, _ = ft_recurrent(input_ft, task_prompt="test")
+        output = ft_recurrent(input_ft, task_prompt="test")
         return output
 
 
