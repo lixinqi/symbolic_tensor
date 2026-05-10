@@ -1,8 +1,10 @@
 # Experience
 
-A PyTorch extension that replaces numeric matrix multiplication with **LLM-powered text computation** inside neural network training loops. Each tensor element stores arbitrary text (code, translations, etc.) in files on disk, while numeric coefficients flow through standard autograd. An ExperienceTensor — a key-value store shaped as `[N, 3]` — serves as the learnable "weight" of the model, starting empty and being built up entirely by a patch-based optimizer across training iterations. The LLM acts as the compute kernel: during forward pass it reads experience entries to produce outputs; during backward pass it computes diffs; during the optimizer step `patch` applies diffs to experience entries incrementally.
+A **self-improving harness framework** built as a PyTorch extension. Composable tensor ops + trainable experience + autograd = portable Modules that improve through training.
 
-The result is a model that can **learn to perform tasks it was never trained on** by accumulating experience at runtime, demonstrated by translating Python into Viba — a novel DSL that does not exist in the training corpus of any existing LLM.
+Each harness Module is a static DAG of lazy tensor ops (`ft_expert`, `ft_switch`, `ft_sequential`, `ft_recurrent`, `ft_tmux_*`). The Module's behavior is determined by its **experience tensors** — QKV stores that serve as learnable weights. The LLM acts as the compute kernel: forward pass reads experience to produce outputs; backward pass computes diffs; optimizer applies patches to experience incrementally.
+
+The result: **portable, self-improving agents** that share the same infrastructure but learn different skills through training. Like Claude Code slash commands, but standardized — typed tensors, autograd, shape contracts, trainable experience.
 
 ## Architecture
 
@@ -226,163 +228,137 @@ Two-channel update per step:
 │   └── 1/1/data             # Multi-digit index 11
 ```
 
-## Demo: Python to Viba Translation
+## Demo: LLM Coder Simulator (Portable Harness Module)
 
-This example trains a model from scratch to translate Python code into **Viba** — a novel domain-specific language invented for this project that does not exist in the training corpus of any existing LLM. The LLM must learn to generate syntactically and semantically correct code in a language it has never seen, purely from the experience entries built up during training.
+This example demonstrates the core thesis: **composable ops + trainable experience + autograd = self-improving harness models**. An LLM-powered coder is composed entirely from reusable infrastructure ops — no custom logic except a termination validator. The same Module structure with different experience tensors becomes a different skill.
 
-### Why Viba?
+### Why This Matters
 
-Existing LLMs have been trained on billions of lines of Python, JavaScript, Haskell, etc. Translating between these tests whether the model can *recall* patterns from pre-training. Viba eliminates this confound — any correct translation demonstrates genuine *generalization* driven by the experience mechanism.
+Traditional agent frameworks hard-code action parsing, state management, and orchestration logic. Each new capability requires new glue code. This framework replaces all of that with a **static DAG of composable tensor ops**:
 
-Viba is an algebraic data type (ADT) definition language with these core constructs:
+- **Expert 1 decides WHAT** (action type + hint): `"text:输入shell命令"` or `"ctrl:按回车执行"`
+- **Expert 2 knows HOW** (hint → real command): `"echo hello world"` or `"Enter"`
+- **New action types** don't require changing Expert 2 — just add experience entries to Expert 1
+- **Training improves both experts** via autograd — experience tensors are the learnable weights
 
-```viba
-name := <type_expr>                     # type/function definition
-<type_expr> := <binding> ...            # sequence of bindings
-$var <type>                             # typed variable declaration
-<- $var <type>                          # input binding (argument)
-<- $expr                                # return binding (result)
-# inline                                # inline expansion hint
+### Architecture
+
+```
+workspace_ft[1]             — tmux instance ID
+capture_op[1, 30]          = ft_tmux_capture_pane(ft_expand(workspace_ft, [1, 30]))
+decision_expert[1, 30]     = ft_expert(capture_op, decision_exp)   → "text:hint"|"ctrl:hint"
+cmd_expert[1, 30]          = ft_expert(decision_expert, cmd_exp)   → "echo hello"|"Enter"
+send_text_op[1, 30]        = ft_tmux_send_text(cmd_expert, workspace_expanded)
+send_ctrl_op[1, 30]        = ft_tmux_send_ctrl(cmd_expert, workspace_expanded)
+switched_send[1, 30]       = ft_switch(decision_expert, [("text",send_text_op),("ctrl",send_ctrl_op)])
+validator[1, 30]           = ft_coder_validator(ft_sequential(switched_send, sleep, capture))
+output[1]                  = ft_recurrent(validator)
 ```
 
-Type expressions use four ADT combinators:
+Every op except `ft_coder_validator` is shared infrastructure reusable across all harness models.
 
-| Combinator | Syntax | Meaning | Example |
-|-----------|--------|---------|---------|
-| Sum | `\|` | Tagged union (branching) | `\| 'positive' \| 'zero' \| 'negative'` |
-| Product | adjacency / `*` | Tuple composition | `str * int` |
-| Exponent | `<-` | Function type | `int <- int` (unary), `str <- int <- float` (curried) |
-| Tag | `` ` `` | Type-level tag/annotation | `` `JSON`` |
+### Key Insight: Chain Experts, Don't Parse
 
-Additional constructs:
-
-- **Match**: `Match[$x > 0 -> 'positive', $x == 0 -> 'zero', _ -> 'negative']`
-- **Generics**: `list[$elem int]`
-- **Dict literal**: `dict['first' = $a, 'second' = $b]`
-- **Function type value**: `(int <- int)`
-- **Literals**: `INT`, `FLOAT`, `BOOLEAN`, `STRING ("...")`, `SINGLE_STRING ('...')`, `TRIPLE_STRING ('''...''')`, `CODE_BLOCK ({...})`
-- **Special types**: `void` / `()` (unit), `never` (bottom), `...` (ellipsis)
-- **Tuple syntax**: `(A, B)` desugars to product type
-- **Import**: `Import[path/to/file.viba]` references another Viba definition
-
-### 1. Dataset
-
-12 Python-to-Viba translation pairs covering fundamental patterns:
-
-| Pattern | Python | Viba |
-|---------|--------|------|
-| Sequential | `seq.py` | `seq.viba` |
-| Branching | `branch.py` | `branch.viba` |
-| Loop | `loop.py` | `loop.viba` |
-| Recursion | `recursion.py` | `recursion.viba` |
-| Higher-order | `higher_order.py` | `higher_order.viba` |
-| Data structures | `data_struct.py` | `data_struct.viba` |
-| Default args | `default_arg.py` | `default_arg.viba` |
-| List comprehension | `list_comp.py` | `list_comp.viba` |
-| String formatting | `format_str.py` | `format_str.viba` |
-| Guard clauses | `guard.py` | `guard.viba` |
-| Accumulator | `accumulator.py` | `accumulator.viba` |
-| Closure | `closure.py` | `closure.viba` |
-
-### 2. Setup
+Instead of one monolithic expert + custom parsers for each action type:
 
 ```python
-import tempfile
-from pathlib import Path
-
-from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
-from experience.symbolic_tensor.function.get_edit_distance_ratio import get_edit_distance_ratio
-from experience.symbolic_tensor.optimizer.st_sgd import StSGD
-from experience.example.naive_symbolic_transform_model.model import NaiveModel
-
-DATASET_PAIRS = [
-    "seq", "branch", "loop",
-    "recursion", "higher_order", "data_struct",
-    "default_arg", "list_comp", "format_str",
-    "guard", "accumulator", "closure",
-]
+# BAD: custom parsing, not reusable, not trainable
+decision = parse_action(expert_output)  # brittle regex/string matching
+if decision.type == "text":
+    cmd = extract_command(expert_output)  # another custom parser
 ```
 
-### 3. Build Tensors
+Chain two experts — each with its own trainable experience:
 
 ```python
-with tempfile.TemporaryDirectory() as tmpdir:
-    # Input: symlinks to Python source files
-    py_paths = [Path("dataset") / f"{name}.py" for name in DATASET_PAIRS]
-    input_tensor = make_tensor(py_paths, tmpdir, symlink=True)
-
-    # Expected: Viba code as strings
-    viba_contents = [(Path("dataset") / f"{name}.viba").read_text() for name in DATASET_PAIRS]
-    expected_tensor = make_tensor(viba_contents, tmpdir)
-
-    # Experience: starts EMPTY — learned during training
-    n = len(DATASET_PAIRS)
-    experience_tensor = make_tensor([[""] * 3 for _ in range(n)], tmpdir)
+# GOOD: composable, trainable, extensible
+decision_expert = ft_expert(capture_op, decision_experience, topk=2)   # WHAT
+cmd_expert = ft_expert(decision_expert, cmd_experience, topk=2)         # HOW
 ```
 
-### 4. Training Loop
+Expert 1's output feeds directly as Expert 2's input. Write-through ensures no double LLM calls.
+
+### Experience Tensors (Learnable Weights)
 
 ```python
-    model = NaiveModel(task_prompt="Translate Python To Viba", topk=1)
-    model.load_experience(experience_tensor)
-    optimizer = StSGD(model.parameters(), lr=1.0)
+# Decision expert: terminal observation → action_type:hint
+decision_experience = make_tensor([
+    ["提示符后面没有其他文字", "命令行为空", "text:输入shell命令"],
+    ["提示符后面有echo命令",   "命令行已有内容", "ctrl:按回车执行"],
+], tmpdir)
 
-    for iteration in range(1, 6):
-        optimizer.zero_grad()
-
-        # Forward: LLM translates each Python file to Viba using experience
-        output, selected_indexes = model(input_tensor)
-
-        # Loss: Levenshtein edit distance ratio
-        loss = get_edit_distance_ratio(output, expected_tensor)
-        mean_loss = loss.mean().item()
-        print(f"Iteration {iteration} loss: {mean_loss:.4f}")
-
-        # Backward: computes symbolic gradients (diffs) via autograd
-        loss.mean().backward()
-
-        # Optimizer step: applies patches to experience via patch
-        optimizer.step()
+# Cmd expert: hint → real command
+cmd_experience = make_tensor([
+    ["text:输入shell命令\n任务是列出目录",    "需要ls",   "ls"],
+    ["text:输入shell命令\n任务是输出hello",   "需要echo", "echo hello world"],
+    ["ctrl:按回车执行",                       "按Enter",  "Enter"],
+], tmpdir)
 ```
 
-### 5. Run
+These are `[N, 3]` QKV tensors — trainable via backward + `StSGD`. More experience entries = better generalization.
+
+### Pipeline Composition
+
+```python
+# All shared ops — same for ANY harness model
+workspace_expanded = ft_expand(workspace_ft, [1, MAX_ITERS])
+capture_op = ft_tmux_capture_pane(workspace_expanded)
+decision_expert = ft_expert(capture_op, decision_experience, task_prompt="...", topk=2)
+cmd_expert = ft_expert(decision_expert, cmd_experience, task_prompt="...", topk=2)
+send_text_op = ft_tmux_send_text(cmd_expert, workspace_expanded)
+send_ctrl_op = ft_tmux_send_ctrl(cmd_expert, workspace_expanded)
+switched_send = ft_switch(decision_expert, [
+    ("text", "type", "send text to terminal", send_text_op),
+    ("ctrl", "ctrl", "send control key",      send_ctrl_op),
+])
+sleep_op = ft_sleep(workspace_expanded, 0.5)
+iteration_body = ft_sequential(switched_send, sleep_op, capture_op)
+
+# Only this is harness-specific
+validator = ft_coder_validator(iteration_body, max_iters=MAX_ITERS)
+output = ft_recurrent(validator)
+
+# ONE forward call — the prompt IS the task
+output.ft_forward(make_tensor(["在终端中输出问候语hello world"], tmpdir))
+```
+
+### Portable Modules
+
+A harness Module is defined by:
+1. **Experience tensors** — the learned skill (trainable via autograd)
+2. **Validator** — the termination condition (harness-specific)
+3. **Pipeline structure** — identical across all modules (shared infrastructure)
+
+Same Module structure + different experience = different behavior:
+
+| Module | Experience 1 | Experience 2 | Validator |
+|--------|-------------|-------------|-----------|
+| Coder | terminal → action_type | hint → shell cmd | prompt returns to idle |
+| Debugger | error → strategy | strategy → debug cmd | tests pass |
+| Deployer | status → action | action → deploy cmd | service healthy |
+
+### Run
+
+```bash
+python -m experience.future_tensor.test.test_llm_coder_simulator
+```
+
+### Design Principles
+
+- **Static DAG, not imperative orchestration** — compose a graph of lazy tensors, then pull from the output
+- **No shared mutable state** — coordination through tensor coordinates, not lists/dicts
+- **Chain experts, don't parse** — two chained `ft_expert` ops replace custom parsers
+- **Observe the world directly** — `ft_tmux_capture_pane` reads live terminal state, no shadow copies
+- **Shape-first** — all inputs shaped `[1, max_iters]` or broadcastable
+- **Self-improving** — experience tensors accumulate knowledge via backward + optimizer step
+
+## Training Demo: Python to Viba Translation
+
+The `example/naive_symbolic_transform_model/` directory demonstrates training from scratch — translating Python into **Viba**, a novel DSL that doesn't exist in any LLM's training corpus. Experience starts empty and accumulates correct mappings over 5 iterations (loss: 0.66 → 0.42, 36.5% reduction).
 
 ```bash
 python -m experience.example.naive_symbolic_transform_model.train
 ```
-
-### 6. Results (5 iterations, 12 pairs)
-
-Loss trajectory: `['0.6641', '0.5469', '0.4668', '0.4473', '0.4219']` — **converges** (36.5% reduction).
-
-```
-Dataset: 12 pairs
-Experience: [24, 3]   # 24 entries (2x dataset size for exploration headroom)
-
-Iteration 1/5  Mean loss: 0.6641
-  output[0]: 'fun greet(name: str) -> str:\n    let greeting = "Hello"...'        # random language
-  output[1]: 'func classify(x: int) -> str:\n    if x > 0:...'                  # Python-like
-  Patches: applied=18 rejected=0 fuzzed=0 skipped=0
-
-Iteration 3/5  Mean loss: 0.4668
-  output[0]: 'greet :=\n    $message str\n    <- $name str\n    ...'              # Viba syntax!
-  output[5]: 'make_pair :=\n    dict\n    <- $a str\n    <- $b str\n    ...'    # Viba syntax!
-  Patches: applied=6 rejected=0 fuzzed=0 skipped=0
-
-Iteration 5/5  Mean loss: 0.4219
-  output[1]: "classify :=\n    | 'positive'\n    | 'zero'\n    | 'negative'..."  # exact Viba
-  output[3]: 'factorial :=\n    <- $n int\n    # recursive\n    <- Match[...]'   # exact Viba
-  output[11]: 'make_adder :=\n    $adder (int <- int)\n    <- $x int\n    ...'    # exact Viba
-
-Patch stats (all 5 iterations): 34/34 applied, 0 rejected, 100% success rate.
-```
-
-Key observations:
-- The model **starts with no Viba knowledge** — iteration 1 outputs are in random languages (Go, Rust, TypeScript-like).
-- By iteration 3, the LLM begins using Viba syntax (`<-`, `$var`, `:=`) for some outputs.
-- By iteration 5, several outputs match expected Viba code exactly (loss < 0.01 for branch, closure, guard).
-- Experience entries accumulate correct Python-to-Viba mappings during training — e.g., entry `[22,23]` stores `classify(x) -> classify := | 'positive' | ...`.
-- All 34 patches applied cleanly with 0% rejection rate across 5 iterations.
 
 ## Auto-Encoder Example
 
