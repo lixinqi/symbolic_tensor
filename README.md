@@ -9,12 +9,18 @@ The result: **portable, self-improving agents** that share the same infrastructu
 An LLM-powered coder composed entirely from reusable ops — no custom logic except a termination validator. Two chained experts collaborate: Expert 1 decides WHAT to do, Expert 2 knows HOW to do it.
 
 ```
-capture_op[1, 30]          = ft_tmux_capture_pane(workspace)        → live terminal text
-decision_expert[1, 30]     = ft_expert(capture_op, decision_exp)    → "text:hint"|"ctrl:hint"
-cmd_expert[1, 30]          = ft_expert(decision_expert, cmd_exp)    → "echo hello"|"Enter"
-switched_send[1, 30]       = ft_switch(decision_expert, [("text",send_text),("ctrl",send_ctrl)])
-validator[1, 30]           = ft_coder_validator(ft_sequential(switched_send, sleep, capture))
-output[1]                  = ft_recurrent(validator)
+# [1, 30] live terminal text
+capture_op       = ft_tmux_capture_pane(workspace)
+# [1, 30] → "text:hint"|"ctrl:hint"
+decision_expert  = ft_expert(capture_op, decision_exp)
+# [1, 30] → "echo hello"|"Enter"
+cmd_expert       = ft_expert(decision_expert, cmd_exp)
+# [1, 30] routes by prefix
+switched_send    = ft_switch(decision_expert, [("text",…),("ctrl",…)])
+# [1, 30]
+validator        = ft_coder_validator(ft_sequential(switched_send, sleep, capture))
+# [1] reduced
+output           = ft_recurrent(validator)
 ```
 
 Every op except `ft_coder_validator` is shared infrastructure reusable across all harness models.
