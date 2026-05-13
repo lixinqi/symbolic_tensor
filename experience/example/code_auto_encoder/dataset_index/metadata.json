@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "codebase_dir": "/home/PaddleAgent/Experience/experience/example/code_auto_encoder/codebase",
+  "train_ratio": 0.8,
+  "seed": 42,
+  "num_train_files": 52,
+  "num_eval_files": 13,
+  "num_train_samples": 332,
+  "num_eval_samples": 82,
+  "short_per_file": 2,
+  "long_per_file": 2,
+  "max_structural_per_file": 3
+}

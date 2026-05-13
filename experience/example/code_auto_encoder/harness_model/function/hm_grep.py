@@ -16,9 +16,13 @@ class HmGrep(HarnessOp):
         pattern: str = "",
         glob: str = None,
         max_results: int = 50,
+        file_path: str = None,
+        **kwargs,
     ) -> str:
         """Newline-separated file:line:content matches."""
         import fnmatch
+        if glob is None and file_path:
+            glob = file_path
 
         try:
             regex = re.compile(pattern)

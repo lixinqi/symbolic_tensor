@@ -1,0 +1,576 @@
+[
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 24,
+    "mask_end": 26,
+    "ground_truth": "                permission_mode=permission_mode,\n                cwd=cwd,\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 30,
+    "mask_end": 33,
+    "ground_truth": "        if llm_env is not None:\n            for key in llm_env:\n                if env_backup.get(key) is not None:\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 20,
+    "mask_end": 28,
+    "ground_truth": "        async for item in query(\n            prompt=prompt,\n            options=ClaudeAgentOptions(\n                allowed_tools=allowed_tools,\n                permission_mode=permission_mode,\n                cwd=cwd,\n            ),\n        ):\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 6,
+    "mask_end": 12,
+    "ground_truth": "    prompt: str,\n    cwd: str | None = None,\n    allowed_tools: list[str] = None,\n    permission_mode: str = \"acceptEdits\",\n    llm_env: Optional[Dict[str, str]] = None,\n):\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 12,
+    "mask_end": 36,
+    "ground_truth": "    if allowed_tools is None:\n        allowed_tools = [\"Read\", \"Edit\"]\n    env_backup = {}\n    if llm_env is not None:\n        for key, val in llm_env.items():\n            env_backup[key] = os.environ.get(key)\n            os.environ[key] = val\n    try:\n        async for item in query(\n            prompt=prompt,\n            options=ClaudeAgentOptions(\n                allowed_tools=allowed_tools,\n                permission_mode=permission_mode,\n                cwd=cwd,\n            ),\n        ):\n            yield item\n    finally:\n        if llm_env is not None:\n            for key in llm_env:\n                if env_backup.get(key) is not None:\n                    os.environ[key] = env_backup[key]\n                else:\n                    os.environ.pop(key, None)\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/coding_agent_query.py",
+    "mask_start": 37,
+    "mask_end": 40,
+    "ground_truth": "    async def func():\n        await asyncio.gather(*handlers)\n    asyncio.run(func())\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 62,
+    "mask_end": 65,
+    "ground_truth": "        digits = list(str(flat_index))\n        view_storage_path = os.path.join(\n            view_tensor.st_relative_to,\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 105,
+    "mask_end": 107,
+    "ground_truth": "        \"You need read all the key => value pairs to get the experiences.\\n\"\n        \"The value files show the EXACT target format and syntax.\\n\"\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 181,
+    "mask_end": 185,
+    "ground_truth": "        output_dir = os.path.join(workspace_dir, \"mutable_output_dir\")\n        dump_view(experience_sliced_view, exp_view_dir, \"txt\")\n        dump_view(scalar_input_view, input_view_dir, \"txt\")\n        dump_view(scalar_output_value, output_dir, \"txt\")\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 108,
+    "mask_end": 112,
+    "ground_truth": "        \"Do NOT invent your own syntax or formatting \u2014 copy the patterns from the experience values.\\n\\n\"\n        f\"Conducted by \\\"{const_experience_view}\\\",\\n\"\n        f\"please translate source semantic text \\\"{const_input_view}\\\"\\n\"\n        f\"to target semantic text \\\"{mutable_output_dir}\\\".\\n\\n\"\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 23,
+    "mask_end": 26,
+    "ground_truth": "    result: List[Union[torch.Tensor, slice]] = list(index_tensors[:-1])\n    result.append(slice(None))\n    return result\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 28,
+    "mask_end": 40,
+    "ground_truth": "    digits = list(str(flat_index))\n    path = os.path.join(\n        tensor.st_relative_to,\n        tensor.st_tensor_uid,\n        \"storage\",\n        os.path.join(*digits),\n        \"data\",\n    )\n    if not os.path.isfile(path):\n        return None\n    with open(path, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/st_moe_forward.py",
+    "mask_start": 42,
+    "mask_end": 53,
+    "ground_truth": "    if not shape:\n        return flat_results[0]\n    if len(shape) == 1:\n        return flat_results\n    chunk_size = 1\n    for s in shape[1:]:\n        chunk_size *= s\n    return [\n        _build_nested_result(flat_results[i * chunk_size:(i + 1) * chunk_size], shape[1:])\n        for i in range(shape[0])\n    ]\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 49,
+    "mask_end": 51,
+    "ground_truth": "        start = i * chunk_size\n        result.append(_build_nested(flat_paths[start:start + chunk_size], shape[1:]))\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 72,
+    "mask_end": 74,
+    "ground_truth": "        f\"Expected {len(input.size())} slice elements, got {len(slice_tensors)}\"\n    )\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 16,
+    "mask_end": 22,
+    "ground_truth": "        os.path.join(*digits),\n        \"data\",\n    )\ndef _normalize_slice_element(\n    elem: SliceElement, dim_size: int\n) -> Tuple[List[int], bool]:\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 83,
+    "mask_end": 90,
+    "ground_truth": "        ret = make_tensor([], input.st_relative_to, symlink=True)\n        reshaped = ret.view(output_shape)\n        reshaped.st_relative_to = ret.st_relative_to\n        reshaped.st_tensor_uid = ret.st_tensor_uid\n        return reshaped\n    all_indices = [idx for idx, _ in per_dim]\n    selected_paths: List[Path] = []\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 9,
+    "mask_end": 19,
+    "ground_truth": "    stride = tensor.stride()\n    flat_index = sum(c * s for c, s in zip(coordinates, stride))\n    digits = list(str(flat_index))\n    return Path(\n        tensor.st_relative_to,\n        tensor.st_tensor_uid,\n        \"storage\",\n        os.path.join(*digits),\n        \"data\",\n    )\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 27,
+    "mask_end": 38,
+    "ground_truth": "    if isinstance(elem, int):\n        return [elem], True\n    elif isinstance(elem, slice):\n        return list(range(*elem.indices(dim_size))), False\n    elif isinstance(elem, torch.Tensor):\n        if elem.dim() == 0:\n            return [int(elem.item())], True\n        else:\n            return elem.tolist(), False\n    else:\n        raise TypeError(f\"Unsupported slice element type: {type(elem)}\")\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/slice_view.py",
+    "mask_start": 40,
+    "mask_end": 52,
+    "ground_truth": "    if not shape:\n        return flat_paths[0]\n    if len(shape) == 1:\n        return flat_paths\n    chunk_size = 1\n    for s in shape[1:]:\n        chunk_size *= s\n    result = []\n    for i in range(shape[0]):\n        start = i * chunk_size\n        result.append(_build_nested(flat_paths[start:start + chunk_size], shape[1:]))\n    return result\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 38,
+    "mask_end": 39,
+    "ground_truth": "        if os.path.islink(lvalue_path) or os.path.exists(lvalue_path):\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 9,
+    "mask_end": 10,
+    "ground_truth": "    return os.path.join(\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 32,
+    "mask_end": 38,
+    "ground_truth": "        lvalue_path = _get_raw_storage_path(lvalue, coords)\n        rvalue_path = os.path.realpath(_get_raw_storage_path(rvalue, coords))\n        if not os.path.exists(rvalue_path):\n            os.makedirs(os.path.dirname(rvalue_path), exist_ok=True)\n            open(rvalue_path, \"a\").close()\n        os.makedirs(os.path.dirname(lvalue_path), exist_ok=True)\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 26,
+    "mask_end": 34,
+    "ground_truth": "        f\"Shape mismatch: lvalue {list(lvalue.shape)} != rvalue {list(rvalue.shape)}\"\n    )\n    coords_list = list(itertools.product(*[range(s) for s in lvalue.size()]))\n    for coords in coords_list:\n        coords = list(coords)\n        lvalue[tuple(coords)] = rvalue[tuple(coords)]\n        lvalue_path = _get_raw_storage_path(lvalue, coords)\n        rvalue_path = os.path.realpath(_get_raw_storage_path(rvalue, coords))\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 6,
+    "mask_end": 16,
+    "ground_truth": "    stride = tensor.stride()\n    flat_index = sum(c * s for c, s in zip(coordinates, stride))\n    digits = list(str(flat_index))\n    return os.path.join(\n        tensor.st_relative_to,\n        tensor.st_tensor_uid,\n        \"storage\",\n        os.path.join(*digits),\n        \"data\",\n    )\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 25,
+    "mask_end": 42,
+    "ground_truth": "    assert lvalue.shape == rvalue.shape, (\n        f\"Shape mismatch: lvalue {list(lvalue.shape)} != rvalue {list(rvalue.shape)}\"\n    )\n    coords_list = list(itertools.product(*[range(s) for s in lvalue.size()]))\n    for coords in coords_list:\n        coords = list(coords)\n        lvalue[tuple(coords)] = rvalue[tuple(coords)]\n        lvalue_path = _get_raw_storage_path(lvalue, coords)\n        rvalue_path = os.path.realpath(_get_raw_storage_path(rvalue, coords))\n        if not os.path.exists(rvalue_path):\n            os.makedirs(os.path.dirname(rvalue_path), exist_ok=True)\n            open(rvalue_path, \"a\").close()\n        os.makedirs(os.path.dirname(lvalue_path), exist_ok=True)\n        if os.path.islink(lvalue_path) or os.path.exists(lvalue_path):\n            os.remove(lvalue_path)\n        rel_target = os.path.relpath(rvalue_path, os.path.dirname(lvalue_path))\n        os.symlink(rel_target, lvalue_path)\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/assign_view.py",
+    "mask_start": 49,
+    "mask_end": 56,
+    "ground_truth": "        if condition:\n            print(f\"  \\u2713 {name}\")\n        else:\n            print(f\"  \\u2717 {name}\")\n            if expected is not None and actual is not None:\n                print(f\"    expected: {expected}\")\n                print(f\"    actual:   {actual}\")\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 10,
+    "mask_end": 12,
+    "ground_truth": "    for item in nested:\n        result.extend(_flatten_nested(item))\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 19,
+    "mask_end": 22,
+    "ground_truth": "            env_backup = os.environ.pop(\"CLAUDECODE\", None)\n            try:\n                async for _ in coding_agent_query(prompt=prompt, cwd=workspace_dir, allowed_tools=[\"Read\", \"Edit\", \"Write\"], llm_env=llm_env):\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 19,
+    "mask_end": 25,
+    "ground_truth": "            env_backup = os.environ.pop(\"CLAUDECODE\", None)\n            try:\n                async for _ in coding_agent_query(prompt=prompt, cwd=workspace_dir, allowed_tools=[\"Read\", \"Edit\", \"Write\"], llm_env=llm_env):\n                    pass\n            finally:\n                if env_backup is not None:\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 16,
+    "mask_end": 20,
+    "ground_truth": "        async def _do_one(task: AgentTask):\n            workspace_dir = task.workspace_dir\n            prompt = task.prompt\n            env_backup = os.environ.pop(\"CLAUDECODE\", None)\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 7,
+    "mask_end": 13,
+    "ground_truth": "    if not isinstance(nested, list):\n        return [nested]\n    result = []\n    for item in nested:\n        result.extend(_flatten_nested(item))\n    return result\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 15,
+    "mask_end": 29,
+    "ground_truth": "        flat_tasks = _flatten_nested(all_tasks)\n        async def _do_one(task: AgentTask):\n            workspace_dir = task.workspace_dir\n            prompt = task.prompt\n            env_backup = os.environ.pop(\"CLAUDECODE\", None)\n            try:\n                async for _ in coding_agent_query(prompt=prompt, cwd=workspace_dir, allowed_tools=[\"Read\", \"Edit\", \"Write\"], llm_env=llm_env):\n                    pass\n            finally:\n                if env_backup is not None:\n                    os.environ[\"CLAUDECODE\"] = env_backup\n        async def _run_all():\n            await asyncio.gather(*[_do_one(task) for task in flat_tasks])\n        asyncio.run(_run_all())",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/coding_agent_task_handler.py",
+    "mask_start": 17,
+    "mask_end": 26,
+    "ground_truth": "            workspace_dir = task.workspace_dir\n            prompt = task.prompt\n            env_backup = os.environ.pop(\"CLAUDECODE\", None)\n            try:\n                async for _ in coding_agent_query(prompt=prompt, cwd=workspace_dir, allowed_tools=[\"Read\", \"Edit\", \"Write\"], llm_env=llm_env):\n                    pass\n            finally:\n                if env_backup is not None:\n                    os.environ[\"CLAUDECODE\"] = env_backup\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "test/test_gain_st_sgd.py",
+    "mask_start": 14,
+    "mask_end": 17,
+    "ground_truth": "        os.path.join(*digits),\n        \"data\",\n    )\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "test/test_gain_st_sgd.py",
+    "mask_start": 8,
+    "mask_end": 10,
+    "ground_truth": "def read_storage(tensor, flat_index):\n    digits = list(str(flat_index))\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "test/test_gain_st_sgd.py",
+    "mask_start": 14,
+    "mask_end": 18,
+    "ground_truth": "        os.path.join(*digits),\n        \"data\",\n    )\n    with open(path) as f:\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "test/test_gain_st_sgd.py",
+    "mask_start": 12,
+    "mask_end": 18,
+    "ground_truth": "        tensor.st_tensor_uid,\n        \"storage\",\n        os.path.join(*digits),\n        \"data\",\n    )\n    with open(path) as f:\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "test/test_gain_st_sgd.py",
+    "mask_start": 9,
+    "mask_end": 19,
+    "ground_truth": "    digits = list(str(flat_index))\n    path = os.path.join(\n        tensor.st_relative_to,\n        tensor.st_tensor_uid,\n        \"storage\",\n        os.path.join(*digits),\n        \"data\",\n    )\n    with open(path) as f:\n        return f.read()\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 48,
+    "mask_end": 51,
+    "ground_truth": "                        f\"{packed_workspace}\\n\\n\"\n                        f\"The whole task are split into several pieces, One LLMs request for one piece, \"\n                        f\"In This request, Your output will replace the {todo_file_content_hint} placeholder in file {todo_file_path}. \\n\"\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 59,
+    "mask_end": 60,
+    "ground_truth": "                f.write(output_content)\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 48,
+    "mask_end": 56,
+    "ground_truth": "                        f\"{packed_workspace}\\n\\n\"\n                        f\"The whole task are split into several pieces, One LLMs request for one piece, \"\n                        f\"In This request, Your output will replace the {todo_file_content_hint} placeholder in file {todo_file_path}. \\n\"\n                        f\"Output raw text only. Do NOT wrap in markdown code fences (``` or ```lang).\\n\"\n                        f\"Do not generate unrelated content.\"\n                    )\n                    jobs.append((todo_file_path, raw_llm_prompt))\n        async def _do_one(todo_file_path: str, raw_llm_prompt: str):\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 7,
+    "mask_end": 14,
+    "ground_truth": "    if not isinstance(nested, list):\n        return [nested]\n    result = []\n    for item in nested:\n        result.extend(_flatten_nested(item))\n    return result\ndef _grep_by_file_content_hint(root_dir: str, todo_file_content_hint: str) -> List[str]:\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 7,
+    "mask_end": 13,
+    "ground_truth": "    if not isinstance(nested, list):\n        return [nested]\n    result = []\n    for item in nested:\n        result.extend(_flatten_nested(item))\n    return result\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 15,
+    "mask_end": 27,
+    "ground_truth": "    todo_files = []\n    for dirpath, dirnames, filenames in os.walk(root_dir):\n        for filename in filenames:\n            file_path = os.path.join(dirpath, filename)\n            try:\n                with open(file_path, \"r\", encoding=\"utf-8\") as f:\n                    content = f.read()\n                if todo_file_content_hint in content:\n                    todo_files.append(file_path)\n            except (UnicodeDecodeError, OSError):\n                continue\n    return todo_files\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/raw_llm_task_handler.py",
+    "mask_start": 29,
+    "mask_end": 63,
+    "ground_truth": "        flat_tasks = _flatten_nested(all_tasks)\n        jobs = []\n        for task in flat_tasks:\n            workspace_dir = task.workspace_dir\n            prompt = task.prompt\n            output_relative_dir_or_list = task.output_relative_dir\n            todo_file_content_hint = task.todo_file_content_hint\n            packed_workspace = pack_dir(workspace_dir)\n            if isinstance(output_relative_dir_or_list, str):\n                output_relative_dirs = [output_relative_dir_or_list]\n            else:\n                output_relative_dirs = output_relative_dir_or_list\n            for output_relative_dir in output_relative_dirs:\n                output_root = os.path.join(workspace_dir, output_relative_dir)\n                todo_file_paths = _grep_by_file_content_hint(output_root, todo_file_content_hint)\n                for todo_file_path in todo_file_paths:\n                    raw_llm_prompt = (\n                        f\"{prompt}\\n\\n\"\n                        f\"The Directories are packed as following like repomix:\\n\\n\"\n                        f\"{packed_workspace}\\n\\n\"\n                        f\"The whole task are split into several pieces, One LLMs request for one piece, \"\n                        f\"In This request, Your output will replace the {todo_file_content_hint} placeholder in file {todo_file_path}. \\n\"\n                        f\"Output raw text only. Do NOT wrap in markdown code fences (``` or ```lang).\\n\"\n                        f\"Do not generate unrelated content.\"\n                    )\n                    jobs.append((todo_file_path, raw_llm_prompt))\n        async def _do_one(todo_file_path: str, raw_llm_prompt: str):\n            from experience.llm_client.raw_llm_query import raw_llm_query\n            output_content = await raw_llm_query(raw_llm_prompt, llm_env=llm_env)\n            with open(todo_file_path, \"w\", encoding=\"utf-8\") as f:\n                f.write(output_content)\n        async def _run_all():\n            await asyncio.gather(*[_do_one(path, prompt) for path, prompt in jobs])\n        asyncio.run(_run_all())\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "test/test_transform_method_time_comparison.py",
+    "mask_start": 9,
+    "mask_end": 10,
+    "ground_truth": "    with tempfile.TemporaryDirectory() as tmpdir:\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "test/test_transform_method_time_comparison.py",
+    "mask_start": 27,
+    "mask_end": 28,
+    "ground_truth": "            outputs.append(content)\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "test/test_transform_method_time_comparison.py",
+    "mask_start": 18,
+    "mask_end": 24,
+    "ground_truth": "        t1 = time.time()\n        elapsed = t1 - t0\n        outputs = []\n        root = os.path.join(tmpdir, output.st_tensor_uid, \"storage\")\n        for i in range(output.numel()):\n            digits = list(str(i))\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "test/test_transform_method_time_comparison.py",
+    "mask_start": 9,
+    "mask_end": 17,
+    "ground_truth": "    with tempfile.TemporaryDirectory() as tmpdir:\n        input_tensor = make_tensor(input_data, tmpdir)\n        experience_tensor = make_tensor(experience_data, tmpdir)\n        t0 = time.time()\n        output, selected_indexes = st_moe_forward(\n            input_tensor, experience_tensor,\n            topk=topk,\n            llm_method=llm_method,\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "test/test_transform_method_time_comparison.py",
+    "mask_start": 9,
+    "mask_end": 29,
+    "ground_truth": "    with tempfile.TemporaryDirectory() as tmpdir:\n        input_tensor = make_tensor(input_data, tmpdir)\n        experience_tensor = make_tensor(experience_data, tmpdir)\n        t0 = time.time()\n        output, selected_indexes = st_moe_forward(\n            input_tensor, experience_tensor,\n            topk=topk,\n            llm_method=llm_method,\n        )\n        t1 = time.time()\n        elapsed = t1 - t0\n        outputs = []\n        root = os.path.join(tmpdir, output.st_tensor_uid, \"storage\")\n        for i in range(output.numel()):\n            digits = list(str(i))\n            path = os.path.join(root, os.path.join(*digits), \"data\")\n            with open(path) as f:\n                content = f.read()\n            outputs.append(content)\n        return elapsed, outputs\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 69,
+    "mask_end": 72,
+    "ground_truth": "    task_prompt: str = \"\",\n    llm_method: str = \"raw_llm_api\",\n    llm_env: Optional[Dict[str, str]] = None,\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 59,
+    "mask_end": 61,
+    "ground_truth": "    return (\n        \"You are a coding agent.\\n\\n\"\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 21,
+    "mask_end": 28,
+    "ground_truth": "        return flat_results\n    chunk_size = 1\n    for s in shape[1:]:\n        chunk_size *= s\n    return [\n        _build_nested_result(flat_results[i * chunk_size:(i + 1) * chunk_size], shape[1:])\n        for i in range(shape[0])\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 58,
+    "mask_end": 66,
+    "ground_truth": ") -> str:\n    return (\n        \"You are a coding agent.\\n\\n\"\n        f\"{task_prompt}\\n\\n\"\n        f\"Input: \\\"{const_input_view}\\\"\\n\"\n        f\"Output: \\\"{mutable_output_dir}\\\"\\n\\n\"\n        f\"Replace TODO in \\\"{mutable_output_dir}\\\" with result.\\n\"\n    )\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 18,
+    "mask_end": 29,
+    "ground_truth": "    if not shape:\n        return flat_results[0]\n    if len(shape) == 1:\n        return flat_results\n    chunk_size = 1\n    for s in shape[1:]:\n        chunk_size *= s\n    return [\n        _build_nested_result(flat_results[i * chunk_size:(i + 1) * chunk_size], shape[1:])\n        for i in range(shape[0])\n    ]\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 31,
+    "mask_end": 53,
+    "ground_truth": "    coords_list = [list(coord) for coord in itertools.product(*[range(s) for s in view_tensor.size()])]\n    for coords in coords_list:\n        flat_index = sum(c * s for c, s in zip(coords, view_tensor.stride()))\n        digits = list(str(flat_index))\n        view_storage_path = os.path.join(\n            view_tensor.st_relative_to,\n            view_tensor.st_tensor_uid,\n            \"storage\",\n            os.path.join(*digits),\n            \"data\",\n        )\n        real_storage_path = os.path.realpath(view_storage_path)\n        if coords:\n            coord_dirs = os.path.join(*[str(c) for c in coords])\n            mutable_file = os.path.join(mutable_dir, coord_dirs, \"data.txt\")\n        else:\n            mutable_file = os.path.join(mutable_dir, \"data.txt\")\n        if os.path.isfile(mutable_file):\n            with open(mutable_file, \"r\", encoding=\"utf-8\") as f:\n                content = f.read()\n            with open(real_storage_path, \"w\", encoding=\"utf-8\") as f:\n                f.write(content)\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/coding_agent.py",
+    "mask_start": 59,
+    "mask_end": 66,
+    "ground_truth": "    return (\n        \"You are a coding agent.\\n\\n\"\n        f\"{task_prompt}\\n\\n\"\n        f\"Input: \\\"{const_input_view}\\\"\\n\"\n        f\"Output: \\\"{mutable_output_dir}\\\"\\n\\n\"\n        f\"Replace TODO in \\\"{mutable_output_dir}\\\" with result.\\n\"\n    )\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 15,
+    "mask_end": 17,
+    "ground_truth": "    expanded_token_mask = token_mask[:, :, None].expand(-1, -1, seq_len)\n    return tril & expanded_token_mask\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 13,
+    "mask_end": 15,
+    "ground_truth": "        torch.ones(seq_len, seq_len, dtype=torch.bool, device=token_mask.device)\n    )\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 11,
+    "mask_end": 17,
+    "ground_truth": "    batch_size, seq_len = token_mask.shape\n    tril = torch.tril(\n        torch.ones(seq_len, seq_len, dtype=torch.bool, device=token_mask.device)\n    )\n    expanded_token_mask = token_mask[:, :, None].expand(-1, -1, seq_len)\n    return tril & expanded_token_mask\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 12,
+    "mask_end": 17,
+    "ground_truth": "    tril = torch.tril(\n        torch.ones(seq_len, seq_len, dtype=torch.bool, device=token_mask.device)\n    )\n    expanded_token_mask = token_mask[:, :, None].expand(-1, -1, seq_len)\n    return tril & expanded_token_mask\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 11,
+    "mask_end": 17,
+    "ground_truth": "    batch_size, seq_len = token_mask.shape\n    tril = torch.tril(\n        torch.ones(seq_len, seq_len, dtype=torch.bool, device=token_mask.device)\n    )\n    expanded_token_mask = token_mask[:, :, None].expand(-1, -1, seq_len)\n    return tril & expanded_token_mask\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/function/get_causal_attention_mask.py",
+    "mask_start": 20,
+    "mask_end": 27,
+    "ground_truth": "        if condition:\n            print(f\"  \\u2713 {name}\")\n        else:\n            print(f\"  \\u2717 {name}\")\n            if expected is not None and actual is not None:\n                print(f\"    expected: {expected}\")\n                print(f\"    actual:   {actual}\")\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 6,
+    "mask_end": 7,
+    "ground_truth": "    if len(size) == 0:\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 7,
+    "mask_end": 8,
+    "ground_truth": "        return fill\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 12,
+    "mask_end": 17,
+    "ground_truth": "    Args:\n        input: A symbolic tensor with st_relative_to attribute.\n    Returns:\n        A new symbolic tensor with the same shape, each element storing \"\".\n    \"\"\"\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 6,
+    "mask_end": 12,
+    "ground_truth": "    if len(size) == 0:\n        return fill\n    return [_expand(size[1:], fill) for _ in range(size[0])]\ndef empty_tensor_like(input: torch.Tensor) -> torch.Tensor:\n    \"\"\"\n    Create a symbolic tensor with the same shape as input, filled with \"\" strings.\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 6,
+    "mask_end": 9,
+    "ground_truth": "    if len(size) == 0:\n        return fill\n    return [_expand(size[1:], fill) for _ in range(size[0])]\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/tensor_util/empty_tensor_like.py",
+    "mask_start": 25,
+    "mask_end": 32,
+    "ground_truth": "        if condition:\n            print(f\"  \u2713 {name}\")\n        else:\n            print(f\"  \u2717 {name}\")\n            if expected is not None and actual is not None:\n                print(f\"    expected: {expected}\")\n                print(f\"    actual:   {actual}\")\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "llm_client/__init__.py",
+    "mask_start": 11,
+    "mask_end": 12,
+    "ground_truth": "        print(f\"ENTER _call_claude, model={env.get('LLM_MODEL')}\\n{prompt}\", file=f)\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/__init__.py",
+    "mask_start": 10,
+    "mask_end": 12,
+    "ground_truth": "    with Path(\"/tmp/a.log\").open(\"a\", encoding=\"utf-8\") as f:\n        print(f\"ENTER _call_claude, model={env.get('LLM_MODEL')}\\n{prompt}\", file=f)\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "llm_client/__init__.py",
+    "mask_start": 11,
+    "mask_end": 18,
+    "ground_truth": "        print(f\"ENTER _call_claude, model={env.get('LLM_MODEL')}\\n{prompt}\", file=f)\n    client = OpenAI(\n        api_key=env.get('LLM_API_KEY'),\n        base_url=env.get('LLM_BASE_URL'),\n    )\n    response = client.chat.completions.create(\n        model=env.get('LLM_MODEL'),\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/__init__.py",
+    "mask_start": 12,
+    "mask_end": 18,
+    "ground_truth": "    client = OpenAI(\n        api_key=env.get('LLM_API_KEY'),\n        base_url=env.get('LLM_BASE_URL'),\n    )\n    response = client.chat.completions.create(\n        model=env.get('LLM_MODEL'),\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "llm_client/__init__.py",
+    "mask_start": 9,
+    "mask_end": 26,
+    "ground_truth": "    env = os.environ\n    with Path(\"/tmp/a.log\").open(\"a\", encoding=\"utf-8\") as f:\n        print(f\"ENTER _call_claude, model={env.get('LLM_MODEL')}\\n{prompt}\", file=f)\n    client = OpenAI(\n        api_key=env.get('LLM_API_KEY'),\n        base_url=env.get('LLM_BASE_URL'),\n    )\n    response = client.chat.completions.create(\n        model=env.get('LLM_MODEL'),\n        messages=[\n            {'role': 'user', 'content': prompt},\n        ],\n    )\n    ret = response.choices[0].message.content.strip()\n    with Path(\"/tmp/a.log\").open(\"a\", encoding=\"utf-8\") as f:\n        print(f\"EXIT _call_claude, model={env.get('LLM_MODEL')}\\n{ret}\", file=f)\n    return ret",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 41,
+    "mask_end": 44,
+    "ground_truth": "            yield tensor\n    def __len__(self):\n        return (len(self.file_paths) + self.batch_size - 1) // self.batch_size\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 28,
+    "mask_end": 31,
+    "ground_truth": "        self.file_paths = _get_all_file_paths(root_dir, extension)\n    def __iter__(self):\n        batch = []\n",
+    "mask_type": "short"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 8,
+    "mask_end": 13,
+    "ground_truth": "    for dirpath, _, filenames in os.walk(root_dir):\n        for fname in sorted(filenames):\n            if extension is not None and not fname.endswith(extension):\n                continue\n            paths.append(os.path.join(dirpath, fname))\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 34,
+    "mask_end": 38,
+    "ground_truth": "                tensor = make_tensor(batch, self.root_dir, symlink=True)\n                tensor.requires_grad_(False)\n                yield tensor\n                batch = []\n",
+    "mask_type": "long"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 7,
+    "mask_end": 15,
+    "ground_truth": "    paths = []\n    for dirpath, _, filenames in os.walk(root_dir):\n        for fname in sorted(filenames):\n            if extension is not None and not fname.endswith(extension):\n                continue\n            paths.append(os.path.join(dirpath, fname))\n    paths.sort()\n    return paths\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 25,
+    "mask_end": 29,
+    "ground_truth": "        self.root_dir = root_dir\n        self.extension = extension\n        self.batch_size = batch_size\n        self.file_paths = _get_all_file_paths(root_dir, extension)\n",
+    "mask_type": "structural"
+  },
+  {
+    "file_path": "symbolic_tensor/data_loader/sole_file_batch_data_loader.py",
+    "mask_start": 30,
+    "mask_end": 42,
+    "ground_truth": "        batch = []\n        for fpath in self.file_paths:\n            batch.append(Path(fpath))\n            if len(batch) == self.batch_size:\n                tensor = make_tensor(batch, self.root_dir, symlink=True)\n                tensor.requires_grad_(False)\n                yield tensor\n                batch = []\n        if batch:\n            tensor = make_tensor(batch, self.root_dir, symlink=True)\n            tensor.requires_grad_(False)\n            yield tensor\n",
+    "mask_type": "structural"
+  }
+]
