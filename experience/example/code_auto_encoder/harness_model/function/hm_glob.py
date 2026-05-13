@@ -10,7 +10,7 @@ class HmGlob(HarnessOp):
     name = "glob"
     description = "Find files matching a glob pattern. Returns relative paths."
 
-    def forward(self, worktree_path: str, pattern: str = "**/*.py") -> str:
+    def forward(self, worktree_path: str, pattern: str = "**/*.py", **kwargs) -> str:
         """Newline-separated relative paths. Capped at 100 results."""
         matches = _glob.glob(
             os.path.join(worktree_path, pattern), recursive=True,
