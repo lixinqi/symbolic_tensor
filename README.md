@@ -173,6 +173,11 @@ with dispatch_policy(TracePolicy(records)):
 - **Experience starts empty** — learned entirely at runtime, cold-start supported
 - **LLM as compute kernel** — replaces matrix multiplication with semantic reasoning
 
+## Roadmap
+
+1. **Adapter mechanism for existing coding agents.** Adapters for Claude Code, OpenCode, OpenClaw, Hermes — wrap each agent's tool interface as `ft_*` ops so they plug into the compute graph as interchangeable backends.
+2. **Tmux screen capture streams hub.** A shared capture stream that records ground-truth terminal interactions, producing standardized experience tensors. Multiple harness agents train from the same hub — enabling experience sharing and transfer learning across agents.
+
 ## Internals
 
 Two LLM backends: `raw_llm_api` (OpenAI-compatible, lightweight) and `coding_agent` (Claude Agent SDK with file tools), dispatched concurrently via `asyncio.gather`. Autograd functions in `symbolic_tensor/function/` implement `StMoe` (query → retrieval → LLM translate), attention, slicing (symlink views vs copies), stack, fork, merge, and edit-distance loss. Tensor utilities (`tensor_util/`) provide `make_tensor`, `get_diff_tensor`, `patch_tensor` (unified diffs, cold-start support), and Pythonic methods registered on `torch.Tensor` (`st_pack`, `st_patch`, `st_get_diff`, `st_view_slicer[...]`, etc.).
