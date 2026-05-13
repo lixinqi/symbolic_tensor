@@ -15,12 +15,12 @@ from openai import AsyncOpenAI, BadRequestError, InternalServerError, RateLimitE
 from experience.llm_client.agent_config import RawLlmConfig
 from experience.llm_client.agent_config_factory import AgentConfigFactory
 
-_RATE_LIMIT_RETRIES = 5
-_RATE_LIMIT_BASE_DELAY = 10.0
-_SERVER_ERROR_RETRIES = 6
-_SERVER_ERROR_BASE_DELAY = 10.0
-_BAD_REQUEST_RETRIES = 3
-_BAD_REQUEST_BASE_DELAY = 15.0
+_RATE_LIMIT_RETRIES = int(os.environ.get("LLM_RATE_LIMIT_RETRIES", "5"))
+_RATE_LIMIT_BASE_DELAY = float(os.environ.get("LLM_RATE_LIMIT_BASE_DELAY", "10.0"))
+_SERVER_ERROR_RETRIES = int(os.environ.get("LLM_SERVER_ERROR_RETRIES", "6"))
+_SERVER_ERROR_BASE_DELAY = float(os.environ.get("LLM_SERVER_ERROR_BASE_DELAY", "10.0"))
+_BAD_REQUEST_RETRIES = int(os.environ.get("LLM_BAD_REQUEST_RETRIES", "3"))
+_BAD_REQUEST_BASE_DELAY = float(os.environ.get("LLM_BAD_REQUEST_BASE_DELAY", "15.0"))
 
 # Global concurrency control (0 = unlimited).
 # Per-event-loop semaphore: recreated lazily whenever the running loop changes,
@@ -46,6 +46,45 @@ def _strip_think_tags(content: str) -> str:
     content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
     content = re.sub(r'^<think>.*', '', content, flags=re.DOTALL)
     return content.strip()
+
+
+async def _call_with_retry(client: AsyncOpenAI, model: str, messages: list) -> str:
+    """Call the LLM API with automatic retry on rate-limit, server, and bad-request errors."""
+    rate_limit_attempts = 0
+    server_error_attempts = 0
+    bad_request_attempts = 0
+    while True:
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=False,
+            )
+            if isinstance(response, str):
+                return response
+            return response.choices[0].message.content
+        except RateLimitError:
+            rate_limit_attempts += 1
+            if rate_limit_attempts >= _RATE_LIMIT_RETRIES:
+                raise
+            delay = _RATE_LIMIT_BASE_DELAY * (2 ** (rate_limit_attempts - 1))
+            print(f"[raw_llm_query] 429 rate limit, retry {rate_limit_attempts}/{_RATE_LIMIT_RETRIES-1} in {delay:.0f}s", file=sys.stderr)
+            await asyncio.sleep(delay)
+        except InternalServerError as e:
+            server_error_attempts += 1
+            if server_error_attempts >= _SERVER_ERROR_RETRIES:
+                raise
+            delay = _SERVER_ERROR_BASE_DELAY * (2 ** (server_error_attempts - 1))
+            print(f"[raw_llm_query] 500 server error, retry {server_error_attempts}/{_SERVER_ERROR_RETRIES-1} in {delay:.0f}s: {e}", file=sys.stderr)
+            await asyncio.sleep(delay)
+        except BadRequestError as e:
+            # Some API providers return 400 for transient network errors (e.g., code 1210).
+            bad_request_attempts += 1
+            if bad_request_attempts >= _BAD_REQUEST_RETRIES:
+                raise
+            delay = _BAD_REQUEST_BASE_DELAY * (2 ** (bad_request_attempts - 1))
+            print(f"[raw_llm_query] 400 bad request, retry {bad_request_attempts}/{_BAD_REQUEST_RETRIES-1} in {delay:.0f}s: {e}", file=sys.stderr)
+            await asyncio.sleep(delay)
 
 
 async def raw_llm_query(
@@ -97,53 +136,12 @@ async def raw_llm_query(
             default_headers=custom_headers,
         )
         try:
-            rate_limit_attempts = 0
-            server_error_attempts = 0
-            bad_request_attempts = 0
-            while True:
-                try:
-                    response = await client.chat.completions.create(
-                        model=config.model,
-                        messages=[
-                            {"role": "system", "content": "You are a helpful assistant. Output raw content only, no thinking process."},
-                            {"role": "user", "content": prompt},
-                        ],
-                        stream=False
-                    )
-                    break
-                except RateLimitError:
-                    rate_limit_attempts += 1
-                    if rate_limit_attempts >= _RATE_LIMIT_RETRIES:
-                        raise
-                    delay = _RATE_LIMIT_BASE_DELAY * (2 ** (rate_limit_attempts - 1))
-                    print(f"[raw_llm_query] 429 rate limit, retry {rate_limit_attempts}/{_RATE_LIMIT_RETRIES-1} in {delay:.0f}s", file=sys.stderr)
-                    await asyncio.sleep(delay)
-                except InternalServerError as e:
-                    server_error_attempts += 1
-                    if server_error_attempts >= _SERVER_ERROR_RETRIES:
-                        raise
-                    delay = _SERVER_ERROR_BASE_DELAY * (2 ** (server_error_attempts - 1))
-                    print(f"[raw_llm_query] 500 server error, retry {server_error_attempts}/{_SERVER_ERROR_RETRIES-1} in {delay:.0f}s: {e}", file=sys.stderr)
-                    await asyncio.sleep(delay)
-                except BadRequestError as e:
-                    # Some API providers return 400 for transient network errors (e.g., code 1210).
-                    # Retry a limited number of times before giving up.
-                    bad_request_attempts += 1
-                    if bad_request_attempts >= _BAD_REQUEST_RETRIES:
-                        raise
-                    delay = _BAD_REQUEST_BASE_DELAY * (2 ** (bad_request_attempts - 1))
-                    print(f"[raw_llm_query] 400 bad request, retry {bad_request_attempts}/{_BAD_REQUEST_RETRIES-1} in {delay:.0f}s: {e}", file=sys.stderr)
-                    await asyncio.sleep(delay)
-
-            # Handle different response formats
-            if isinstance(response, str):
-                content = response
-            else:
-                content = response.choices[0].message.content
-
-            # Strip <think> tags from output
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant. Output raw content only, no thinking process."},
+                {"role": "user", "content": prompt},
+            ]
+            content = await _call_with_retry(client, config.model, messages)
             return _strip_think_tags(content)
-
         finally:
             await client.close()
 
