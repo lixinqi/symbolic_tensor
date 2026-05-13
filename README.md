@@ -203,6 +203,8 @@ Three stages of increasing autonomy — each stage removes one human-in-the-loop
 
 **Stage 3: Fully autonomous.** Same as Stage 2, but the coding agent for graph updates is itself a trained harness model — a "meta-harness" whose experience is "how to improve compute graphs given 2nd derivative traces." The system bootstraps its own architecture search.
 
+**Current status:** Stage 1 implementing — forward pass, experience tensors, compute graph composition, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3 are TODO.
+
 ## Internals
 
 Two LLM backends: `raw_llm_api` (OpenAI-compatible, lightweight) and `coding_agent` (Claude Agent SDK with file tools), dispatched concurrently via `asyncio.gather`. Autograd functions in `symbolic_tensor/function/` implement `StMoe` (query → retrieval → LLM translate), attention, slicing (symlink views vs copies), stack, fork, merge, and edit-distance loss. Tensor utilities (`tensor_util/`) provide `make_tensor`, `get_diff_tensor`, `patch_tensor` (unified diffs, cold-start support), and Pythonic methods registered on `torch.Tensor` (`st_pack`, `st_patch`, `st_get_diff`, `st_view_slicer[...]`, etc.).
