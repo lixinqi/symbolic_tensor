@@ -175,7 +175,9 @@ with dispatch_policy(TracePolicy(records)):
 
 ## Roadmap
 
-1. **Adapter mechanism for existing coding agents.** Adapters for Claude Code, OpenCode, OpenClaw, Hermes — wrap each agent's tool interface as `ft_*` ops so they plug into the compute graph as interchangeable backends.
+1. **Adapter mechanism for existing coding agents.** Two directions:
+   - **Agent → Harness Module**: wrap Claude Code / OpenCode / OpenClaw / Hermes as a Harness Module — their tool interfaces become `ft_*` ops in the compute graph, gaining autograd and self-improvement for free.
+   - **Harness Module → Agent skill**: export a trained Harness Module as a coding agent tool/skill — any agent can invoke it as a composable capability without knowing the internals.
 2. **Tmux screen capture streams hub.** A shared capture stream that records ground-truth terminal interactions, producing standardized experience tensors. Multiple harness agents train from the same hub — enabling experience sharing and transfer learning across agents.
 
 ## Internals
