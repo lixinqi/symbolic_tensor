@@ -4,22 +4,6 @@ A **self-improving harness framework** built as a PyTorch extension. Composable 
 
 The result: **portable, self-improving agents** that share the same infrastructure but learn different skills through training. Like Claude Code slash commands, but standardized — typed tensors, autograd, shape contracts, trainable experience.
 
-## Why a Compute Graph?
-
-Programs are sequential, branch, and loop. We compact all three into typed tensor ops:
-
-| Control flow | Op | What it does |
-|---|---|---|
-| Sequential | `ft_sequential` | Do A then B |
-| Branch | `ft_switch` | If X then A else B |
-| Loop | `ft_recurrent` | Repeat until validator passes |
-
-This makes agent generation trivial for LLMs. Instead of writing correct imperative code (hard — shared state, error handling, async coordination), the LLM composes a graph from ~10 typed ops (easy — slot-filling with shape verification). Three properties make this uniquely LLM-friendly:
-
-1. **Structure vs behavior separation.** The LLM generates the graph (structure) once. Behavior is determined by experience tensors, which self-improve through training. The LLM doesn't need to get behavior right at generation time.
-2. **Shape contracts = static verification.** If shapes don't match, the composition is wrong — detectable before execution. LLMs make fewer structural errors than behavioral errors.
-3. **Fault-tolerant generation.** Even poor seed experience gets corrected by training. The graph just needs to be structurally correct.
-
 ## Example: LLM Coder Simulator
 
 An LLM-powered coder composed entirely from reusable ops — no custom logic except a termination validator. Two chained experts collaborate: Expert 1 decides WHAT to do, Expert 2 knows HOW to do it.
@@ -98,6 +82,22 @@ Same structure + different experience = different behavior:
 ```bash
 python -m experience.future_tensor.test.test_llm_coder_simulator
 ```
+
+## Why a Compute Graph?
+
+Programs are sequential, branch, and loop. We compact all three into typed tensor ops:
+
+| Control flow | Op | What it does |
+|---|---|---|
+| Sequential | `ft_sequential` | Do A then B |
+| Branch | `ft_switch` | If X then A else B |
+| Loop | `ft_recurrent` | Repeat until validator passes |
+
+This makes agent generation trivial for LLMs. Instead of writing correct imperative code (hard — shared state, error handling, async coordination), the LLM composes a graph from ~10 typed ops (easy — slot-filling with shape verification). Three properties make this uniquely LLM-friendly:
+
+1. **Structure vs behavior separation.** The LLM generates the graph (structure) once. Behavior is determined by experience tensors, which self-improve through training. The LLM doesn't need to get behavior right at generation time.
+2. **Shape contracts = static verification.** If shapes don't match, the composition is wrong — detectable before execution. LLMs make fewer structural errors than behavioral errors.
+3. **Fault-tolerant generation.** Even poor seed experience gets corrected by training. The graph just needs to be structurally correct.
 
 ## How It Works
 
