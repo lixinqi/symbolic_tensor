@@ -181,6 +181,11 @@ with dispatch_policy(TracePolicy(records)):
 2. **Ground-truth terminal interactions sharing.** Two mechanisms:
    - **Capture streams hub**: record live terminal sessions into standardized experience tensors via tmux capture. A central hub aggregates streams from multiple developers/agents into a shared experience pool.
    - **Learn from existing interactions**: train harness agents on recorded ground-truth sessions — enabling experience transfer across agents. One agent's successful terminal interaction becomes another agent's seed experience.
+3. **Meta tasks learning.** For each new code repo, bootstrap experience through self-supervised tasks that require no human labels:
+   - **Masked code reconstruction**: mask a code region, train the agent to reconstruct it from surrounding context. Teaches code structure and local patterns.
+   - **Docstring ↔ code**: given a docstring, generate the implementation (and vice versa). Teaches intent-to-code mapping.
+   - **Code coverage by tests**: given a function, generate tests that maximize coverage. Teaches behavioral understanding.
+   - **Runtime stack prediction**: given a call site, predict the runtime call stack. Teaches control flow and dependency reasoning.
 
 ## Internals
 
