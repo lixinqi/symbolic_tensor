@@ -187,6 +187,22 @@ with dispatch_policy(TracePolicy(records)):
    - **Code coverage by tests**: given a function, generate tests that maximize coverage. Teaches behavioral understanding.
    - **Runtime stack prediction**: given a call site, predict the runtime call stack. Teaches control flow and dependency reasoning.
 
+## Suggested Study: Progressive Research
+
+Three stages of increasing autonomy — each stage removes one human-in-the-loop dependency:
+
+| Stage | Forward | Experience Update | Graph Update |
+|-------|---------|-------------------|--------------|
+| 1 | 0th reflection | coding agent directly | coding agent directly |
+| 2 | 0th reflection | 1st reflection (autograd) | coding agent guided by 2nd reflection trace |
+| 3 | 0th reflection | 1st reflection (autograd) | bootstrapped harness model guided by 2nd reflection trace |
+
+**Stage 1: Manual iteration.** The harness runs forward (0th reflection). A coding agent (Claude Code, etc.) inspects results and directly edits experience tensors and the compute graph. This is the current working state — human-assisted improvement.
+
+**Stage 2: Self-improving experience, assisted graph evolution.** Forward runs as before. The 1st derivative (backward pass) automatically updates experience via `StSGD` — no human needed for experience improvement. For graph structure changes, a coding agent reads the 2nd derivative trace (`ReflectionRecord` list) and decides which ops to add/remove/rewire.
+
+**Stage 3: Fully autonomous.** Same as Stage 2, but the coding agent for graph updates is itself a trained harness model — a "meta-harness" whose experience is "how to improve compute graphs given 2nd derivative traces." The system bootstraps its own architecture search.
+
 ## Internals
 
 Two LLM backends: `raw_llm_api` (OpenAI-compatible, lightweight) and `coding_agent` (Claude Agent SDK with file tools), dispatched concurrently via `asyncio.gather`. Autograd functions in `symbolic_tensor/function/` implement `StMoe` (query → retrieval → LLM translate), attention, slicing (symlink views vs copies), stack, fork, merge, and edit-distance loss. Tensor utilities (`tensor_util/`) provide `make_tensor`, `get_diff_tensor`, `patch_tensor` (unified diffs, cold-start support), and Pythonic methods registered on `torch.Tensor` (`st_pack`, `st_patch`, `st_get_diff`, `st_view_slicer[...]`, etc.).
