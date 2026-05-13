@@ -23,7 +23,6 @@ from experience.future_tensor.function.ft_recurrent_backward import (
     BackwardPromptCallable,
 )
 from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
-from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 
 
 class FtRecurrent(torch.autograd.Function):
@@ -43,7 +42,7 @@ class FtRecurrent(torch.autograd.Function):
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
         accumulate_output=None,
-    ) -> Tuple[FutureTensor, FutureTensor]:
+    ) -> FutureTensor:
         output, prompt_tensor = recurrent_forward(input, accumulate_output=accumulate_output)
 
         # Save for backward — these are FutureTensors now, but backward will
@@ -57,27 +56,22 @@ class FtRecurrent(torch.autograd.Function):
         ctx.llm_method = llm_method
         ctx.llm_env = llm_env
 
-        return output, prompt_tensor
+        return output
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor, grad_prompt_tensor=None):
+    def backward(ctx, grad_output: torch.Tensor):
         # After forward + ft_forward, the FutureTensors have materialized
         # ft_static_tensor attributes (symbolic tensors with st_* attrs).
         input_st = ctx.input_ft.ft_static_tensor
         output_st = ctx.output_ft.ft_static_tensor
         prompt_tensor_st = ctx.prompt_tensor_ft.ft_static_tensor
 
-        # If grad_output lacks st_* attrs (autograd strips them),
-        # wrap as a TODO symbolic tensor with the numeric grad data.
-        if not hasattr(grad_output, "st_relative_to"):
-            symbolic_grad_output = todo_tensor_like(output_st)
-            symbolic_grad_output.data.copy_(grad_output.data)
-            grad_output = symbolic_grad_output
-
         # Enable 2nd-derivative graph recording.
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
 
+        # RecurrentGradFn.forward handles st_* attribute reconstruction
+        # and calls recurrent_backward internally.
         grad_input = RecurrentGradFn.apply(
             grad_output,
             input_st,
@@ -103,7 +97,7 @@ def ft_recurrent(
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
     accumulate_output=None,
-) -> Tuple[FutureTensor, FutureTensor]:
+) -> FutureTensor:
     """Recurrent generate-validate loop with autograd support.
 
     Runs up to recurrent_dim iterations per prefix element. First confident
@@ -121,9 +115,7 @@ def ft_recurrent(
             If None, uses identity (current iteration output only).
 
     Returns:
-        (output, prompt_tensor):
-            output: FutureTensor of shape (*prefix_dims).
-            prompt_tensor: FutureTensor of shape (*prefix_dims, recurrent_dim).
+        FutureTensor output of shape (*prefix_dims).
     """
     return FtRecurrent.apply(
         input, topk_self_confidence_but_failed, grad_input_prompt,
@@ -192,16 +184,12 @@ if __name__ == "__main__":
             return (f"result_{coords}", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(s) for s in [2, 3]])
-        output, prompt_tensor = ft_recurrent(ft_input)
+        output = ft_recurrent(ft_input)
 
         run_test("output shape is prefix [2]",
                  output.ft_capacity_shape == [2])
-        run_test("prompt_tensor shape is [2, 3]",
-                 prompt_tensor.ft_capacity_shape == [2, 3])
         run_test("output not forwarded yet",
                  output.ft_forwarded is False)
-        run_test("prompt_tensor not forwarded yet",
-                 prompt_tensor.ft_forwarded is False)
 
     # ── Tests 8-11: Forward + ft_forward materializes ──
     print("Tests 8-11: Forward + ft_forward")
@@ -210,7 +198,7 @@ if __name__ == "__main__":
             return (f"ans_{coords}", Status.confidence(0.8))
 
         ft_input = FutureTensor(tmpdir, confident_get, [sympy.Integer(s) for s in [3, 2]])
-        output, prompt_tensor = ft_recurrent(ft_input)
+        output = ft_recurrent(ft_input)
 
         # ft_forward the output
         output_prompts = make_tensor(["go0", "go1", "go2"], tmpdir)
@@ -240,7 +228,7 @@ if __name__ == "__main__":
             return (f"good_{coords}", Status.confidence(0.95))
 
         ft_input = FutureTensor(tmpdir, retry_get, [sympy.Integer(s) for s in [1, 4]])
-        output, prompt_tensor = ft_recurrent(ft_input)
+        output = ft_recurrent(ft_input)
 
         output_prompts = make_tensor(["start"], tmpdir)
         output.ft_forward(output_prompts)
@@ -282,7 +270,7 @@ if __name__ == "__main__":
             return ("Hello world", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(s) for s in [1, 2]])
-        output, prompt_tensor = ft_recurrent(ft_input, task_prompt="Translate to French.")
+        output = ft_recurrent(ft_input, task_prompt="Translate to French.")
 
         # Materialize forward
         output_prompts = make_tensor(["translate"], tmpdir)
@@ -296,14 +284,18 @@ if __name__ == "__main__":
         ctx = type('Ctx', (), {})()
         ctx.input_ft = ft_input
         ctx.output_ft = output
-        ctx.prompt_tensor_ft = prompt_tensor
+        ctx.prompt_tensor_ft = output.grad_fn._saved_data[0] if hasattr(output, 'grad_fn') and output.grad_fn else output
+        # Get prompt_tensor from recurrent_forward directly
+        from experience.future_tensor.function.ft_recurrent_forward import recurrent_forward as _rf
+        _, _prompt_tensor = _rf(ft_input)
+        ctx.prompt_tensor_ft = _prompt_tensor
         ctx.topk_self_confidence_but_failed = 8
         ctx.grad_input_prompt = None
         ctx.task_prompt = "Translate to French."
         ctx.llm_method = "raw_llm_api"
         ctx.llm_env = None
 
-        result = FtRecurrent.backward(ctx, grad_output, None)
+        result = FtRecurrent.backward(ctx, grad_output)
         grad_input = result[0]
 
         run_test("grad_input shape matches input",

@@ -14,11 +14,14 @@ Public API:
 
 autograd.Function wrappers (1st-backward → 2nd-derivative dispatch):
 
-    RecurrentGradFn   (wraps recurrent_backward)
-    ExpertGradFn      (wraps st_moe_backward)
-    SliceGradFn       (wraps slice_backward)
-    UnsqueezeGradFn   (wraps unsqueeze squeeze-via-slice_forward)
-    SequentialGradFn  (wraps sequential_backward)
+    RecurrentGradFn         (wraps recurrent_backward)
+    ExpertGradFn            (wraps st_moe_backward)
+    SliceGradFn             (wraps slice_backward)
+    UnsqueezeGradFn         (wraps unsqueeze squeeze-via-slice_forward)
+    SequentialGradFn        (wraps sequential_backward)
+    TmuxCreateSessionGradFn  (wraps tmux_create_session_backward)
+    TmuxSendTextGradFn       (wraps tmux_send_text_backward)
+    TmuxSendCtrlGradFn       (wraps tmux_send_ctrl_backward)
 """
 
 from experience.future_tensor.second_derivative.need_2nd_derivative import need_2nd_derivative

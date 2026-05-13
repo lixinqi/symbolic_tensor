@@ -39,39 +39,13 @@ class FtSequential(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        # Reconstruct FutureTensor attributes if stripped by autograd
-        if not hasattr(grad_output, "ft_static_tensor"):
-            first_input = ctx.inputs[0]
-            shape = first_input.ft_capacity_shape
-            relative_to = first_input.ft_static_tensor.st_relative_to
-
-            async def dummy_get(coords, prompt):
-                from experience.future_tensor.status import Status
-                return ("", Status.confidence(0.0))
-
-            ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
-            if grad_output.numel() == 1:
-                if shape:
-                    ref_ft.ft_static_tensor.data.flatten().fill_(grad_output.item())
-                else:
-                    ref_ft.ft_static_tensor.data.fill_(grad_output.item())
-            else:
-                ref_ft.ft_static_tensor.data.copy_(grad_output.data.view(ref_ft.ft_static_tensor.shape))
-            ref_ft.ft_forwarded = True
-
-            # Monkey-patch attributes onto the existing grad_output tensor
-            grad_output.ft_static_tensor = ref_ft.ft_static_tensor
-            grad_output.ft_capacity_shape = ref_ft.ft_capacity_shape
-            grad_output.ft_async_get = ref_ft.ft_async_get
-            grad_output.ft_forwarded = ref_ft.ft_forwarded
-            grad_output.ft_shape_schema = ref_ft.ft_shape_schema
-            grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
-
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
 
-        # Call SequentialGradFn for 2nd-derivative tracking
-        grad_for_all = SequentialGradFn.apply(grad_output, ctx.num_inputs)
+        # SequentialGradFn.forward handles FutureTensor attribute reconstruction
+        # and calls sequential_backward internally.
+        first_input = ctx.inputs[0]
+        grad_for_all = SequentialGradFn.apply(grad_output, ctx.num_inputs, first_input)
 
         # Return grads for all inputs
         return tuple(grad_for_all for _ in range(ctx.num_inputs))

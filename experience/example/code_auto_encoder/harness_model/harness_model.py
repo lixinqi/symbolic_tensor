@@ -281,7 +281,7 @@ class HarnessModel(nn.Module):
         ft_validated = ft_unary(ft_raw, self._validate_tool_result)
 
         # Inner recurrent: retry individual tool call until valid
-        ft_tool_result, _ = ft_recurrent(
+        ft_tool_result = ft_recurrent(
             ft_validated,
             task_prompt=self.task_prompt,
             llm_method=self.llm_method,
@@ -298,7 +298,7 @@ class HarnessModel(nn.Module):
             _concat_context_weighted if self.accumulate_mode == "weighted"
             else _concat_context
         )
-        context_ft, _ = ft_recurrent(
+        context_ft = ft_recurrent(
             ft_checked,
             accumulate_output=accum_fn,
             task_prompt=self.task_prompt,
@@ -336,7 +336,7 @@ class HarnessModel(nn.Module):
             llm_env=self.llm_env,
         )
 
-        output_ft, _ = ft_recurrent(
+        output_ft = ft_recurrent(
             ft_gen,
             task_prompt=self.task_prompt,
             llm_method=self.llm_method,
