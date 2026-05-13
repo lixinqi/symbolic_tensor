@@ -205,6 +205,14 @@ Three stages of increasing autonomy — each stage removes one human-in-the-loop
 
 **Current status:** Stage 1 implementing — forward pass, experience tensors, compute graph composition, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3 are TODO.
 
+## Thesis
+
+Base LLM weights carry two things: **general capabilities** (reasoning, reflection) and **memories** (facts, patterns, code idioms). Most of the parameters are memories.
+
+This project externalizes memory into trainable experience tensors — retrievable, patchable, shareable, and composable. The base LLM only needs to be good at reasoning and reflection. Everything else lives in experience.
+
+If Stage 3's self-referencing succeeds — a harness model improving its own compute graph via 2nd derivative traces — the system becomes an open-ended self-improver. Reasoning reflects on reasoning, experience accumulates without bound, and architecture evolves autonomously. That's the path.
+
 ## Internals
 
 Two LLM backends: `raw_llm_api` (OpenAI-compatible, lightweight) and `coding_agent` (Claude Agent SDK with file tools), dispatched concurrently via `asyncio.gather`. Autograd functions in `symbolic_tensor/function/` implement `StMoe` (query → retrieval → LLM translate), attention, slicing (symlink views vs copies), stack, fork, merge, and edit-distance loss. Tensor utilities (`tensor_util/`) provide `make_tensor`, `get_diff_tensor`, `patch_tensor` (unified diffs, cold-start support), and Pythonic methods registered on `torch.Tensor` (`st_pack`, `st_patch`, `st_get_diff`, `st_view_slicer[...]`, etc.).
