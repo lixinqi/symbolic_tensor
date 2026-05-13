@@ -178,9 +178,9 @@ with dispatch_policy(TracePolicy(records)):
 1. **Adapter mechanism for existing coding agents.** Two directions:
    - **Agent → Harness Module**: wrap Claude Code / OpenCode / OpenClaw / Hermes as a Harness Module — their tool interfaces become `ft_*` ops in the compute graph, gaining autograd and self-improvement for free.
    - **Harness Module → Agent skill**: export a trained Harness Module as a coding agent tool/skill — any agent can invoke it as a composable capability without knowing the internals.
-2. **ground-truth terminal interactions sharing.**
-   - **a) Tmux screen capture streams hub.** A shared capture stream that records ground-truth terminal interactions, producing standardized experience tensors.
-   - **b) Learn experiences from existing ground-truth terminal interactions.** Multiple harness agents train from the same hub — enabling experience sharing and transfer learning across agents.
+2. **Ground-truth terminal interactions sharing.** Two mechanisms:
+   - **Capture streams hub**: record live terminal sessions into standardized experience tensors via tmux capture. A central hub aggregates streams from multiple developers/agents into a shared experience pool.
+   - **Learn from existing interactions**: train harness agents on recorded ground-truth sessions — enabling experience transfer across agents. One agent's successful terminal interaction becomes another agent's seed experience.
 
 ## Internals
 
