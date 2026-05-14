@@ -32,9 +32,9 @@ from experience.future_tensor.function.ft_expert import ft_expert
 from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_expand import ft_expand
 from experience.future_tensor.function.ft_mean import ft_mean
-from experience.future_tensor.function.ft_first_line import ft_first_line
 from experience.future_tensor.function.ft_terminal_idle_gate import ft_terminal_idle_gate
 from experience.future_tensor.function.ft_validate_ctrl import ft_validate_ctrl
+from experience.future_tensor.function.ft_tmux_speculative_complete import ft_tmux_speculative_complete
 from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
     need_reflection,
@@ -106,11 +106,16 @@ class ClaudeCodeMock:
         has_prompt, has_cmd = self._parse(last_line)
 
         # Teach task prompts once (cold-start → populated)
+        # Bunch-style: generate all actions for the full sequence in one shot
         if not self._task_taught and (has_prompt or has_cmd):
             st_setitem(self.decision_task, [0],
-                "观察终端最后一行。提示符后只有路径→text:输入shell命令。提示符后有命令→ctrl:按回车执行。只输出一行。")
+                "观察终端最后一行，输出完成任务所需的全部动作序列，每个动作一行，用空行分隔。"
+                "每个动作格式：text:描述 或 ctrl:描述。"
+                "例如：text:输入命令\\n\\nctrl:按回车执行")
             st_setitem(self.cmd_task, [0],
-                "text:开头→输出shell命令。ctrl:开头→输出Enter。只输出一行。")
+                "根据动作描述，输出实际命令序列，每个命令一行，用空行分隔。"
+                "text:开头→输出shell命令。ctrl:开头→输出Enter。"
+                "例如：echo hello world\\n\\nEnter")
             self._task_taught = True
 
         if has_cmd:
@@ -121,8 +126,11 @@ class ClaudeCodeMock:
             for _ in range(min(3, self.n_experience - self._ci)):
                 self._teach_cmd("ctrl:按回车执行", "ctrl\nEnter", "Enter")
         elif has_prompt:
-            self._teach_decision(last_line, "空提示符\n没有命令", "text:输入shell命令")
-            self._teach_cmd("text:输入shell命令", "text\nshell命令", "echo hello world")
+            # Bunch-style: teach the full sequence (text + ctrl) as one experience entry
+            self._teach_decision(last_line, "空提示符\n没有命令",
+                "text:输入shell命令\n\nctrl:按回车执行")
+            self._teach_cmd("text:输入shell命令\n\nctrl:按回车执行",
+                "text+ctrl\n完整命令序列", "echo hello world\n\nEnter")
 
         print(f"    cc: prompt={has_prompt} cmd={has_cmd} | {last_line}")
 
@@ -223,13 +231,16 @@ def inline_output_prompt(task_prompt, exp_text, input_text, prompt):
         exp_text: formatted experience text (from ft_retrieve_experience)
         input_text: input content string
         prompt: serialized trajectory from ft_async_get
+
+    Supports bunch-style output: multiple actions separated by blank lines.
     """
     return (
         f"{prompt}\n\n"
         f"{task_prompt}\n\n"
         f"Examples of correct input→output:\n{exp_text}\n\n"
         f"Now for this input:\n{input_text}\n\n"
-        "Reply with ONLY the output. One line. No explanation. No prefix."
+        "Reply with the output. Multiple actions separated by blank lines are OK. "
+        "No explanation. No prefix."
     )
 
 
@@ -261,16 +272,20 @@ with tempfile.TemporaryDirectory() as tmpdir:
     cmd_task.requires_grad_(True)
 
     # Expert chain: retrieve → build context → LLM call (composed via ft_expert)
+    # No ft_first_line between experts — speculative complete handles multi-action dispatch
     decision_raw = ft_expert(capture, decision_exp, decision_task,
         output_prompt=inline_output_prompt, topk=2, skip_query_gen=True)
-    decision = ft_first_line(decision_raw)
 
-    cmd_raw = ft_expert(decision, cmd_exp, cmd_task,
+    cmd_raw = ft_expert(decision_raw, cmd_exp, cmd_task,
         output_prompt=inline_output_prompt, topk=2, skip_query_gen=True)
-    cmd_clean = ft_first_line(cmd_raw)
-    cmd_gated = ft_terminal_idle_gate(cmd_clean, expanded)
-    cmd_ctrl = ft_validate_ctrl(cmd_clean)
-    switched = ft_switch(decision, [
+
+    # Speculative complete: consume actions one at a time, confirming via screen
+    decision_spec = ft_tmux_speculative_complete(decision_raw, capture)
+    cmd_spec = ft_tmux_speculative_complete(cmd_raw, capture)
+
+    cmd_gated = ft_terminal_idle_gate(cmd_spec, expanded)
+    cmd_ctrl = ft_validate_ctrl(cmd_spec)
+    switched = ft_switch(decision_spec, [
         ("text", "type", "send text", ft_tmux_send_text(cmd_gated, expanded)),
         ("ctrl", "ctrl", "send ctrl", ft_tmux_send_ctrl(cmd_ctrl, expanded)),
     ])
