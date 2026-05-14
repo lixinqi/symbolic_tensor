@@ -24,7 +24,7 @@ autograd.Function wrappers (1st-backward -> 2nd-derivative dispatch):
     TmuxSendCtrlGradFn       (wraps tmux_send_ctrl_backward)
 """
 
-from experience.future_tensor.backward_dispatch.need_reflection import need_reflection
+from experience.future_tensor.backward_dispatch.need_reflection import need_reflection, ft_reflection_starter
 from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 from experience.future_tensor.backward_dispatch.context import dispatch_policy
 from experience.future_tensor.backward_dispatch.trace_policy import TracePolicy
@@ -36,6 +36,7 @@ from experience.future_tensor.backward_dispatch.policy import (
 
 __all__ = [
     "need_reflection",
+    "ft_reflection_starter",
     "get_backward_dispatcher",
     "dispatch_policy",
     "TracePolicy",

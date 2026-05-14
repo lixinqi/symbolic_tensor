@@ -47,6 +47,16 @@ class _NeedReflection(torch.autograd.Function):
         return grad_input, grad_sds
 
 
+def ft_reflection_starter() -> torch.Tensor:
+    """Create the scalar tensor that starts the 2nd-derivative backward pass.
+
+    Returns:
+        A scalar ``bfloat16`` tensor with ``requires_grad=True``, suitable as
+        the ``backward_dispatch_start`` argument to :func:`need_reflection`.
+    """
+    return torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+
+
 def need_reflection(
     input: torch.Tensor,
     backward_dispatch_start: torch.Tensor,

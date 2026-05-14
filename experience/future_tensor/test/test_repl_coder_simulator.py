@@ -38,6 +38,7 @@ from experience.future_tensor.function.ft_validate_ctrl import ft_validate_ctrl
 from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
     need_reflection,
+    ft_reflection_starter,
     TracePolicy,
 )
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as st_make_tensor
@@ -311,8 +312,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     body = ft_sequential(switched, ft_sleep(expanded, 0.5), capture)
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
 
-    sds = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    output = ft_recurrent(need_reflection(validator, sds), step_budget=1)
+    reflection_starter = ft_reflection_starter()
+    output = ft_recurrent(need_reflection(validator, reflection_starter), step_budget=1)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
 
     # Stage 1 operator (knows nothing about the pipeline above)
