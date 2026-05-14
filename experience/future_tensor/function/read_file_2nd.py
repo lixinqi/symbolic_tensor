@@ -8,6 +8,7 @@ ReadFileGradFn: autograd.Function for 2nd-derivative dispatch.
 import torch
 
 from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
+from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
 
 
 class ReadFileGradFn(torch.autograd.Function):
@@ -23,6 +24,11 @@ class ReadFileGradFn(torch.autograd.Function):
         ctx.save_for_backward(grad_output)
         ctx._read_file_backward_fn = read_file_backward
         ctx._grad_input = grad_output
+
+        # 1st-derivative dispatch: policy replaces default backward
+        dispatch_1st = get_1st_dispatcher(read_file_backward)
+        dispatch_1st({})  # pass-through: result is grad_output + 0 either way
+
         return grad_output + 0
 
     @staticmethod

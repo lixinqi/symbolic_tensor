@@ -7,6 +7,7 @@ FtRecurrent := torch.autograd.Function[
     $ctx.task_prompt str # default ""
     $ctx.llm_method str # default "raw_llm_api"
     $ctx.llm_env dict[str, str] # default None
+    $ctx.step_budget int # default None (run to completion)
 ]
 
 ft_recurrent := FtRecurrent.apply
@@ -42,14 +43,21 @@ class FtRecurrent(torch.autograd.Function):
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
         accumulate_output=None,
+        step_budget: Optional[int] = None,
     ) -> FutureTensor:
-        output, prompt_tensor = recurrent_forward(input, accumulate_output=accumulate_output)
+        output, prompt_tensor, next_position, recurrent_state = recurrent_forward(
+            input,
+            accumulate_output=accumulate_output,
+            step_budget=step_budget,
+        )
 
         # Save for backward — these are FutureTensors now, but backward will
         # use their materialized .ft_static_tensor (symbolic tensor) after ft_forward.
         ctx.input_ft = input
         ctx.output_ft = output
         ctx.prompt_tensor_ft = prompt_tensor
+        ctx.next_position = next_position
+        ctx.recurrent_state = recurrent_state
         ctx.topk_self_confidence_but_failed = topk_self_confidence_but_failed
         ctx.grad_input_prompt = grad_input_prompt
         ctx.task_prompt = task_prompt
@@ -85,8 +93,8 @@ class FtRecurrent(torch.autograd.Function):
         )
 
         # Return grads for (input, topk_scbf, grad_input_prompt, task_prompt,
-        #                    llm_method, llm_env, accumulate_output)
-        return grad_input, None, None, None, None, None, None
+        #                    llm_method, llm_env, accumulate_output, step_budget)
+        return grad_input, None, None, None, None, None, None, None
 
 
 def ft_recurrent(
@@ -97,6 +105,7 @@ def ft_recurrent(
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
     accumulate_output=None,
+    step_budget: Optional[int] = None,
 ) -> FutureTensor:
     """Recurrent generate-validate loop with autograd support.
 
@@ -113,13 +122,16 @@ def ft_recurrent(
         accumulate_output: Optional callable to accumulate outputs across
             iterations. Signature: (accumulator, cur_output) -> new_accumulator.
             If None, uses identity (current iteration output only).
+        step_budget: Optional max iterations per ft_forward call. None = run to
+            completion (backward compatible). When set, ft_forward resumes from
+            next_position on subsequent calls.
 
     Returns:
         FutureTensor output of shape (*prefix_dims).
     """
     return FtRecurrent.apply(
         input, topk_self_confidence_but_failed, grad_input_prompt,
-        task_prompt, llm_method, llm_env, accumulate_output,
+        task_prompt, llm_method, llm_env, accumulate_output, step_budget,
     )
 
 
@@ -287,7 +299,7 @@ if __name__ == "__main__":
         ctx.prompt_tensor_ft = output.grad_fn._saved_data[0] if hasattr(output, 'grad_fn') and output.grad_fn else output
         # Get prompt_tensor from recurrent_forward directly
         from experience.future_tensor.function.ft_recurrent_forward import recurrent_forward as _rf
-        _, _prompt_tensor = _rf(ft_input)
+        _, _prompt_tensor, _, _ = _rf(ft_input)
         ctx.prompt_tensor_ft = _prompt_tensor
         ctx.topk_self_confidence_but_failed = 8
         ctx.grad_input_prompt = None

@@ -14,6 +14,7 @@ import sympy
 import torch
 
 from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
+from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
 
 
 class SequentialGradFn(torch.autograd.Function):
@@ -56,7 +57,15 @@ class SequentialGradFn(torch.autograd.Function):
         ctx._sequential_backward_fn = sequential_backward
         ctx._grad_input = grad_output
 
+        # 1st-derivative dispatch: policy replaces default backward
+        dispatch_1st = get_1st_dispatcher(sequential_backward)
+        if dispatch_1st({"num_inputs": num_inputs}):
+            # Policy handled it — skip default backward
+            return grad_output + 0
+
+        # No policy active — run actual backward (default behavior)
         grad_input = sequential_backward(grad_output, num_inputs)
+
         # Force creation of SequentialGradFnBackward by returning a new tensor.
         # Inside autograd.Function forward, ``+ 0`` is not tracked by autograd;
         # the returned tensor simply gets SequentialGradFnBackward as its grad_fn.

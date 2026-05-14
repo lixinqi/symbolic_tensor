@@ -1,7 +1,9 @@
 """
 recurrent_forward :=
     ($output FutureTensor[($prefix_dims ...)],
-     $prompt_tensor FutureTensor[($prefix_dims ..., $recurrent_dim int)])
+     $prompt_tensor FutureTensor[($prefix_dims ..., $recurrent_dim int)],
+     $next_position torch.IntTensor[($prefix_dims ...)],
+     $recurrent_state dict[tuple, dict])
     <- $input FutureTensor[($prefix_dims ..., $recurrent_dim int)]
     <- $get_next_iter_prompt GetNextIterPromptCallable # default None
     # inline
@@ -15,9 +17,10 @@ GetNextIterPromptCallable := $func (Awaitable[$ret str]
 """
 
 import os
-from typing import Awaitable, Callable, List, Optional, Tuple
+from typing import Awaitable, Callable, Dict, List, Optional, Tuple
 
 import sympy
+import torch
 
 from experience.future_tensor.future_tensor import FutureTensor, _read_element, _coords_to_flat
 from experience.future_tensor.status import Status
@@ -40,12 +43,17 @@ def recurrent_forward(
     input: FutureTensor,
     get_next_iter_prompt: Optional[GetNextIterPromptCallable] = None,
     accumulate_output: Optional[Callable[[str, str], str]] = None,
-) -> Tuple[FutureTensor, FutureTensor]:
+    step_budget: Optional[int] = None,
+    next_position: Optional[torch.Tensor] = None,
+    recurrent_state: Optional[Dict[tuple, dict]] = None,
+) -> Tuple[FutureTensor, FutureTensor, torch.Tensor, Dict[tuple, dict]]:
     """Recurrent forward: retry loop encoded in tensor dimensions.
 
     Takes input of shape (*prefix_dims, recurrent_dim) where the last dim
-    encodes a generate-then-retry loop. Returns (output, prompt_tensor) where
-    output has shape (*prefix_dims) and prompt_tensor has the same shape as input.
+    encodes a generate-then-retry loop. Returns (output, prompt_tensor,
+    next_position, recurrent_state) where output has shape (*prefix_dims),
+    prompt_tensor has the same shape as input, next_position tracks per-element
+    loop progress, and recurrent_state persists loop state across resumes.
 
     For each prefix coordinate, iterates i in range(recurrent_dim):
       - Calls input.ft_async_get([*coords, i], cur_prompt)
@@ -64,9 +72,16 @@ def recurrent_forward(
         accumulate_output: Optional callable to accumulate outputs across
             iterations. Signature: (accumulator, cur_output) -> new_accumulator.
             If None, uses the current iteration's output directly (identity).
+        step_budget: Optional max iterations per resume. None = run to completion.
+        next_position: Optional IntTensor of shape (*prefix_dims) tracking loop
+            progress. None = start from zeros (fresh run).
+        recurrent_state: Optional dict persisting per-element loop state across
+            resumes. None = start fresh.
 
     Returns:
-        (output, prompt_tensor) tuple of FutureTensors.
+        (output, prompt_tensor, next_position, recurrent_state) tuple.
+        output and prompt_tensor are FutureTensors. next_position is
+        torch.IntTensor, recurrent_state is a dict.
     """
     input_shape = input.ft_capacity_shape
     assert len(input_shape) >= 1, (
@@ -75,6 +90,12 @@ def recurrent_forward(
 
     recurrent_dim = input_shape[-1]
     prefix_shape = input_shape[:-1]
+
+    # Initialize next_position if not provided
+    if next_position is None:
+        next_position = torch.zeros(*prefix_shape, dtype=torch.int) if prefix_shape else torch.zeros((), dtype=torch.int)
+    if recurrent_state is None:
+        recurrent_state = {}
 
     # Create prompt_tensor: same shape as input, initially empty
     from experience.symbolic_tensor.tensor_util.make_none_tensor import make_none_tensor
@@ -87,18 +108,39 @@ def recurrent_forward(
     async def recurrent_forward_async_get(
         coordinates: List[int], prompt: str
     ) -> Tuple[str, Status]:
-        # Write initial prompt into prompt_tensor at [*coordinates, 0]
-        st_setitem(prompt_tensor.ft_static_tensor, [*coordinates, 0], prompt)
+        prefix_coords = tuple(coordinates)
 
-        best_output = ""
-        best_status = None
-        best_scyf_value = -1.0
-        accumulator = ""
+        # Compute flat index for prefix coordinates
+        if prefix_shape:
+            flat_idx = _coords_to_flat(coordinates, prefix_shape)
+        else:
+            flat_idx = 0
 
-        for i in range(recurrent_dim):
+        start_i = next_position.flatten()[flat_idx].item()
+        end_i = recurrent_dim if step_budget is None else min(recurrent_dim, start_i + step_budget)
+
+        # Restore persisted state or initialize fresh
+        state = recurrent_state.get(prefix_coords, {
+            "best_output": "", "best_status": None,
+            "best_scyf_value": -1.0, "accumulator": "",
+        })
+        best_output = state["best_output"]
+        best_status = state["best_status"]
+        best_scyf_value = state["best_scyf_value"]
+        accumulator = state["accumulator"]
+
+        # Write initial prompt into prompt_tensor at [*coordinates, 0] only on first start
+        if start_i == 0:
+            st_setitem(prompt_tensor.ft_static_tensor, [*coordinates, 0], prompt)
+
+        last_i = start_i
+        terminal_status = None  # set if we hit a terminal status (confidence etc.)
+
+        for i in range(start_i, end_i):
+            last_i = i
             # Read cur_prompt from prompt_tensor[*coordinates, i]
-            flat_idx = _coords_to_flat([*coordinates, i], input_shape)
-            cur_prompt = _read_element(prompt_tensor.ft_static_tensor, flat_idx)
+            flat_prompt_idx = _coords_to_flat([*coordinates, i], input_shape)
+            cur_prompt = _read_element(prompt_tensor.ft_static_tensor, flat_prompt_idx)
 
             # Call input.ft_async_get([*coordinates, i], cur_prompt)
             cur_output, cur_output_status = await input.ft_async_get(
@@ -113,12 +155,28 @@ def recurrent_forward(
 
             # Match on cur_output_status
             if cur_output_status.is_confidence:
+                # Update position to recurrent_dim (done)
+                next_position.flatten()[flat_idx] = recurrent_dim
+                recurrent_state[prefix_coords] = {
+                    "best_output": accumulator, "best_status": cur_output_status,
+                    "best_scyf_value": best_scyf_value, "accumulator": accumulator,
+                }
                 return (accumulator, cur_output_status)
 
             if cur_output_status.is_kConfidenceNotBounded:
+                next_position.flatten()[flat_idx] = recurrent_dim
+                recurrent_state[prefix_coords] = {
+                    "best_output": accumulator, "best_status": Status.confidence(1.0),
+                    "best_scyf_value": best_scyf_value, "accumulator": accumulator,
+                }
                 return (accumulator, Status.confidence(1.0))
 
             if cur_output_status.is_kContextOverflow:
+                next_position.flatten()[flat_idx] = recurrent_dim
+                recurrent_state[prefix_coords] = {
+                    "best_output": "", "best_status": Status.kContextOverflow,
+                    "best_scyf_value": best_scyf_value, "accumulator": accumulator,
+                }
                 return ("", Status.kContextOverflow)
 
             # self_confidence_but_failed case
@@ -139,7 +197,16 @@ def recurrent_forward(
                     )
                 st_setitem(prompt_tensor.ft_static_tensor, [*coordinates, i + 1], accumulated)
 
-        # All trials failed
+        # Update position after this budget slice
+        next_position.flatten()[flat_idx] = last_i + 1
+
+        # Persist state
+        recurrent_state[prefix_coords] = {
+            "best_output": best_output, "best_status": best_status,
+            "best_scyf_value": best_scyf_value, "accumulator": accumulator,
+        }
+
+        # All trials in this budget exhausted
         if accumulate_output is not None:
             return (accumulator, best_status)
         return (best_output, best_status)
@@ -149,7 +216,7 @@ def recurrent_forward(
         recurrent_forward_async_get,
         ft_shape_schema=[sympy.Integer(s) for s in prefix_shape],
     )
-    return (output, prompt_tensor)
+    return (output, prompt_tensor, next_position, recurrent_state)
 
 
 if __name__ == "__main__":
@@ -200,7 +267,7 @@ if __name__ == "__main__":
             return ("hello world", Status.confidence(0.9))
 
         inp = FutureTensor(tmpdir, ok_first, [sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
 
         run_test("1: output shape []", out.ft_capacity_shape == [])
         run_test("2: prompt_tensor shape [1]", pt.ft_capacity_shape == [1])
@@ -220,7 +287,7 @@ if __name__ == "__main__":
             return ("result_0", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, ok_first_3, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("7: shape [] with recurrent_dim=3", out.ft_capacity_shape == [])
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
@@ -234,7 +301,7 @@ if __name__ == "__main__":
             return (f"out_{prefix}", Status.confidence(0.9))
 
         inp = FutureTensor(tmpdir, prefix_ok, [sympy.Integer(2), sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("10: prefix [2] shape", out.ft_capacity_shape == [2])
 
     # === Group 2: confidence on second try (tests 11-25) ===
@@ -253,7 +320,7 @@ if __name__ == "__main__":
             return ("???", Status.confidence(0.0))
 
         inp = FutureTensor(tmpdir, logged_get, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("initial", tmpdir)
         out.ft_forward(prompt_t)
 
@@ -282,7 +349,7 @@ if __name__ == "__main__":
             return ("???", Status.confidence(0.0))
 
         inp = FutureTensor(tmpdir, ok_on_third, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("start", tmpdir)
         out.ft_forward(prompt_t)
         run_test("19: content from i=2", read_ft_element(out, 0) == "out2")
@@ -300,7 +367,7 @@ if __name__ == "__main__":
             return (f"gen_{i}", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, capture_prompt, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("INIT", tmpdir)
         out.ft_forward(prompt_t)
 
@@ -320,7 +387,7 @@ if __name__ == "__main__":
             return (f"output_{i}", Status.self_confidence_but_failed(confs[i]))
 
         inp = FutureTensor(tmpdir, all_fail, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
 
@@ -337,7 +404,7 @@ if __name__ == "__main__":
             return (f"out_{i}", Status.self_confidence_but_failed(0.1 * (i + 1)))
 
         inp = FutureTensor(tmpdir, best_last, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         # Best: i=2 -> 0.3
@@ -353,7 +420,7 @@ if __name__ == "__main__":
             return (f"out_{i}", Status.self_confidence_but_failed(confs[i]))
 
         inp = FutureTensor(tmpdir, best_first, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("30: best is out_0", read_ft_element(out, 0) == "out_0")
@@ -366,7 +433,7 @@ if __name__ == "__main__":
             return ("only_out", Status.self_confidence_but_failed(0.6))
 
         inp = FutureTensor(tmpdir, single_fail, [sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("32: content only_out", read_ft_element(out, 0) == "only_out")
@@ -380,7 +447,7 @@ if __name__ == "__main__":
             return (f"out_{i}", Status.self_confidence_but_failed(0.5))
 
         inp = FutureTensor(tmpdir, tied, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("34: tied -> first wins", read_ft_element(out, 0) == "out_0")
@@ -393,7 +460,7 @@ if __name__ == "__main__":
             return ("overflow_content", Status.kContextOverflow)
 
         inp = FutureTensor(tmpdir, overflow_get, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("36: kContextOverflow returns empty string",
@@ -407,7 +474,7 @@ if __name__ == "__main__":
             return ("unbounded_output", Status.kConfidenceNotBounded)
 
         inp = FutureTensor(tmpdir, not_bounded_get, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("38: kConfidenceNotBounded content", read_ft_element(out, 0) == "unbounded_output")
@@ -435,7 +502,7 @@ if __name__ == "__main__":
             return (f"gen_{i}", Status.self_confidence_but_failed(0.5))
 
         inp = FutureTensor(tmpdir, capture_all, [sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("INITIAL", tmpdir)
         out.ft_forward(prompt_t)
 
@@ -462,7 +529,7 @@ if __name__ == "__main__":
             return ("good", Status.confidence(0.9))
 
         inp = FutureTensor(tmpdir, simple_retry, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("start", tmpdir)
         out.ft_forward(prompt_t)
 
@@ -482,7 +549,7 @@ if __name__ == "__main__":
             return ("out", Status.confidence(0.9))
 
         inp = FutureTensor(tmpdir, multiline_test, [sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("line1\nline2\nline3", tmpdir)
         out.ft_forward(prompt_t)
         run_test("53: multiline content", read_ft_element(out, 0) == "out")
@@ -504,7 +571,7 @@ if __name__ == "__main__":
                 return (f"p{prefix}_good", Status.confidence(0.9))
 
         inp = FutureTensor(tmpdir, multi_elem, [sympy.Integer(3), sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("56: prefix [3] shape", out.ft_capacity_shape == [3])
         run_test("57: prompt_tensor shape [3,2]", pt.ft_capacity_shape == [3, 2])
 
@@ -525,7 +592,7 @@ if __name__ == "__main__":
             return (f"r{r}c{c}", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, prefix_2d, [sympy.Integer(2), sympy.Integer(2), sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("64: prefix [2,2] shape", out.ft_capacity_shape == [2, 2])
 
         prompt_t = st_make_tensor([["p00", "p01"], ["p10", "p11"]], tmpdir)
@@ -546,7 +613,7 @@ if __name__ == "__main__":
             return (f"e{prefix}_i{i}", Status.self_confidence_but_failed(0.3 + i * 0.1))
 
         inp = FutureTensor(tmpdir, mixed_per_elem, [sympy.Integer(4), sympy.Integer(3)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("69: shape [4]", out.ft_capacity_shape == [4])
         prompt_t = st_make_tensor(["p"] * 4, tmpdir)
         out.ft_forward(prompt_t)
@@ -567,7 +634,7 @@ if __name__ == "__main__":
             return ("result", Status.confidence(0.85))
 
         inp = FutureTensor(tmpdir, single_ok, [sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("76: recurrent_dim=1 Ok shape", out.ft_capacity_shape == [])
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
@@ -579,7 +646,7 @@ if __name__ == "__main__":
             return ("result", Status.self_confidence_but_failed(0.7))
 
         inp = FutureTensor(tmpdir, single_err, [sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
         run_test("79: single fail content", read_ft_element(out, 0) == "result")
@@ -595,7 +662,7 @@ if __name__ == "__main__":
             return (f"out_{i}", Status.self_confidence_but_failed(0.1 * (i + 1)))
 
         inp = FutureTensor(tmpdir, dim5, [sympy.Integer(5)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("81: recurrent_dim=5 shape", out.ft_capacity_shape == [])
         prompt_t = st_make_tensor("p", tmpdir)
         out.ft_forward(prompt_t)
@@ -611,7 +678,7 @@ if __name__ == "__main__":
             return (f"gen_{i}", Status.self_confidence_but_failed(0.5))
 
         inp = FutureTensor(tmpdir, prompt_dependent, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("initial", tmpdir)
         out.ft_forward(prompt_t)
         # i=0 fails (no FIXED), error details not directly in prompt
@@ -628,7 +695,7 @@ if __name__ == "__main__":
             return (f"gen_{i}_with_FIXED", Status.self_confidence_but_failed(0.5))
 
         inp = FutureTensor(tmpdir, prompt_dependent2, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("initial", tmpdir)
         out.ft_forward(prompt_t)
         # i=0 output is "gen_0_with_FIXED", accumulated into i=1 prompt
@@ -645,7 +712,7 @@ if __name__ == "__main__":
             return ("gen", Status.self_confidence_but_failed(0.5))
 
         inp = FutureTensor(tmpdir, prompt_dependent3, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor("FIXED already", tmpdir)
         out.ft_forward(prompt_t)
         run_test("86: Ok on i=0 with FIXED in initial", read_ft_element(out, 0) == "gen")
@@ -658,7 +725,7 @@ if __name__ == "__main__":
             return (f"echo:{prompt[:3]}", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, per_prompt, [sympy.Integer(3), sympy.Integer(1)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         prompt_t = st_make_tensor(["AAA", "BBB", "CCC"], tmpdir)
         out.ft_forward(prompt_t)
         run_test("88: elem 0 uses its prompt", read_ft_element(out, 0) == "echo:AAA")
@@ -676,7 +743,7 @@ if __name__ == "__main__":
             return (f"p{prefix}_i{i}", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, comp_get, [sympy.Integer(4), sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("91: shape [4]", out.ft_capacity_shape == [4])
 
         # Slice the output
@@ -697,7 +764,7 @@ if __name__ == "__main__":
             return (f"item_{i}", Status.confidence(0.85))
 
         inp = FutureTensor(tmpdir, unsq_get, [sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("95: before unsqueeze shape []", out.ft_capacity_shape == [])
 
         unsq = unsqueeze_forward(out, 0)
@@ -718,7 +785,7 @@ if __name__ == "__main__":
             return (f"r{r}c{c}_i1", Status.confidence(0.8))
 
         inp = FutureTensor(tmpdir, big_get, [sympy.Integer(3), sympy.Integer(3), sympy.Integer(2)])
-        out, pt = recurrent_forward(inp)
+        out, pt, _, _ = recurrent_forward(inp)
         run_test("98: 2D prefix shape [3,3]", out.ft_capacity_shape == [3, 3])
 
         sliced = slice_forward(out, [1, slice(None)])

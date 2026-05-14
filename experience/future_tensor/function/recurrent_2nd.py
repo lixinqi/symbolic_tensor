@@ -12,6 +12,7 @@ naturally triggers RecurrentGradFn.backward() (the 2nd-derivative dispatch).
 import torch
 
 from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
+from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
 
 
 class RecurrentGradFn(torch.autograd.Function):
@@ -53,6 +54,18 @@ class RecurrentGradFn(torch.autograd.Function):
         ctx.llm_env = llm_env
         ctx._recurrent_backward_fn = recurrent_backward
 
+        # 1st-derivative dispatch: policy replaces default backward
+        dispatch_1st = get_1st_dispatcher(recurrent_backward)
+        if dispatch_1st({
+            "input": input, "output": output, "prompt_tensor": prompt_tensor,
+            "topk_self_confidence_but_failed": topk_self_confidence_but_failed,
+            "task_prompt": task_prompt, "llm_method": llm_method, "llm_env": llm_env,
+        }):
+            # Policy handled it — skip expensive LLM backward
+            ctx._grad_input = grad_output
+            return grad_output + 0
+
+        # No policy active — run actual backward (default behavior)
         grad_input = recurrent_backward(
             grad_output, input, output, prompt_tensor,
             topk_self_confidence_but_failed=topk_self_confidence_but_failed,
@@ -62,6 +75,7 @@ class RecurrentGradFn(torch.autograd.Function):
             llm_env=llm_env,
         )
         ctx._grad_input = grad_input
+
         return grad_input
 
     @staticmethod

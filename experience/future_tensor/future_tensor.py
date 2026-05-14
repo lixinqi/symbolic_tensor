@@ -143,7 +143,12 @@ def FutureTensor(
     ft.ft_async_get = ft_async_get
 
     def ft_forward(prompt_tensor: torch.Tensor) -> None:
-        """Materialize this FutureTensor by calling ft_async_get for each element."""
+        """Materialize this FutureTensor by calling ft_async_get for each element.
+
+        Resume-aware: skips elements that are already terminal (coefficient > 0
+        indicates confidence/success). Sets ft_forwarded = True only when ALL
+        elements are terminal.
+        """
         if ft.ft_forwarded:
             return
 
@@ -155,37 +160,52 @@ def FutureTensor(
             for coords in itertools.product(*[range(s) for s in shape])
         ]
 
-        # Read prompts from prompt_tensor for each coordinate
-        all_prompts: List[str] = [
+        # Filter to elements needing execution: coefficient <= 0
+        pending = []
+        for coords in all_coordinates:
+            flat_idx = _coords_to_flat(coords, shape)
+            coeff = ft.ft_static_tensor.data.flatten()[flat_idx].item()
+            if coeff <= 0:
+                pending.append(coords)
+
+        if not pending:
+            ft.ft_forwarded = True
+            return
+
+        # Read prompts only for pending elements
+        pending_prompts: List[str] = [
             _read_element(prompt_tensor, _coords_to_flat(coords, shape))
-            for coords in all_coordinates
+            for coords in pending
         ]
 
-        # Async call ft_async_get for each (coordinates, prompt) pair
+        # Async call ft_async_get for each pending (coordinates, prompt) pair
         async def _gather():
             tasks = [
                 ft.ft_async_get(coords, prompt)
-                for coords, prompt in zip(all_coordinates, all_prompts)
+                for coords, prompt in zip(pending, pending_prompts)
             ]
             return await asyncio.gather(*tasks)
 
         results: List[Tuple[str, Status]] = asyncio.run(_gather())
 
-        # Unpack (content, status) pairs; Status -> float stored in ft_static_tensor
-        sole_elem_output: List[str] = [content for content, _ in results]
-        float_values: List[float] = [Status.convert_status_to_float(s) for _, s in results]
-
-        # Write status floats into ft_static_tensor coefficients
-        for coords, fval in zip(all_coordinates, float_values):
+        # Write results per-element (preserve already-completed elements)
+        for coords, (content, status) in zip(pending, results):
             flat_idx = _coords_to_flat(coords, shape)
+            fval = Status.convert_status_to_float(status)
             ft.ft_static_tensor.data.flatten()[flat_idx] = fval
 
-        # Make a new symbolic tensor from the results and assign its storage
-        nested_data = _unflatten(sole_elem_output, shape)
-        result_tensor = make_tensor(nested_data, relative_to)
-        _assign_symbolic_only(ft.ft_static_tensor, result_tensor)
+            # Write content to storage directly
+            dst_path = _storage_path_for_tensor(ft.ft_static_tensor, coords, shape)
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            with open(dst_path, "w", encoding="utf-8") as f:
+                f.write(content)
 
-        ft.ft_forwarded = True
+        # ft_forwarded = True only when ALL elements are terminal (coefficient > 0)
+        all_terminal = all(
+            ft.ft_static_tensor.data.flatten()[_coords_to_flat(c, shape)].item() > 0
+            for c in all_coordinates
+        )
+        ft.ft_forwarded = all_terminal
 
     ft.ft_forward = ft_forward
 

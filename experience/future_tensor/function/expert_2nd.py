@@ -12,6 +12,7 @@ ExpertGradFn.backward() (the 2nd-derivative dispatch).
 import torch
 
 from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
+from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
 
 
 class ExpertGradFn(torch.autograd.Function):
@@ -53,6 +54,21 @@ class ExpertGradFn(torch.autograd.Function):
         ctx.selected_experience_qkv_indexes_list = selected_experience_qkv_indexes_list
         ctx._st_moe_backward_fn = st_moe_backward
 
+        # 1st-derivative dispatch: policy replaces default backward
+        dispatch_1st = get_1st_dispatcher(st_moe_backward)
+        if dispatch_1st({
+            "input": input, "output": output, "experience": experience,
+            "task_prompt": task_prompt, "topk": topk, "context": context,
+            "selected_experience_qkv_indexes_list": selected_experience_qkv_indexes_list,
+            "llm_method": llm_method, "llm_env": llm_env,
+        }):
+            # Policy handled it — skip expensive LLM backward
+            from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
+            ctx._grad_input = todo_tensor_like(input) if hasattr(input, 'st_relative_to') else grad_output
+            ctx._grad_experience = todo_tensor_like(experience) if hasattr(experience, 'st_relative_to') else grad_output
+            return grad_output + 0, grad_output + 0
+
+        # No policy active — run actual backward (default behavior)
         grad_input, grad_experience = st_moe_backward(
             grad_output, input, output, experience,
             selected_experience_qkv_indexes_list,
@@ -67,6 +83,7 @@ class ExpertGradFn(torch.autograd.Function):
         )
         ctx._grad_input = grad_input
         ctx._grad_experience = grad_experience
+
         return grad_input, grad_experience
 
     @staticmethod

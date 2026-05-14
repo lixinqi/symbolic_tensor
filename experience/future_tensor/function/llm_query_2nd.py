@@ -13,6 +13,7 @@ LlmQueryGradFn.backward() (the 2nd-derivative dispatch).
 import torch
 
 from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
+from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
 
 
 class LlmQueryGradFn(torch.autograd.Function):
@@ -46,11 +47,24 @@ class LlmQueryGradFn(torch.autograd.Function):
         ctx.llm_env = llm_env
         ctx._llm_query_backward_fn = llm_query_backward
 
+        # 1st-derivative dispatch: policy replaces default backward
+        dispatch_1st = get_1st_dispatcher(llm_query_backward)
+        if dispatch_1st({
+            "input": input_st, "output": output_st,
+            "system_prompt": system_prompt, "task_prompt": task_prompt,
+            "llm_method": llm_method, "llm_env": llm_env,
+        }):
+            # Policy handled it — skip expensive LLM backward
+            ctx._grad_input = grad_output
+            return grad_output + 0
+
+        # No policy active — run actual backward (default behavior)
         grad_input = llm_query_backward_compute(
             grad_output, input_st, output_st,
             system_prompt, task_prompt, llm_method, llm_env,
         )
         ctx._grad_input = grad_input
+
         return grad_input
 
     @staticmethod
