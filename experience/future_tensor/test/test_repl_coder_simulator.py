@@ -286,7 +286,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     setup.ft_forward(st_make_tensor(["启动终端会话"], tmpdir))
 
     expanded = ft_expand(workspace, [1, MAX_ITERS])
-    capture = ft_tmux_capture_pane(expanded)
+    reflection_starter = ft_reflection_starter()
+    capture = need_reflection(ft_tmux_capture_pane(expanded), reflection_starter)
 
     # Experience (TODO — cold-start)
     decision_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
@@ -312,8 +313,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     body = ft_sequential(switched, ft_sleep(expanded, 0.5), capture)
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
 
-    reflection_starter = ft_reflection_starter()
-    output = ft_recurrent(need_reflection(validator, reflection_starter), step_budget=1)
+    output = ft_recurrent(validator, step_budget=1)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
 
     # Stage 1 operator (knows nothing about the pipeline above)
