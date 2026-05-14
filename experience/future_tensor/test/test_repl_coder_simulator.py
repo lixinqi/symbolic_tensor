@@ -199,6 +199,77 @@ def read_ft_element(ft):
     return open(path).read() if os.path.isfile(path) else None
 
 
+# ─── Inline output_prompt: reads files, embeds content in prompt text ───
+# raw_llm_api cannot read file paths from the default prompt.
+# This callable reads workspace files and puts content inline so the LLM
+# actually sees the experience entries and input text.
+
+def _read_exp_entries(exp_view_dir):
+    """Read experience QKV entries from disk. Returns list of (query, key, value) tuples."""
+    if not os.path.isdir(exp_view_dir):
+        return []
+    # Experience layout: <coord>/0/data.txt=query, <coord>/1/data.txt=key, <coord>/2/data.txt=value
+    entries = {}
+    for root, dirs, files in os.walk(exp_view_dir):
+        for fname in files:
+            fpath = os.path.join(root, fname)
+            rel = os.path.relpath(fpath, exp_view_dir)
+            parts = rel.replace("\\", "/").split("/")
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+            except Exception:
+                content = ""
+            # parts like ["0", "0", "data.txt"] → coord="0", qkv_idx=0
+            if len(parts) >= 3:
+                coord = parts[0]
+                qkv_idx = int(parts[1])
+                if coord not in entries:
+                    entries[coord] = ["", "", ""]
+                entries[coord][qkv_idx] = content
+    return [(e[0], e[1], e[2]) for e in entries.values() if any(e)]
+
+
+def _read_input_text(input_view_dir):
+    """Read input text from the workspace."""
+    if not os.path.isdir(input_view_dir):
+        return ""
+    for root, dirs, files in os.walk(input_view_dir):
+        for fname in sorted(files):
+            fpath = os.path.join(root, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+    return ""
+
+
+def inline_output_prompt(task_prompt, workspace_dir, exp_view_dir, input_view_dir, output_dir):
+    """Build LLM prompt with experience and input content inline."""
+    entries = _read_exp_entries(exp_view_dir)
+    input_text = _read_input_text(input_view_dir)
+
+    # Build experience examples: show query → value (input-like → output)
+    if entries:
+        examples = []
+        for q, k, v in entries:
+            if v:
+                # Show the query (which resembles the input) → value (the target output)
+                label = q.replace("\n", " ") if q else k.replace("\n", " ")
+                examples.append(f"  INPUT: {label}\n  OUTPUT: {v}")
+        exp_text = "\n\n".join(examples) if examples else "(no examples)"
+    else:
+        exp_text = "(no examples)"
+
+    return (
+        f"{task_prompt}\n\n"
+        f"Examples of correct input→output:\n{exp_text}\n\n"
+        f"Now for this input:\n{input_text}\n\n"
+        "Reply with ONLY the output. One line. No explanation. No prefix."
+    )
+
+
 # ─── Harness model + REPL loop ───
 
 print("Running test_repl_coder_simulator (online Stage 1)...\n")
@@ -218,81 +289,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # Experience (TODO — cold-start)
     decision_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
     cmd_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
-
-    # ─── Inline output_prompt: reads files, embeds content in prompt text ───
-    # raw_llm_api cannot read file paths from the default prompt.
-    # This callable reads workspace files and puts content inline so the LLM
-    # actually sees the experience entries and input text.
-    def _read_exp_entries(exp_view_dir):
-        """Read experience QKV entries from disk. Returns list of (query, key, value) tuples."""
-        if not os.path.isdir(exp_view_dir):
-            return []
-        # Experience layout: <coord>/0/data.txt=query, <coord>/1/data.txt=key, <coord>/2/data.txt=value
-        entries = {}
-        for root, dirs, files in os.walk(exp_view_dir):
-            for fname in files:
-                fpath = os.path.join(root, fname)
-                rel = os.path.relpath(fpath, exp_view_dir)
-                parts = rel.replace("\\", "/").split("/")
-                try:
-                    with open(fpath, "r", encoding="utf-8") as f:
-                        content = f.read().strip()
-                except Exception:
-                    content = ""
-                # parts like ["0", "0", "data.txt"] → coord="0", qkv_idx=0
-                if len(parts) >= 3:
-                    coord = parts[0]
-                    qkv_idx = int(parts[1])
-                    if coord not in entries:
-                        entries[coord] = ["", "", ""]
-                    entries[coord][qkv_idx] = content
-        return [(e[0], e[1], e[2]) for e in entries.values() if any(e)]
-
-    def _read_input_text(input_view_dir):
-        """Read input text from the workspace."""
-        if not os.path.isdir(input_view_dir):
-            return ""
-        for root, dirs, files in os.walk(input_view_dir):
-            for fname in sorted(files):
-                fpath = os.path.join(root, fname)
-                try:
-                    with open(fpath, "r", encoding="utf-8") as f:
-                        return f.read().strip()
-                except Exception:
-                    pass
-        return ""
-
-    def _write_output(output_dir, text):
-        """Write output text to the workspace mutable output dir."""
-        for root, dirs, files in os.walk(output_dir):
-            for fname in files:
-                fpath = os.path.join(root, fname)
-                with open(fpath, "w", encoding="utf-8") as f:
-                    f.write(text)
-                return
-
-    def inline_output_prompt(task_prompt, workspace_dir, exp_view_dir, input_view_dir, output_dir):
-        entries = _read_exp_entries(exp_view_dir)
-        input_text = _read_input_text(input_view_dir)
-
-        # Build experience examples: show query → value (input-like → output)
-        if entries:
-            examples = []
-            for q, k, v in entries:
-                if v:
-                    # Show the query (which resembles the input) → value (the target output)
-                    label = q.replace("\n", " ") if q else k.replace("\n", " ")
-                    examples.append(f"  INPUT: {label}\n  OUTPUT: {v}")
-            exp_text = "\n\n".join(examples) if examples else "(no examples)"
-        else:
-            exp_text = "(no examples)"
-
-        return (
-            f"{task_prompt}\n\n"
-            f"Examples of correct input→output:\n{exp_text}\n\n"
-            f"Now for this input:\n{input_text}\n\n"
-            "Reply with ONLY the output. One line. No explanation. No prefix."
-        )
 
     # Expert chain → filter → gate → switch → body → validator → recurrent
     decision_raw = ft_expert(capture, decision_exp,
