@@ -2,13 +2,13 @@
 
 Architecture:
   1. Read .cloze_task.json + target file (Python I/O, no LLM)
-  2. ft_expert with trainable experience (code generation)
+  2. ft_legacy_expert with trainable experience (code generation)
   3. ft_recurrent (retry until valid)
 
 Key simplification vs HarnessModel:
   - No Stage 1 nested ft_recurrent for context gathering
   - Context gathered directly via Python file reads
-  - Same ft_expert + ft_recurrent pipeline for trainable generation
+  - Same ft_legacy_expert + ft_recurrent pipeline for trainable generation
 """
 
 import json
@@ -27,7 +27,7 @@ import sympy
 
 from experience.future_tensor.future_tensor import FutureTensor, _read_element
 from experience.future_tensor.function.ft_recurrent import ft_recurrent
-from experience.future_tensor.function.ft_expert import ft_expert
+from experience.future_tensor.function.ft_legacy_expert import ft_legacy_expert
 from experience.future_tensor.status import Status
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 
@@ -113,21 +113,21 @@ class TmuxHarnessModel(nn.Module):
 
             contexts.append(task_header + "\n\n" + numbered)
 
-        # Step 2: Build [batch, max_codegen_steps] FutureTensor for ft_expert
+        # Step 2: Build [batch, max_codegen_steps] FutureTensor for ft_legacy_expert
         ft_context = FutureTensor(
             tmpdir,
             self._make_context_repeater(contexts),
             [sympy.Integer(batch_size), sympy.Integer(self.max_codegen_steps)],
         )
-        # Materialize context before ft_expert reads it
+        # Materialize context before ft_legacy_expert reads it
         ctx_prompts = make_tensor(
             [["ctx"] * self.max_codegen_steps] * batch_size,
             tmpdir,
         )
         ft_context.ft_forward(ctx_prompts)
 
-        # Step 3: ft_expert with trainable experience
-        ft_gen = ft_expert(
+        # Step 3: ft_legacy_expert with trainable experience
+        ft_gen = ft_legacy_expert(
             ft_context,
             self.experience if self.experience is not None else make_tensor([["", "", ""]], tmpdir),
             output_prompt=self._make_code_gen_output_prompt(),
@@ -159,7 +159,7 @@ class TmuxHarnessModel(nn.Module):
         return context_repeater
 
     def _make_code_gen_output_prompt(self):
-        """Return output_prompt callable for ft_expert's code generation stage."""
+        """Return output_prompt callable for ft_legacy_expert's code generation stage."""
         def output_prompt(task_prompt, workspace_dir, exp_view_dir, input_view_dir, output_dir):
             return (
                 _SYSTEM_GENERATION.strip() + "\n\n"

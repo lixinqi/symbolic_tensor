@@ -21,7 +21,7 @@ import sympy
 
 from experience.future_tensor.future_tensor import FutureTensor, _read_element, _coords_to_flat
 from experience.future_tensor.function.ft_recurrent import ft_recurrent
-from experience.future_tensor.function.ft_expert import ft_expert
+from experience.future_tensor.function.ft_legacy_expert import ft_legacy_expert
 from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes
 from experience.future_tensor.status import Status
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
@@ -311,22 +311,22 @@ class HarnessModel(nn.Module):
         context_tensor = context_ft.ft_static_tensor
         self.last_context_tensor = context_tensor
 
-        # ── Stage 2: code_gen via ft_expert ──
+        # ── Stage 2: code_gen via ft_legacy_expert ──
         # Build [batch, L] input FutureTensor from materialized context + task metadata.
         ft_context_broadcast = FutureTensor(
             tmpdir,
             self._make_context_repeater(context_tensor, worktree_tensor),
             [sympy.Integer(batch_size), sympy.Integer(self.max_codegen_steps)],
         )
-        # Materialize before ft_expert reads ft_static_tensor.
+        # Materialize before ft_legacy_expert reads ft_static_tensor.
         context_broadcast_prompts = make_tensor(
             [["ctx"] * self.max_codegen_steps] * batch_size,
             tmpdir,
         )
         ft_context_broadcast.ft_forward(context_broadcast_prompts)
 
-        # Wire experience into the backward graph via ft_expert.
-        ft_gen, _, _ = ft_expert(
+        # Wire experience into the backward graph via ft_legacy_expert.
+        ft_gen, _, _ = ft_legacy_expert(
             ft_context_broadcast,
             self.experience if self.experience is not None else make_tensor([["", "", ""]], tmpdir),
             output_prompt=self._make_code_gen_output_prompt(),
@@ -542,7 +542,7 @@ class HarnessModel(nn.Module):
         """Build ft_async_get for [batch, L] FutureTensor that broadcasts gathered context.
 
         Each element at [batch_idx, gen_step_idx] returns the gathered context for batch_idx,
-        prefixed with CLOZE_TASK metadata so ft_expert's output_prompt can access it.
+        prefixed with CLOZE_TASK metadata so ft_legacy_expert's output_prompt can access it.
         """
         async def context_repeater(coords: List[int], prompt: str) -> Tuple[str, Status]:
             batch_idx = coords[0]
@@ -567,7 +567,7 @@ class HarnessModel(nn.Module):
         return context_repeater
 
     def _make_code_gen_output_prompt(self):
-        """Return an output_prompt callable for ft_expert's code generation stage.
+        """Return an output_prompt callable for ft_legacy_expert's code generation stage.
 
         The workspace passed to output_prompt contains:
           const_input_view/  — gathered context + CLOZE_TASK metadata

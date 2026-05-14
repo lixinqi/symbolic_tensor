@@ -1,12 +1,12 @@
 """
-test_llm_coder_simulator: LLM-powered coder simulator using ft_expert + ft_recurrent.
+test_llm_coder_simulator: LLM-powered coder simulator using ft_legacy_expert + ft_recurrent.
 
 Architecture (all composed at pipeline level):
 
   workspace_ft[1]             — tmux instance ID
   capture_op[1, 30]          = ft_tmux_capture_pane(ft_expand(workspace_ft, [1, 30]))
-  decision_expert[1, 30]     = ft_expert(capture_op, decision_exp)   → "text:hint"|"ctrl:hint"
-  cmd_expert[1, 30]          = ft_expert(decision_expert, cmd_exp)   → "echo hello"|"Enter"
+  decision_expert[1, 30]     = ft_legacy_expert(capture_op, decision_exp)   → "text:hint"|"ctrl:hint"
+  cmd_expert[1, 30]          = ft_legacy_expert(decision_expert, cmd_exp)   → "echo hello"|"Enter"
   send_text_op[1, 30]        = ft_tmux_send_text(cmd_expert, workspace_expanded)
   send_ctrl_op[1, 30]        = ft_tmux_send_ctrl(cmd_expert, workspace_expanded)
   switched_send[1, 30]       = ft_switch(decision_expert, [("text",send_text_op),("ctrl",send_ctrl_op)])
@@ -36,7 +36,7 @@ from experience.future_tensor.function.ft_tmux_capture_pane import ft_tmux_captu
 from experience.future_tensor.function.ft_sleep import ft_sleep
 from experience.future_tensor.function.ft_sequential import ft_sequential
 from experience.future_tensor.function.ft_recurrent import ft_recurrent
-from experience.future_tensor.function.ft_expert import ft_expert
+from experience.future_tensor.function.ft_legacy_expert import ft_legacy_expert
 from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_expand import ft_expand
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as st_make_tensor
@@ -177,7 +177,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # 3. decision_expert[1, 30]: reads terminal → "text:hint" or "ctrl:hint"
     decision_experience = make_decision_experience(tmpdir)
-    decision_expert = ft_expert(
+    decision_expert = ft_legacy_expert(
         capture_op, decision_experience,
         task_prompt="观察终端最后一行。如果提示符(λ或$)后面只有路径没有其他文字，输出：text:输入shell命令。如果提示符后面有命令文字（如echo、ls等），输出：ctrl:按回车执行。只输出一行，格式必须是text:或ctrl:开头。",
         topk=2,
@@ -185,7 +185,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     # 4. cmd_expert[1, 30]: reads decision_expert output → real command
     cmd_experience = make_cmd_experience(tmpdir)
-    cmd_expert = ft_expert(
+    cmd_expert = ft_legacy_expert(
         decision_expert, cmd_experience,
         task_prompt="根据输入的动作描述，输出实际要执行的内容。如果输入以text:开头，输出对应的shell命令（如echo hello world）。如果输入以ctrl:开头，输出键名Enter。只输出命令本身一行，不要加text:或ctrl:前缀，不要解释。",
         topk=2,
