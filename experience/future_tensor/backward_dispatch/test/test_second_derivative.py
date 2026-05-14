@@ -1,9 +1,9 @@
 """
-Tests for experience.future_tensor.second_derivative.
+Tests for experience.future_tensor.backward_dispatch.
 
 Tests are grouped by scenario:
   1. Module imports and structure
-  2. need_2nd_derivative: requires_grad behaviour
+  2. need_reflection: requires_grad behaviour
   3. dispatch_policy context manager + PolicyConflictError
   4. TracePolicy (default): records collected without LLM
   5. Custom policy: selective dispatch
@@ -14,7 +14,7 @@ Tests are grouped by scenario:
  10. ReflectionRecord fields
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_second_derivative
+    python -m experience.future_tensor.backward_dispatch.test.test_backward_dispatch
 """
 
 import os
@@ -44,9 +44,9 @@ def run_test(name: str, condition: bool, expected=None, actual=None):
 # ── Group 1: Module imports ──────────────────────────────────────────────────
 print("Group 1: Module imports")
 
-from experience.future_tensor.second_derivative import (
-    need_2nd_derivative,
-    get_2nd_dispatcher,
+from experience.future_tensor.backward_dispatch import (
+    need_reflection,
+    get_backward_dispatcher,
     dispatch_policy,
     TracePolicy,
     Policy,
@@ -56,8 +56,8 @@ from experience.future_tensor.second_derivative import (
 from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
 from experience.future_tensor.function.expert_2nd import ExpertGradFn
 
-run_test("need_2nd_derivative callable", callable(need_2nd_derivative))
-run_test("get_2nd_dispatcher callable", callable(get_2nd_dispatcher))
+run_test("need_reflection callable", callable(need_reflection))
+run_test("get_backward_dispatcher callable", callable(get_backward_dispatcher))
 run_test("dispatch_policy callable", callable(dispatch_policy))
 run_test("TracePolicy is Policy subclass", issubclass(TracePolicy, Policy))
 run_test("ReflectionRecord importable", ReflectionRecord is not None)
@@ -68,32 +68,32 @@ run_test("RecurrentGradFn is autograd.Function subclass",
 run_test("ExpertGradFn is autograd.Function subclass",
          issubclass(ExpertGradFn, torch.autograd.Function))
 
-# ── Group 2: need_2nd_derivative ─────────────────────────────────────────────
-print("\nGroup 2: need_2nd_derivative")
+# ── Group 2: need_reflection ─────────────────────────────────────────────
+print("\nGroup 2: need_reflection")
 
 anchor = torch.nn.Parameter(torch.ones(()))
 
 t = torch.zeros(())
-result = need_2nd_derivative(t, anchor)
+result = need_reflection(t, anchor)
 run_test("returns tensor with same value", result.item() == t.item())
 run_test("input is scalar", result.shape == torch.Size([]))
 run_test("requires_grad set to True", result.requires_grad is True)
 
 # Already requires_grad — idempotent
 t2 = torch.zeros((), requires_grad=True)
-result2 = need_2nd_derivative(t2, anchor)
+result2 = need_reflection(t2, anchor)
 run_test("idempotent when already requires_grad", result2.requires_grad is True)
 
-# Non-scalar second_derivative_start raises
+# Non-scalar backward_dispatch_start raises
 try:
-    need_2nd_derivative(torch.zeros(()), torch.nn.Parameter(torch.ones(3)))
-    run_test("non-scalar second_derivative_start raises AssertionError", False)
+    need_reflection(torch.zeros(()), torch.nn.Parameter(torch.ones(3)))
+    run_test("non-scalar backward_dispatch_start raises AssertionError", False)
 except AssertionError:
-    run_test("non-scalar second_derivative_start raises AssertionError", True)
+    run_test("non-scalar backward_dispatch_start raises AssertionError", True)
 
 # Non-scalar input raises
 try:
-    need_2nd_derivative(torch.zeros(3), anchor)
+    need_reflection(torch.zeros(3), anchor)
     run_test("non-scalar input raises AssertionError", False)
 except AssertionError:
     run_test("non-scalar input raises AssertionError", True)
@@ -105,7 +105,7 @@ collector = []
 with dispatch_policy(TracePolicy(collector)):
     # Active inside block — verify by dispatching directly
     from experience.future_tensor.function.ft_recurrent_backward import recurrent_backward
-    d = get_2nd_dispatcher(recurrent_backward)
+    d = get_backward_dispatcher(recurrent_backward)
     out = d({"x": 1})
 
 run_test("dispatch inside block appends record", len(collector) == 1)
@@ -126,13 +126,11 @@ except PolicyConflictError:
 collector2 = []
 with dispatch_policy(TracePolicy(collector2)):
     pass
-# dispatch outside block goes to default collector, not collector2
-from experience.future_tensor.second_derivative.context import _default_collector
-pre_len = len(_default_collector)
-d2 = get_2nd_dispatcher(recurrent_backward)
-d2({"outside": True})
-run_test("outside block goes to module default (not collector2)",
-         len(collector2) == 0 and len(_default_collector) > pre_len)
+# dispatch outside block is now a no-op (returns False) since no module-level default
+d2 = get_backward_dispatcher(recurrent_backward)
+result_outside = d2({"outside": True})
+run_test("outside block dispatch is no-op (returns False)",
+         len(collector2) == 0 and result_outside is False)
 
 # ── Group 4: TracePolicy default ─────────────────────────────────────────────
 print("\nGroup 4: TracePolicy — default, non-destructive")
@@ -173,8 +171,8 @@ class SelectivePolicy(Policy):
 
 sp = SelectivePolicy()
 with dispatch_policy(sp):
-    get_2nd_dispatcher(recurrent_backward)({"r": 1})
-    get_2nd_dispatcher(st_moe_backward)({"m": 2})
+    get_backward_dispatcher(recurrent_backward)({"r": 1})
+    get_backward_dispatcher(st_moe_backward)({"m": 2})
 
 run_test("SelectivePolicy: recurrent_called has 1 entry", len(sp.recurrent_called) == 1)
 run_test("SelectivePolicy: other_trace has 1 entry", len(sp.other_trace) == 1)
@@ -238,7 +236,7 @@ run_test("st_moe_backward callable", callable(_st_moe_backward))
 print("\nGroup 8: Integration — RecurrentGradFn.backward() → TracePolicy")
 
 # When FtRecurrent.backward() calls RecurrentGradFn.apply(...), and the caller
-# later calls second_derivative_start.grad.backward(), PyTorch will invoke
+# later calls backward_dispatch_start.grad.backward(), PyTorch will invoke
 # RecurrentGradFn.backward() which dispatches the 2nd derivative.
 # Here we simulate this by calling RecurrentGradFn.apply() on leaf tensors
 # and calling .backward() on a scalar to trigger the 2nd derivative.
@@ -368,6 +366,6 @@ run_test("fn.__name__ accessible", rec.fn.__name__ == "recurrent_backward")
 # ── Summary ───────────────────────────────────────────────────────────────────
 print(f"\n  Passed: {passed}, Failed: {failed}, Total: {passed + failed}")
 if failed == 0:
-    print("All second_derivative tests passed.")
+    print("All backward_dispatch tests passed.")
 else:
     sys.exit(1)

@@ -21,6 +21,7 @@ from experience.future_tensor.function.llm_query_backward import llm_query_backw
 from experience.future_tensor.function.llm_query_2nd import LlmQueryGradFn
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 from experience.symbolic_tensor.function import symbolic_grad_registry
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtLlmQuery(torch.autograd.Function):
@@ -81,6 +82,15 @@ class FtLlmQuery(torch.autograd.Function):
             symbolic_grad_output = todo_tensor_like(output_st)
             symbolic_grad_output.data.copy_(grad_output_orig.data)
             grad_output = symbolic_grad_output
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(llm_query_backward)
+        if dispatch({
+            "input": input_st, "output": output_st,
+            "system_prompt": ctx.system_prompt, "task_prompt": ctx.task_prompt,
+            "llm_method": ctx.llm_method, "llm_env": ctx.llm_env,
+        }):
+            return None, None, None, None, None
 
         # Call GradFn for 2nd-derivative support
         grad_input = LlmQueryGradFn.apply(

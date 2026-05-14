@@ -18,6 +18,7 @@ from experience.future_tensor.future_tensor import FutureTensor, _tensor_to_futu
 from experience.future_tensor.function.unsqueeze_forward import unsqueeze_forward
 from experience.future_tensor.function.slice_forward import slice_forward
 from experience.future_tensor.function.unsqueeze_2nd import UnsqueezeGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtUnsqueeze(torch.autograd.Function):
@@ -70,6 +71,11 @@ class FtUnsqueeze(torch.autograd.Function):
             dim = ndim_output + dim
         slices = [slice(None)] * ndim_output
         slices[dim] = 0  # int index collapses the dim
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(unsqueeze_forward)
+        if dispatch({}):
+            return grad_output, None
 
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)

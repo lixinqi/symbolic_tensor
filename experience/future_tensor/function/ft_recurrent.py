@@ -24,6 +24,7 @@ from experience.future_tensor.function.ft_recurrent_backward import (
     BackwardPromptCallable,
 )
 from experience.future_tensor.function.recurrent_2nd import RecurrentGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtRecurrent(torch.autograd.Function):
@@ -77,6 +78,15 @@ class FtRecurrent(torch.autograd.Function):
         # Enable 2nd-derivative graph recording.
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(recurrent_backward)
+        if dispatch({
+            "input": input_st, "output": output_st, "prompt_tensor": prompt_tensor_st,
+            "topk_self_confidence_but_failed": ctx.topk_self_confidence_but_failed,
+            "task_prompt": ctx.task_prompt, "llm_method": ctx.llm_method, "llm_env": ctx.llm_env,
+        }):
+            return grad_output, None, None, None, None, None, None, None
 
         # RecurrentGradFn.forward handles st_* attribute reconstruction
         # and calls recurrent_backward internally.

@@ -16,6 +16,7 @@ from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.function.sequential_forward import sequential_forward
 from experience.future_tensor.function.sequential_backward import sequential_backward
 from experience.future_tensor.function.sequential_2nd import SequentialGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtSequential(torch.autograd.Function):
@@ -41,6 +42,11 @@ class FtSequential(torch.autograd.Function):
     def backward(ctx, grad_output: torch.Tensor):
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(sequential_backward)
+        if dispatch({"num_inputs": ctx.num_inputs}):
+            return tuple(grad_output for _ in range(ctx.num_inputs))
 
         # SequentialGradFn.forward handles FutureTensor attribute reconstruction
         # and calls sequential_backward internally.

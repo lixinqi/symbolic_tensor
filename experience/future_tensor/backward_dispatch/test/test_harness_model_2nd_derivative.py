@@ -5,11 +5,11 @@ Constructs a ToyHarnessModel (nn.Module) whose forward pass chains ft_unsqueeze,
 ft_slice, and ft_recurrent.  Tests demonstrate the public 2nd-derivative API
 using the natural PyTorch flow:
 
-    mock_input = need_2nd_derivative(mock_input, second_derivative_start)
+    mock_input = need_reflection(mock_input, backward_dispatch_start)
     loss = model.forward(mock_input)
     loss.backward(create_graph=True)
     with dispatch_policy(TracePolicy):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
 Architecture of ToyHarnessModel::
 
@@ -20,7 +20,7 @@ Architecture of ToyHarnessModel::
 
 Groups:
   1. ToyHarnessModel forward — shape and forwarded checks
-  2. need_2nd_derivative — scalar assertions + requires_grad
+  2. need_reflection — scalar assertions + requires_grad
   3. Natural 2nd-derivative flow — 3 records dispatched from model op GradFns
   4. ReflectionRecord fields from model ops
   5. Custom Policy — selective dispatch by fn identity
@@ -28,7 +28,7 @@ Groups:
   7. PolicyConflictError on nested dispatch_policy blocks
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_harness_model_2nd_derivative
+    python -m experience.future_tensor.backward_dispatch.test.test_harness_model_2nd_derivative
 """
 
 import sys
@@ -68,15 +68,15 @@ from experience.future_tensor.function.ft_recurrent_backward import recurrent_ba
 from experience.future_tensor.function.slice_backward import slice_backward
 from experience.future_tensor.function.unsqueeze_forward import unsqueeze_forward
 
-from experience.future_tensor.second_derivative import (
-    need_2nd_derivative,
+from experience.future_tensor.backward_dispatch import (
+    need_reflection,
     dispatch_policy,
     TracePolicy,
     Policy,
     ReflectionRecord,
     PolicyConflictError,
 )
-from experience.future_tensor.second_derivative.context import _default_collector
+from experience.future_tensor.backward_dispatch.context import _default_collector
 
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 from experience.symbolic_tensor.tensor_util.assign_tensor import assign_tensor
@@ -159,14 +159,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Group 2: need_2nd_derivative — scalar assertions + requires_grad
+# Group 2: need_reflection — scalar assertions + requires_grad
 # ══════════════════════════════════════════════════════════════════════════════
-print("\nGroup 2: need_2nd_derivative — scalar assertions + requires_grad")
+print("\nGroup 2: need_reflection — scalar assertions + requires_grad")
 
 model2 = ToyHarnessModel()
-second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
 scalar = torch.zeros(())
-result = need_2nd_derivative(scalar, second_derivative_start)
+result = need_reflection(scalar, backward_dispatch_start)
 
 run_test("result is scalar (shape ())", result.shape == torch.Size([]))
 run_test("requires_grad set to True", result.requires_grad is True)
@@ -174,21 +174,21 @@ run_test("requires_grad set to True", result.requires_grad is True)
 # idempotent
 scalar2 = torch.zeros((), requires_grad=True)
 run_test("idempotent when already requires_grad",
-         need_2nd_derivative(scalar2, second_derivative_start).requires_grad is True)
+         need_reflection(scalar2, backward_dispatch_start).requires_grad is True)
 
 # non-scalar input raises
 try:
-    need_2nd_derivative(torch.zeros(3), second_derivative_start)
+    need_reflection(torch.zeros(3), backward_dispatch_start)
     run_test("non-scalar input raises AssertionError", False)
 except AssertionError:
     run_test("non-scalar input raises AssertionError", True)
 
-# non-scalar second_derivative_start raises
+# non-scalar backward_dispatch_start raises
 try:
-    need_2nd_derivative(torch.zeros(()), torch.ones(3))
-    run_test("non-scalar second_derivative_start raises AssertionError", False)
+    need_reflection(torch.zeros(()), torch.ones(3))
+    run_test("non-scalar backward_dispatch_start raises AssertionError", False)
 except AssertionError:
-    run_test("non-scalar second_derivative_start raises AssertionError", True)
+    run_test("non-scalar backward_dispatch_start raises AssertionError", True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -201,8 +201,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = ToyHarnessModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
 
@@ -212,21 +212,21 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # 1st backward
     loss.backward(create_graph=True)
 
-    run_test("second_derivative_start.grad exists",
-             second_derivative_start.grad is not None)
-    run_test("second_derivative_start.grad has grad_fn",
-             second_derivative_start.grad.grad_fn is not None)
+    run_test("backward_dispatch_start.grad exists",
+             backward_dispatch_start.grad is not None)
+    run_test("backward_dispatch_start.grad has grad_fn",
+             backward_dispatch_start.grad.grad_fn is not None)
 
     # 2nd backward with TracePolicy
     coll3 = []
     with dispatch_policy(TracePolicy(coll3)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     run_test("3 records dispatched", len(coll3) == 3)
 
     if len(coll3) == 3:
         fns = [r.fn for r in coll3]
-        # Backward traversal order: closest to second_derivative_start first
+        # Backward traversal order: closest to backward_dispatch_start first
         run_test("record 0 fn: unsqueeze_forward", fns[0] is unsqueeze_forward)
         run_test("record 1 fn: slice_backward", fns[1] is slice_backward)
         run_test("record 2 fn: recurrent_backward", fns[2] is recurrent_backward)
@@ -254,18 +254,18 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = ToyHarnessModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
 
     coll4 = []
     with dispatch_policy(TracePolicy(coll4)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     if len(coll4) == 3:
-        # Backward traversal order: closest to second_derivative_start first
+        # Backward traversal order: closest to backward_dispatch_start first
         rec_u = coll4[0]
         rec_s = coll4[1]
         rec_r = coll4[2]
@@ -310,15 +310,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = ToyHarnessModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
 
     sp = SelectivePolicy()
     with dispatch_policy(sp):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
 run_test("recurrent_calls has 1 entry", len(sp.recurrent_calls) == 1)
 run_test("other_calls has 2 entries (slice + unsqueeze)", len(sp.other_calls) == 2)
@@ -339,8 +339,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     input_ft.requires_grad_(True)
 
     model = ToyHarnessModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
@@ -350,7 +350,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         pass  # policy active but no backward inside
 
     pre_len = len(_default_collector)
-    second_derivative_start.grad.backward()  # no dispatch_policy block
+    backward_dispatch_start.grad.backward()  # no dispatch_policy block
 
     run_test("inside-block collector still empty", len(coll6) == 0)
     run_test("outside block routes to default collector",

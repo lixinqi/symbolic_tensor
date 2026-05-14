@@ -150,8 +150,8 @@ Optimizer (`StSGD`) applies both: numeric SGD update + `patch` CLI applies diffs
 The LLM reflects on its own reflections:
 
 ```python
-second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-anchored = need_2nd_derivative(input_ft, second_derivative_start)
+backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+anchored = need_reflection(input_ft, backward_dispatch_start)
 output = model(anchored)
 loss = ft_mean(output)
 
@@ -159,7 +159,7 @@ loss.backward(create_graph=True)
 
 records = []
 with dispatch_policy(TracePolicy(records)):
-    second_derivative_start.grad.backward()
+    backward_dispatch_start.grad.backward()
 # records: list of ReflectionRecord(fn, inputs, output, timestamp)
 ```
 
@@ -240,7 +240,7 @@ experience/
 │   ├── future_tensor.py   # FutureTensor factory: lazy async scalar tensor with ft_* attributes
 │   ├── status.py          # Status tagged union (confidence, scbf, kContextOverflow, etc.)
 │   ├── function/          # Autograd ops: slice, unsqueeze, recurrent, expert, switch, sequential, tmux
-│   └── second_derivative/ # 2nd-derivative framework: policies, dispatcher, GradFn wrappers
+│   └── backward_dispatch/ # 2nd-derivative framework: policies, dispatcher, GradFn wrappers
 ├── llm_client/            # LLM backends: raw API (OpenAI-compatible) and coding agent (Claude SDK)
 ├── sparse_util/           # Sparse coordinate operations (transpose, convert)
 ├── fs_util/               # File system utilities (directory packing, path enumeration, text merger)

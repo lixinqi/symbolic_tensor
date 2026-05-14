@@ -34,6 +34,7 @@ from experience.symbolic_tensor.tensor_util.dump_view import dump_view
 from experience.symbolic_tensor.tensor_util.get_diff_tensor import get_diff_tensor
 from experience.llm_client.agent_task import AgentTask
 from experience.llm_client.task_handler import TaskHandler
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 def _scalar_slice_indices(size: torch.Size) -> List[List[int]]:
@@ -211,6 +212,13 @@ def llm_query_backward(ctx, grad_output) -> Optional[torch.Tensor]:
     if not grad_output.requires_grad:
         grad_output.requires_grad_(True)
 
+    dispatch = get_backward_dispatcher(llm_query_backward)
+    if dispatch({
+        "input": ctx.input_ft.ft_static_tensor, "output": ctx.output_ft.ft_static_tensor,
+        "system_prompt": ctx.system_prompt, "task_prompt": ctx.task_prompt,
+        "llm_method": ctx.llm_method, "llm_env": ctx.llm_env,
+    }):
+        return grad_output
     return LlmQueryGradFn.apply(
         grad_output,
         ctx.input_ft.ft_static_tensor,

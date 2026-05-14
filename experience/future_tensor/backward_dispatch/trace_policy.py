@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List
 
 import torch
 
-from experience.future_tensor.second_derivative.policy import Policy, ReflectionRecord
+from experience.future_tensor.backward_dispatch.policy import Policy, ReflectionRecord
 
 
 class TracePolicy(Policy):

@@ -32,9 +32,9 @@ from experience.future_tensor.function.ft_expert import ft_expert
 from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_expand import ft_expand
 from experience.future_tensor.function.ft_mean import ft_mean
-from experience.future_tensor.second_derivative import (
-    first_derivative_policy,
-    need_2nd_derivative,
+from experience.future_tensor.backward_dispatch import (
+    dispatch_policy,
+    need_reflection,
     TracePolicy,
 )
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor as st_make_tensor
@@ -218,7 +218,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     validator.requires_grad_(True)
     sds = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    output = ft_recurrent(need_2nd_derivative(validator, sds), step_budget=1)
+    output = ft_recurrent(need_reflection(validator, sds), step_budget=1)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
 
     # Stage 1 operator (knows nothing about the pipeline above)
@@ -233,7 +233,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
         loss = ft_mean(output)
         records = []
-        with first_derivative_policy(TracePolicy(records)):
+        with dispatch_policy(TracePolicy(records)):
             loss.backward(create_graph=True, retain_graph=True)
         print(f"  step {step}: trace={len(records)}")
         records.clear()

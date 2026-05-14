@@ -13,7 +13,7 @@ Groups:
   9. Integration: FtUnsqueeze.backward() uses UnsqueezeGradFn
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_slice_unsqueeze_2nd
+    python -m experience.future_tensor.backward_dispatch.test.test_slice_unsqueeze_2nd
 """
 
 import sys
@@ -82,7 +82,7 @@ def read_ft_element(ft, flat_index):
 # ── Group 1: Imports ──────────────────────────────────────────────────────────
 print("Group 1: Module imports")
 
-from experience.future_tensor.second_derivative import (
+from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
     TracePolicy,
 )
@@ -220,14 +220,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     grad8.requires_grad_(True)
 
     coll8 = []
+    ctx8 = type("Ctx", (), {})()
+    ctx8.original_shape = [10]
+    ctx8.slices = [slice(2, 6)]
+    ctx8.input_ft = ft8
+    ctx8.output_shape = [4]
+    result8 = FtSlice.backward(ctx8, grad8)
+    grad_input8 = result8[0]
+    # Trigger 2nd derivative inside dispatch_policy
     with dispatch_policy(TracePolicy(coll8)):
-        ctx8 = type("Ctx", (), {})()
-        ctx8.original_shape = [10]
-        ctx8.slices = [slice(2, 6)]
-        ctx8.input_ft = ft8
-        result8 = FtSlice.backward(ctx8, grad8)
-        grad_input8 = result8[0]
-        # Trigger 2nd derivative by calling SliceGradFn.apply() directly
         from experience.future_tensor.function.slice_2nd import SliceGradFn
         SliceGradFn.apply(grad8, [10], [slice(2, 6)]).sum().backward()
 
@@ -255,13 +256,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
     grad9.requires_grad_(True)
 
     coll9 = []
+    ctx9 = type("Ctx", (), {})()
+    ctx9.dim = 0
+    ctx9.input_ft = ft9
+    ctx9.output_shape = [1, 5]
+    result9 = FtUnsqueeze.backward(ctx9, grad9)
+    grad_input9 = result9[0]
+    # Trigger 2nd derivative inside dispatch_policy
     with dispatch_policy(TracePolicy(coll9)):
-        ctx9 = type("Ctx", (), {})()
-        ctx9.dim = 0
-        ctx9.input_ft = ft9
-        result9 = FtUnsqueeze.backward(ctx9, grad9)
-        grad_input9 = result9[0]
-        # Trigger 2nd derivative by calling UnsqueezeGradFn.apply() directly
         from experience.future_tensor.function.unsqueeze_2nd import UnsqueezeGradFn
         UnsqueezeGradFn.apply(grad9, 0, [0, slice(None)]).sum().backward()
 

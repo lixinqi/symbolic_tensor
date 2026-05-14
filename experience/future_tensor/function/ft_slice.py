@@ -18,6 +18,7 @@ from experience.future_tensor.future_tensor import FutureTensor, _tensor_to_futu
 from experience.future_tensor.function.slice_forward import slice_forward
 from experience.future_tensor.function.slice_backward import slice_backward
 from experience.future_tensor.function.slice_2nd import SliceGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtSlice(torch.autograd.Function):
@@ -66,8 +67,11 @@ class FtSlice(torch.autograd.Function):
             grad_output.ft_shape_schema = ref_ft.ft_shape_schema
             grad_output.ft_incremental_concated_tensors = ref_ft.ft_incremental_concated_tensors
 
-        # Enable 2nd-derivative graph recording by requiring grad on the tensor
-        # that is fed into the 2nd-derivative GradFn.
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(slice_backward)
+        if dispatch({}):
+            return grad_output, None
+
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
         return SliceGradFn.apply(grad_output, ctx.original_shape, ctx.slices), None

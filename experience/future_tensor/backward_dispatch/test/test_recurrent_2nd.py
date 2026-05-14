@@ -1,20 +1,23 @@
 """
-test_slice_2nd.py — Individual 2nd-derivative test for ft_slice using natural PyTorch flow.
+test_recurrent_2nd.py — Individual 2nd-derivative test for ft_recurrent using natural PyTorch flow.
 
 Pattern:
-    mock_input = need_2nd_derivative(mock_input, second_derivative_start)
+    mock_input = need_reflection(mock_input, backward_dispatch_start)
     loss = model.forward(mock_input)
     loss.backward(create_graph=True)
     with dispatch_policy(TracePolicy):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
+
+All FutureTensors carry kContextOverflow so ft_recurrent exits immediately
+without calling any LLM — safe for unit tests.
 
 Groups:
   1. Model forward shape and autograd connectivity
-  2. Natural 2nd-derivative flow dispatches slice_backward record
+  2. Natural 2nd-derivative flow dispatches recurrent_backward record
   3. ReflectionRecord fields verification
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_slice_2nd
+    python -m experience.future_tensor.backward_dispatch.test.test_recurrent_2nd
 """
 
 import sys
@@ -45,12 +48,12 @@ def run_test(name: str, condition: bool, expected=None, actual=None):
 
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.status import Status
-from experience.future_tensor.function.ft_slice import ft_slice
+from experience.future_tensor.function.ft_recurrent import ft_recurrent
 from experience.future_tensor.function.ft_mean import ft_mean
-from experience.future_tensor.function.slice_backward import slice_backward
+from experience.future_tensor.function.ft_recurrent_backward import recurrent_backward
 
-from experience.future_tensor.second_derivative import (
-    need_2nd_derivative,
+from experience.future_tensor.backward_dispatch import (
+    need_reflection,
     dispatch_policy,
     TracePolicy,
 )
@@ -83,35 +86,43 @@ def make_forwarded_ft(shape, data_list, tmpdir):
     return ft
 
 
-# ── SliceOnlyModel ────────────────────────────────────────────────────────────
+def make_overflow_ft(shape, data_list, tmpdir):
+    """FutureTensor with kContextOverflow — ft_recurrent exits without calling LLM."""
+    ft = make_forwarded_ft(shape, data_list, tmpdir)
+    ft.ft_static_tensor.data.fill_(
+        Status.convert_status_to_float(Status.kContextOverflow)
+    )
+    return ft
 
-class SliceOnlyModel(nn.Module):
-    """Minimal model containing only ft_slice."""
+
+# ── RecurrentOnlyModel ────────────────────────────────────────────────────────
+
+class RecurrentOnlyModel(nn.Module):
+    """Minimal model containing only ft_recurrent."""
 
     def forward(self, input_ft):
-        return ft_slice(input_ft, [slice(2, 6)])
+        output = ft_recurrent(input_ft, task_prompt="test")
+        return output
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Group 1: Model forward shape and autograd connectivity
+# Group 1: Model forward — shape and autograd connectivity
 # ══════════════════════════════════════════════════════════════════════════════
 print("Group 1: Model forward — shape and autograd connectivity")
 
 with tempfile.TemporaryDirectory() as tmpdir:
-    input_ft = make_forwarded_ft([10], [f"v{i}" for i in range(10)], tmpdir)
+    input_ft = make_overflow_ft([2, 3], ["a", "b", "c", "d", "e", "f"], tmpdir)
     input_ft.requires_grad_(True)
 
-    model = SliceOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    model = RecurrentOnlyModel()
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
 
-    run_test("output ft_capacity_shape is [4]",
-             output.ft_capacity_shape == [4])
+    run_test("output ft_capacity_shape is [2]",
+             output.ft_capacity_shape == [2])
     run_test("output requires_grad", output.requires_grad is True)
     run_test("output has grad_fn", output.grad_fn is not None)
-    run_test("anchored is scalar FutureTensor",
-             anchored.shape == torch.Size([]) and hasattr(anchored, "ft_static_tensor"))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -120,12 +131,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
 print("\nGroup 2: Natural 2nd-derivative flow")
 
 with tempfile.TemporaryDirectory() as tmpdir:
-    input_ft = make_forwarded_ft([10], [f"v{i}" for i in range(10)], tmpdir)
+    input_ft = make_overflow_ft([1, 2], ["x", "y"], tmpdir)
     input_ft.requires_grad_(True)
 
-    model = SliceOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    model = RecurrentOnlyModel()
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
 
@@ -135,27 +146,23 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # 1st backward
     loss.backward(create_graph=True)
 
-    run_test("second_derivative_start.grad exists",
-             second_derivative_start.grad is not None)
-    run_test("second_derivative_start.grad is scalar",
-             second_derivative_start.grad.shape == torch.Size([]))
-    run_test("second_derivative_start.grad has grad_fn",
-             second_derivative_start.grad.grad_fn is not None)
+    run_test("backward_dispatch_start.grad exists",
+             backward_dispatch_start.grad is not None)
+    run_test("backward_dispatch_start.grad has grad_fn",
+             backward_dispatch_start.grad.grad_fn is not None)
 
     # 2nd backward with TracePolicy
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     run_test("TracePolicy collected at least 1 record", len(coll) >= 1)
     if len(coll) >= 1:
-        run_test("record fn is slice_backward", coll[0].fn is slice_backward)
+        run_test("record fn is recurrent_backward", coll[0].fn is recurrent_backward)
         run_test("record has grad_output",
                  "grad_output" in coll[0].inputs)
-        run_test("record has original_shape",
-                 "original_shape" in coll[0].inputs)
-        run_test("record has slices",
-                 "slices" in coll[0].inputs)
+        run_test("record has task_prompt",
+                 coll[0].inputs.get("task_prompt") == "test")
         run_test("record has grad_input",
                  "grad_input" in coll[0].inputs)
 
@@ -166,23 +173,23 @@ with tempfile.TemporaryDirectory() as tmpdir:
 print("\nGroup 3: ReflectionRecord fields")
 
 with tempfile.TemporaryDirectory() as tmpdir:
-    input_ft = make_forwarded_ft([8], [f"e{i}" for i in range(8)], tmpdir)
+    input_ft = make_overflow_ft([2, 2], ["a", "b", "c", "d"], tmpdir)
     input_ft.requires_grad_(True)
 
-    model = SliceOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(input_ft, second_derivative_start)
+    model = RecurrentOnlyModel()
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(input_ft, backward_dispatch_start)
     output = model(anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
 
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     if len(coll) >= 1:
         rec = coll[0]
-        run_test("record.fn is slice_backward", rec.fn is slice_backward)
+        run_test("record.fn is recurrent_backward", rec.fn is recurrent_backward)
         run_test("record.inputs is dict", isinstance(rec.inputs, dict))
         run_test("record.output is scalar tensor", rec.output.shape == torch.Size([]))
         run_test("record.output value is 1.0", rec.output.item() == 1.0)
@@ -190,11 +197,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
                  isinstance(rec.timestamp, float) and rec.timestamp > 0)
         run_test("grad_output in inputs", "grad_output" in rec.inputs)
         run_test("grad_input in inputs", "grad_input" in rec.inputs)
+        run_test("task_prompt in inputs", rec.inputs.get("task_prompt") == "test")
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 print(f"\n  Passed: {passed}, Failed: {failed}, Total: {passed + failed}")
 if failed == 0:
-    print("All ft_slice 2nd-derivative tests passed.")
+    print("All ft_recurrent 2nd-derivative tests passed.")
 else:
     sys.exit(1)

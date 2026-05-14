@@ -17,6 +17,7 @@ import sympy
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.status import Status
 from experience.future_tensor.function.tmux_create_session_2nd import TmuxCreateSessionGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 def tmux_create_session_backward(ctx, grad_output) -> FutureTensor:
@@ -48,4 +49,7 @@ def tmux_create_session_backward(ctx, grad_output) -> FutureTensor:
     if not grad_output.requires_grad:
         grad_output.requires_grad_(True)
 
+    dispatch = get_backward_dispatcher(tmux_create_session_backward)
+    if dispatch({}):
+        return grad_output
     return TmuxCreateSessionGradFn.apply(grad_output)

@@ -16,6 +16,7 @@ from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.function.switch_forward import switch_forward
 from experience.future_tensor.function.switch_backward import switch_backward
 from experience.future_tensor.function.switch_2nd import SwitchGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class FtSwitch(torch.autograd.Function):
@@ -75,6 +76,14 @@ class FtSwitch(torch.autograd.Function):
     def backward(ctx, grad_output: torch.Tensor):
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(switch_backward)
+        if dispatch({"selected_index": ctx.selected_index, "branches": list(ctx.branches)}):
+            n_branches = len(ctx.branches)
+            branch_grads = [None] * n_branches
+            branch_grads[ctx.selected_index] = grad_output
+            return (None, None, None, None, *branch_grads)
 
         # SwitchGradFn.forward handles FutureTensor attribute reconstruction
         # and calls switch_backward internally.

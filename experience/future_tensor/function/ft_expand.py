@@ -14,6 +14,8 @@ import torch
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.function.expand_forward import expand_forward
 from experience.future_tensor.function.expand_2nd import ExpandGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
+from experience.future_tensor.function.expand_backward import expand_backward
 
 
 class FtExpand(torch.autograd.Function):
@@ -36,6 +38,11 @@ class FtExpand(torch.autograd.Function):
     def backward(ctx, grad_output: torch.Tensor):
         if not grad_output.requires_grad:
             grad_output.requires_grad_(True)
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(expand_backward)
+        if dispatch({"input_shape": ctx.input_shape, "expanded_shape": ctx.expanded_shape}):
+            return grad_output, None
 
         # ExpandGradFn.forward handles FutureTensor attribute reconstruction
         # and calls expand_backward internally.
@@ -183,8 +190,8 @@ if __name__ == "__main__":
     # === Group 5: 2nd derivative support ===
     print("\nGroup 5: 2nd derivative support")
 
-    from experience.future_tensor.second_derivative import (
-        need_2nd_derivative,
+    from experience.future_tensor.backward_dispatch import (
+        need_reflection,
         dispatch_policy,
         TracePolicy,
     )
@@ -194,18 +201,18 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([1, 3], ["a", "b", "c"], tmpdir)
         ft.requires_grad_(True)
 
-        second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-        anchored = need_2nd_derivative(ft, second_derivative_start)
+        backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+        anchored = need_reflection(ft, backward_dispatch_start)
         output = ft_expand(anchored, [4, 3])
         loss = output.sum()
         loss.backward(create_graph=True)
 
-        run_test("2nd: grad exists", second_derivative_start.grad is not None)
-        run_test("2nd: grad has grad_fn", second_derivative_start.grad.grad_fn is not None)
+        run_test("2nd: grad exists", backward_dispatch_start.grad is not None)
+        run_test("2nd: grad has grad_fn", backward_dispatch_start.grad.grad_fn is not None)
 
         records = []
         with dispatch_policy(TracePolicy(records)):
-            second_derivative_start.grad.backward()
+            backward_dispatch_start.grad.backward()
 
         run_test("2nd: TracePolicy collected records", len(records) >= 1)
         if records:

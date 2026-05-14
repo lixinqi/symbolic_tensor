@@ -5,14 +5,13 @@ RecurrentGradFn: autograd.Function wrapping recurrent_backward.
   backward = 2nd-derivative dispatch via the active Policy
 
 FtRecurrent.backward() calls RecurrentGradFn.apply(...) instead of
-recurrent_backward(...) directly so that second_derivative_start.grad.backward()
+recurrent_backward(...) directly so that backward_dispatch_start.grad.backward()
 naturally triggers RecurrentGradFn.backward() (the 2nd-derivative dispatch).
 """
 
 import torch
 
-from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
-from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class RecurrentGradFn(torch.autograd.Function):
@@ -54,18 +53,7 @@ class RecurrentGradFn(torch.autograd.Function):
         ctx.llm_env = llm_env
         ctx._recurrent_backward_fn = recurrent_backward
 
-        # 1st-derivative dispatch: policy replaces default backward
-        dispatch_1st = get_1st_dispatcher(recurrent_backward)
-        if dispatch_1st({
-            "input": input, "output": output, "prompt_tensor": prompt_tensor,
-            "topk_self_confidence_but_failed": topk_self_confidence_but_failed,
-            "task_prompt": task_prompt, "llm_method": llm_method, "llm_env": llm_env,
-        }):
-            # Policy handled it — skip expensive LLM backward
-            ctx._grad_input = grad_output
-            return grad_output + 0
-
-        # No policy active — run actual backward (default behavior)
+        # Run actual backward
         grad_input = recurrent_backward(
             grad_output, input, output, prompt_tensor,
             topk_self_confidence_but_failed=topk_self_confidence_but_failed,
@@ -83,7 +71,7 @@ class RecurrentGradFn(torch.autograd.Function):
         """2nd derivative: dispatch to the active Policy."""
         grad_output, input, output, prompt_tensor = ctx.saved_tensors
 
-        dispatch = get_2nd_dispatcher(ctx._recurrent_backward_fn)
+        dispatch = get_backward_dispatcher(ctx._recurrent_backward_fn)
         dispatch({
             "grad_output":                      grad_output,
             "input":                            input,

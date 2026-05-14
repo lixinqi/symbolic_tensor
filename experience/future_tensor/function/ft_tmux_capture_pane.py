@@ -203,8 +203,8 @@ if __name__ == "__main__":
     # === Group 6: 2nd derivative support ===
     print("\nGroup 6: 2nd derivative support")
 
-    from experience.future_tensor.second_derivative import (
-        need_2nd_derivative,
+    from experience.future_tensor.backward_dispatch import (
+        need_reflection,
         dispatch_policy,
         TracePolicy,
     )
@@ -213,18 +213,18 @@ if __name__ == "__main__":
         ft = make_forwarded_ft([2], ["2nd_a", "2nd_b"], tmpdir)
         ft.requires_grad_(True)
 
-        second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-        anchored = need_2nd_derivative(ft, second_derivative_start)
+        backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+        anchored = need_reflection(ft, backward_dispatch_start)
         output = ft_tmux_capture_pane(anchored)
         loss = output.sum()
         loss.backward(create_graph=True)
 
-        run_test("2nd: grad exists", second_derivative_start.grad is not None)
-        run_test("2nd: grad has grad_fn", second_derivative_start.grad.grad_fn is not None)
+        run_test("2nd: grad exists", backward_dispatch_start.grad is not None)
+        run_test("2nd: grad has grad_fn", backward_dispatch_start.grad.grad_fn is not None)
 
         records = []
         with dispatch_policy(TracePolicy(records)):
-            second_derivative_start.grad.backward()
+            backward_dispatch_start.grad.backward()
 
         run_test("2nd: TracePolicy collected records", len(records) >= 1)
         if records:

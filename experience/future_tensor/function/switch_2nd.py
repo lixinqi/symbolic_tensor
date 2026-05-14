@@ -5,7 +5,7 @@ SwitchGradFn: autograd.Function wrapping switch_backward.
   backward = 2nd-derivative dispatch via the active Policy
 
 FtSwitch.backward() calls SwitchGradFn.apply(...) instead of switch_backward(...)
-directly so that second_derivative_start.grad.backward() naturally triggers
+directly so that backward_dispatch_start.grad.backward() naturally triggers
 SwitchGradFn.backward() (the 2nd-derivative dispatch).
 """
 
@@ -13,8 +13,7 @@ import sympy
 import torch
 from typing import List
 
-from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
-from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class SwitchGradFn(torch.autograd.Function):
@@ -59,13 +58,7 @@ class SwitchGradFn(torch.autograd.Function):
         ctx._switch_backward_fn = switch_backward
         ctx._grad_input = grad_output
 
-        # 1st-derivative dispatch: policy replaces default backward
-        dispatch_1st = get_1st_dispatcher(switch_backward)
-        if dispatch_1st({"selected_index": selected_index, "branches": branches}):
-            # Policy handled it — skip default backward
-            return grad_output + 0
-
-        # No policy active — run actual backward (default behavior)
+        # Run actual backward
         grad_input = switch_backward(grad_output, selected_index, branches)
 
         # Force creation of SwitchGradFnBackward by returning a new tensor.
@@ -78,7 +71,7 @@ class SwitchGradFn(torch.autograd.Function):
         """2nd derivative: dispatch to the active Policy."""
         (grad_output,) = ctx.saved_tensors
 
-        dispatch = get_2nd_dispatcher(ctx._switch_backward_fn)
+        dispatch = get_backward_dispatcher(ctx._switch_backward_fn)
         dispatch({
             "grad_output":    grad_output,
             "selected_index": ctx.selected_index,

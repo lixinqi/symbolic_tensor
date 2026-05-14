@@ -6,15 +6,14 @@ used as the backward of unsqueeze.
   backward = 2nd-derivative dispatch via the active Policy
 
 FtUnsqueeze.backward() calls UnsqueezeGradFn.apply(...) instead of slice_forward(...)
-directly so that second_derivative_start.grad.backward() naturally triggers
+directly so that backward_dispatch_start.grad.backward() naturally triggers
 UnsqueezeGradFn.backward() (the 2nd-derivative dispatch).
 """
 
 import torch
 from typing import List
 
-from experience.future_tensor.second_derivative.dispatcher import get_2nd_dispatcher
-from experience.future_tensor.second_derivative.first_dispatcher import get_1st_dispatcher
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 class UnsqueezeGradFn(torch.autograd.Function):
@@ -41,13 +40,6 @@ class UnsqueezeGradFn(torch.autograd.Function):
         ctx.squeeze_slices = squeeze_slices
         ctx._unsqueeze_forward_fn = unsqueeze_forward
 
-        # 1st-derivative dispatch: policy replaces default backward
-        dispatch_1st = get_1st_dispatcher(unsqueeze_forward)
-        if dispatch_1st({}):
-            # Policy handled it — skip default backward
-            ctx._grad_input = grad_output
-            return grad_output + 0
-
         # No policy active — run actual backward (default behavior)
         grad_input = slice_forward(grad_output, squeeze_slices)
         ctx._grad_input = grad_input
@@ -59,7 +51,7 @@ class UnsqueezeGradFn(torch.autograd.Function):
         """2nd derivative: dispatch to the active Policy."""
         (grad_output,) = ctx.saved_tensors
 
-        dispatch = get_2nd_dispatcher(ctx._unsqueeze_forward_fn)
+        dispatch = get_backward_dispatcher(ctx._unsqueeze_forward_fn)
         dispatch({
             "grad_output":   grad_output,
             "dim":           ctx.dim,

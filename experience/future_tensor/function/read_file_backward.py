@@ -17,6 +17,7 @@ import sympy
 from experience.future_tensor.future_tensor import FutureTensor
 from experience.future_tensor.status import Status
 from experience.future_tensor.function.read_file_2nd import ReadFileGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 def read_file_backward(ctx, grad_output) -> FutureTensor:
@@ -48,4 +49,7 @@ def read_file_backward(ctx, grad_output) -> FutureTensor:
     if not grad_output.requires_grad:
         grad_output.requires_grad_(True)
 
+    dispatch = get_backward_dispatcher(read_file_backward)
+    if dispatch({}):
+        return grad_output
     return ReadFileGradFn.apply(grad_output)

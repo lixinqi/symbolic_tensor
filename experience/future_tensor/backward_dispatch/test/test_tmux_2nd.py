@@ -2,11 +2,11 @@
 test_tmux_2nd.py — 2nd-derivative tests for tmux FutureTensor ops.
 
 Pattern:
-    mock_input = need_2nd_derivative(mock_input, second_derivative_start)
+    mock_input = need_reflection(mock_input, backward_dispatch_start)
     loss = model.forward(mock_input)
     loss.backward(create_graph=True)
     with dispatch_policy(TracePolicy):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
 Groups:
   1. Module imports and structure
@@ -22,7 +22,7 @@ Groups:
   11. Natural 2nd-derivative flow dispatches records
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_tmux_2nd
+    python -m experience.future_tensor.backward_dispatch.test.test_tmux_2nd
 """
 
 import os
@@ -74,8 +74,8 @@ from experience.future_tensor.function.tmux_create_session_2nd import TmuxCreate
 from experience.future_tensor.function.tmux_send_text_2nd import TmuxSendTextGradFn
 from experience.future_tensor.function.tmux_send_ctrl_2nd import TmuxSendCtrlGradFn
 
-from experience.future_tensor.second_derivative import (
-    need_2nd_derivative,
+from experience.future_tensor.backward_dispatch import (
+    need_reflection,
     dispatch_policy,
     TracePolicy,
 )
@@ -343,8 +343,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     ft11 = make_forwarded_ft([2], ["n0", "n1"], tmpdir)
     ft11.requires_grad_(True)
 
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(ft11, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(ft11, backward_dispatch_start)
     model_output = ft_tmux_create_session(anchored)
     loss = ft_mean(model_output)
 
@@ -354,15 +354,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # 1st backward
     loss.backward(create_graph=True)
 
-    run_test("second_derivative_start.grad exists",
-             second_derivative_start.grad is not None)
-    run_test("second_derivative_start.grad has grad_fn",
-             second_derivative_start.grad.grad_fn is not None)
+    run_test("backward_dispatch_start.grad exists",
+             backward_dispatch_start.grad is not None)
+    run_test("backward_dispatch_start.grad has grad_fn",
+             backward_dispatch_start.grad.grad_fn is not None)
 
     # 2nd backward with TracePolicy
     coll11 = []
     with dispatch_policy(TracePolicy(coll11)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     run_test("TracePolicy collected at least 1 record", len(coll11) >= 1)
     if len(coll11) >= 1:

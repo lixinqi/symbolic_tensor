@@ -38,6 +38,7 @@ from experience.symbolic_tensor.function.select_qkv_indexes import default_retri
 from experience.symbolic_tensor.tensor_util.todo_tensor_like import todo_tensor_like
 from experience.symbolic_tensor.function import symbolic_grad_registry
 from experience.future_tensor.function.expert_2nd import ExpertGradFn
+from experience.future_tensor.backward_dispatch.backward_dispatcher import get_backward_dispatcher
 
 
 OutputPromptCallable = Callable[..., str]
@@ -146,6 +147,16 @@ class FtExpert(torch.autograd.Function):
             symbolic_grad_output = todo_tensor_like(output_st)
             symbolic_grad_output.data.copy_(grad_output.data)
             grad_output = symbolic_grad_output
+
+        # 1st-derivative dispatch: skip GradFn if dispatcher handles it.
+        dispatch = get_backward_dispatcher(st_moe_backward)
+        if dispatch({
+            "input": input_st, "output": output_st, "experience": experience,
+            "task_prompt": ctx.task_prompt, "topk": ctx.topk, "context": prompt_tensor_st,
+            "selected_experience_qkv_indexes_list": selected_experience_qkv_indexes_list,
+            "llm_method": ctx.llm_method, "llm_env": ctx.llm_env,
+        }):
+            return None, None, None, None, None, None, None, None, None, None, None, None
 
         # Call st_moe_backward with direct mapping:
         #   input = input_st (ft_expert.input)

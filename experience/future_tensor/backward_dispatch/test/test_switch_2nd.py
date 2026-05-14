@@ -2,11 +2,11 @@
 test_switch_2nd.py — Individual 2nd-derivative test for ft_switch using natural PyTorch flow.
 
 Pattern:
-    mock_input = need_2nd_derivative(mock_input, second_derivative_start)
+    mock_input = need_reflection(mock_input, backward_dispatch_start)
     loss = model.forward(mock_input)
     loss.backward(create_graph=True)
     with dispatch_policy(TracePolicy):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
 Groups:
   1. Model forward shape and autograd connectivity
@@ -14,7 +14,7 @@ Groups:
   3. ReflectionRecord fields verification
 
 Run:
-    python -m experience.future_tensor.second_derivative.test.test_switch_2nd
+    python -m experience.future_tensor.backward_dispatch.test.test_switch_2nd
 """
 
 import os
@@ -50,8 +50,8 @@ from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_mean import ft_mean
 from experience.future_tensor.function.switch_backward import switch_backward
 
-from experience.future_tensor.second_derivative import (
-    need_2nd_derivative,
+from experience.future_tensor.backward_dispatch import (
+    need_reflection,
     dispatch_policy,
     TracePolicy,
 )
@@ -141,8 +141,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     branch_b.requires_grad_(True)
 
     model = SwitchOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(branch_b, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(branch_b, backward_dispatch_start)
     output = model(condition, branch_a, anchored)
 
     run_test("output ft_capacity_shape is [3]",
@@ -163,8 +163,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     branch_b.requires_grad_(True)
 
     model = SwitchOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(branch_b, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(branch_b, backward_dispatch_start)
     output = model(condition, branch_a, anchored)
     loss = ft_mean(output)
 
@@ -174,15 +174,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # 1st backward
     loss.backward(create_graph=True)
 
-    run_test("second_derivative_start.grad exists",
-             second_derivative_start.grad is not None)
-    run_test("second_derivative_start.grad has grad_fn",
-             second_derivative_start.grad.grad_fn is not None)
+    run_test("backward_dispatch_start.grad exists",
+             backward_dispatch_start.grad is not None)
+    run_test("backward_dispatch_start.grad has grad_fn",
+             backward_dispatch_start.grad.grad_fn is not None)
 
     # 2nd backward with TracePolicy
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     run_test("TracePolicy collected at least 1 record", len(coll) >= 1)
     if len(coll) >= 1:
@@ -211,15 +211,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     branch_b.requires_grad_(True)
 
     model = SwitchOnlyModel()
-    second_derivative_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
-    anchored = need_2nd_derivative(branch_b, second_derivative_start)
+    backward_dispatch_start = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
+    anchored = need_reflection(branch_b, backward_dispatch_start)
     output = model(condition, branch_a, anchored)
     loss = ft_mean(output)
     loss.backward(create_graph=True)
 
     coll = []
     with dispatch_policy(TracePolicy(coll)):
-        second_derivative_start.grad.backward()
+        backward_dispatch_start.grad.backward()
 
     if len(coll) >= 1:
         rec = coll[0]
@@ -248,19 +248,19 @@ for expected_symbol, expected_index in [("A", 0), ("B", 1)]:
         branch_a.requires_grad_(True)
         branch_b.requires_grad_(True)
 
-        second_derivative_start = torch.ones(
+        backward_dispatch_start = torch.ones(
             (), dtype=torch.bfloat16, requires_grad=True
         )
 
-        # Anchor need_2nd_derivative on the branch that WILL be selected
+        # Anchor need_reflection on the branch that WILL be selected
         if expected_index == 0:
-            anchored_a = need_2nd_derivative(branch_a, second_derivative_start)
+            anchored_a = need_reflection(branch_a, backward_dispatch_start)
             cases = [
                 ("A", "case A", "desc A", anchored_a),
                 ("B", "case B", "desc B", branch_b),
             ]
         else:
-            anchored_b = need_2nd_derivative(branch_b, second_derivative_start)
+            anchored_b = need_reflection(branch_b, backward_dispatch_start)
             cases = [
                 ("A", "case A", "desc A", branch_a),
                 ("B", "case B", "desc B", anchored_b),
@@ -272,7 +272,7 @@ for expected_symbol, expected_index in [("A", 0), ("B", 1)]:
 
         coll = []
         with dispatch_policy(TracePolicy(coll)):
-            second_derivative_start.grad.backward()
+            backward_dispatch_start.grad.backward()
 
         run_test(
             f"symbol {expected_symbol} collected 1 record",
