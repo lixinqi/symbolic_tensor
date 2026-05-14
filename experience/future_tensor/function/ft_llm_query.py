@@ -163,7 +163,7 @@ if __name__ == "__main__":
     # Test 1: Forward creates a lazy FutureTensor
     print("Test 1: Forward creates lazy FutureTensor")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("Hello world", Status.confidence(1.0))
 
         input_ft = FutureTensor(

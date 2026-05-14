@@ -202,7 +202,7 @@ if __name__ == "__main__":
     # ── Tests 4-7: Forward returns correct shapes ──
     print("Tests 4-7: Forward shapes")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def simple_get(coords, prompt):
+        async def simple_get(coords, trajactory):
             return (f"result_{coords}", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(s) for s in [2, 3]])
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # ── Tests 8-11: Forward + ft_forward materializes ──
     print("Tests 8-11: Forward + ft_forward")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def confident_get(coords, prompt):
+        async def confident_get(coords, trajactory):
             return (f"ans_{coords}", Status.confidence(0.8))
 
         ft_input = FutureTensor(tmpdir, confident_get, [sympy.Integer(s) for s in [3, 2]])
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         call_log = []
 
-        async def retry_get(coords, prompt):
+        async def retry_get(coords, trajactory):
             call_log.append(coords)
             iteration = coords[-1]
             if iteration < 2:
@@ -268,7 +268,7 @@ if __name__ == "__main__":
     # ── Tests 15-16: ctx saves backward args ──
     print("Tests 15-16: ctx saves backward args")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("x", Status.confidence(1.0))
 
         ft_input = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in [2, 2]])
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     # ── Tests 17-18: Backward produces grad_input ──
     print("Tests 17-18: Backward (real LLM)")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def bw_get(coords, prompt):
+        async def bw_get(coords, trajactory):
             return ("Hello world", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(s) for s in [1, 2]])

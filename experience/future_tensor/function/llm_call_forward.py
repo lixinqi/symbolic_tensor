@@ -45,7 +45,7 @@ def llm_call_forward(
     relative_to = prompt_ft.ft_static_tensor.st_relative_to
 
     async def _async_get(
-        coordinates: List[int], prompt: str,
+        coordinates: List[int], trajactory: str,
     ) -> Tuple[str, Status]:
         # If already computed, read from disk
         if output.ft_static_tensor.data[tuple(coordinates)].item() > 0:
@@ -56,10 +56,10 @@ def llm_call_forward(
             if content is not None:
                 return (content, Status.confidence(1.0))
 
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
+        if isinstance(trajactory, dict):
+            actual_trajactory = trajactory.get("trajactory", "")
         else:
-            actual_prompt = prompt
+            actual_trajactory = trajactory
 
         # Ensure upstream prompt is materialized
         if (
@@ -67,7 +67,7 @@ def llm_call_forward(
             and prompt_ft.ft_static_tensor.data[tuple(coordinates)].item() == 0
         ):
             prompt_text, prompt_status = await prompt_ft.ft_async_get(
-                coordinates, actual_prompt,
+                coordinates, actual_trajactory,
             )
             if prompt_text:
                 st_setitem(

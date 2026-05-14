@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     def make_condition_ft(symbol, tmpdir):
         """Create a materialized condition FutureTensor with the symbol in storage."""
-        async def symbol_get(coords, prompt):
+        async def symbol_get(coords, trajactory):
             return (symbol, Status.confidence(1.0))
         ft = FutureTensor(tmpdir, symbol_get, [sympy.Integer(1)])
         # Materialize: write symbol into element-0 storage
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     def make_branch_ft(shape, data_list, tmpdir):
         """Create a branch FutureTensor with tracking ft_async_get."""
-        async def branch_get(coords, prompt):
+        async def branch_get(coords, trajactory):
             return (f"val_{coords}", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, branch_get, [sympy.Integer(s) for s in shape])
         # Pre-materialize storage so we can also read directly if needed

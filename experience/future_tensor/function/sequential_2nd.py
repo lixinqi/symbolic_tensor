@@ -30,7 +30,7 @@ class SequentialGradFn(torch.autograd.Function):
             shape = first_input.ft_capacity_shape
             relative_to = first_input.ft_static_tensor.st_relative_to
 
-            async def dummy_get(coords, prompt):
+            async def dummy_get(coords, trajactory):
                 return ("", Status.confidence(0.0))
 
             ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])

@@ -21,7 +21,7 @@ def sleep_forward(input_ft: FutureTensor, seconds: float) -> FutureTensor:
     shape = input_ft.ft_capacity_shape
     relative_to = input_ft.ft_static_tensor.st_relative_to
 
-    async def sleep_async_get(coordinates: List[int], prompt: str):
+    async def sleep_async_get(coordinates: List[int], trajactory: str):
         import asyncio
         await asyncio.sleep(seconds)
         return ("", Status.confidence(1.0))

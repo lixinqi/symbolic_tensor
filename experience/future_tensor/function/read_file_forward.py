@@ -23,13 +23,13 @@ def read_file_forward(input_ft: FutureTensor) -> FutureTensor:
     shape = input_ft.ft_capacity_shape
     relative_to = input_ft.ft_static_tensor.st_relative_to
 
-    async def read_file_async_get(coordinates: List[int], prompt: str):
+    async def read_file_async_get(coordinates: List[int], trajactory: str):
         if input_ft.ft_forwarded:
             _coeff, filepath = input_ft.ft_get_materialized_value(coordinates)
             with open(filepath, "r", encoding="utf-8") as f:
                 file_path = f.read().strip()
         else:
-            content, _status = await input_ft.ft_async_get(coordinates, prompt)
+            content, _status = await input_ft.ft_async_get(coordinates, trajactory)
             file_path = content.strip()
 
         if not file_path:

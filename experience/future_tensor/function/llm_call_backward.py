@@ -179,7 +179,7 @@ def llm_call_backward(ctx, grad_output) -> Optional[torch.Tensor]:
         shape: List[int] = ctx.shape
         relative_to: str = ctx.relative_to
 
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("", Status.confidence(0.0))
 
         ref_ft = FutureTensor(

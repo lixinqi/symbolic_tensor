@@ -47,7 +47,7 @@ class FtSlice(torch.autograd.Function):
             # preserved rather than severed by creating a new tensor object.
             shape = getattr(ctx, "output_shape", list(grad_output.shape))
             relative_to = ctx.input_ft.ft_static_tensor.st_relative_to
-            async def dummy_get(coords, prompt):
+            async def dummy_get(coords, trajactory):
                 return ("", Status.confidence(0.0))
             ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
             if grad_output.numel() == 1:
@@ -132,7 +132,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -290,7 +290,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         received = []
 
-        async def tracking_get(coords, prompt):
+        async def tracking_get(coords, trajactory):
             received.append(coords)
             return (f"out_{coords}", Status.confidence(1.0))
 
@@ -310,7 +310,7 @@ if __name__ == "__main__":
         run_test("74", read_ft_element(r, 3) == "out_[3, 2]")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def int_get(coords, prompt):
+        async def int_get(coords, trajactory):
             return (f"g{coords}", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, int_get, [sympy.Integer(s) for s in [5, 5]])
@@ -322,7 +322,7 @@ if __name__ == "__main__":
         run_test("77", read_ft_element(r, 4) == "g[3, 4]")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def step_get(coords, prompt):
+        async def step_get(coords, trajactory):
             return (str(coords), Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, step_get, [sympy.Integer(s) for s in [12]])

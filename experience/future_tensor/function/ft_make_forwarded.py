@@ -38,7 +38,7 @@ def ft_make_forwarded(
     Returns:
         A FutureTensor with data written to disk, marked as forwarded.
     """
-    async def dummy_get(coords, prompt):
+    async def dummy_get(coords, trajactory):
         return ("unused", Status.confidence(1.0))
 
     ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])

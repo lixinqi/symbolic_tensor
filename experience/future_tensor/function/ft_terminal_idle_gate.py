@@ -70,14 +70,14 @@ def ft_terminal_idle_gate(
     relative_to = input_ft.ft_static_tensor.st_relative_to
     session_shape = session_name_ft.ft_capacity_shape
 
-    async def gate_get(coordinates: List[int], prompt: str):
+    async def gate_get(coordinates: List[int], trajactory: str):
         # Read text from input
         if input_ft.ft_forwarded:
             _coeff, filepath = input_ft.ft_get_materialized_value(coordinates)
             with open(filepath, "r", encoding="utf-8") as f:
                 text = f.read()
         else:
-            text, _status = await input_ft.ft_async_get(coordinates, prompt)
+            text, _status = await input_ft.ft_async_get(coordinates, trajactory)
 
         if not text.strip():
             return ("", Status.confidence(1.0))
@@ -89,7 +89,7 @@ def ft_terminal_idle_gate(
             with open(filepath, "r", encoding="utf-8") as f:
                 instance_id = f.read().strip()
         else:
-            content, _status = await session_name_ft.ft_async_get(session_coords, prompt)
+            content, _status = await session_name_ft.ft_async_get(session_coords, trajactory)
             instance_id = content.strip()
 
         session_name = f"{tmux_session_prefix}{instance_id}"

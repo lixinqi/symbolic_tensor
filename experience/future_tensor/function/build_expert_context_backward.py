@@ -33,7 +33,7 @@ def build_expert_context_backward(ctx, grad_output) -> FutureTensor:
         shape: List[int] = ctx.shape
         relative_to: str = ctx.relative_to
 
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("", Status.confidence(0.0))
 
         ref_ft = FutureTensor(

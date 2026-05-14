@@ -68,7 +68,7 @@ def llm_query_forward(
     relative_to = input_ft.ft_static_tensor.st_relative_to
 
     async def llm_query_async_get(
-        coordinates: List[int], prompt: str,
+        coordinates: List[int], trajactory: str,
     ) -> Tuple[str, Status]:
         import asyncio
 
@@ -83,17 +83,17 @@ def llm_query_forward(
                 return (content, Status.confidence(1.0))
 
         # Ensure input is materialized at this coordinate (lazy pull + write-through)
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
+        if isinstance(trajactory, dict):
+            actual_trajactory = trajactory.get("trajactory", "")
         else:
-            actual_prompt = prompt
+            actual_trajactory = trajactory
 
         if (
             not input_ft.ft_forwarded
             and input_ft.ft_static_tensor.data[tuple(coordinates)].item() == 0
         ):
             input_content, input_status = await input_ft.ft_async_get(
-                coordinates, actual_prompt,
+                coordinates, actual_trajactory,
             )
             if input_content:
                 st_setitem(

@@ -66,7 +66,7 @@ def build_expert_context_forward(
     relative_to = input.ft_static_tensor.st_relative_to
 
     async def _async_get(
-        coordinates: List[int], prompt: str,
+        coordinates: List[int], trajactory: str,
     ) -> Tuple[str, Status]:
         # If already computed, read from disk
         if output.ft_static_tensor.data[tuple(coordinates)].item() > 0:
@@ -77,14 +77,14 @@ def build_expert_context_forward(
             if content is not None:
                 return (content, Status.confidence(1.0))
 
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
+        if isinstance(trajactory, dict):
+            actual_trajactory = trajactory.get("trajactory", "")
         else:
-            actual_prompt = prompt
+            actual_trajactory = trajactory
 
         # Pull experience text from upstream
         exp_text, exp_status = await experience_text.ft_async_get(
-            coordinates, actual_prompt,
+            coordinates, actual_trajactory,
         )
 
         if not exp_status.is_confidence or not exp_text:
@@ -104,9 +104,9 @@ def build_expert_context_forward(
 
         # Build prompt
         if output_prompt is not None:
-            full_prompt = output_prompt(task_prompt, exp_text, input_content, actual_prompt)
+            full_prompt = output_prompt(task_prompt, exp_text, input_content, actual_trajactory)
         else:
-            full_prompt = _default_prompt(task_prompt, exp_text, input_content, actual_prompt)
+            full_prompt = _default_prompt(task_prompt, exp_text, input_content, actual_trajactory)
 
         # Write-through
         st_setitem(

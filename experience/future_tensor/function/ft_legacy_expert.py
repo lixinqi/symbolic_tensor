@@ -306,7 +306,7 @@ if __name__ == "__main__":
     # ── Tests 4-7: Forward returns correct types ──
     print("Tests 4-7: Forward types")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def simple_get(coords, prompt):
+        async def simple_get(coords, trajactory):
             return (f"result_{coords}", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(2)])
@@ -334,7 +334,7 @@ if __name__ == "__main__":
         experience_tensor = make_tensor(experience_data, tmpdir)
 
         # ft_input's ft_async_get returns input content (= st_moe.input)
-        async def expert_get(coords, prompt):
+        async def expert_get(coords, trajactory):
             return ("Hello world in English", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, expert_get, [sympy.Integer(1)])
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     # ── Tests 12-14: ctx saves backward args ──
     print("Tests 12-14: ctx saves backward args")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("x", Status.confidence(1.0))
 
         ft_input = FutureTensor(tmpdir, dummy_get, [sympy.Integer(2)])
@@ -391,8 +391,8 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        async def prompt_cap_get(coords, prompt):
-            return (f"out:{prompt[:10]}", Status.confidence(0.8))
+        async def prompt_cap_get(coords, trajactory):
+            return (f"out:{trajactory[:10]}", Status.confidence(0.8))
 
         ft_input = FutureTensor(tmpdir, prompt_cap_get, [sympy.Integer(2)])
         output = ft_legacy_expert(
@@ -424,7 +424,7 @@ if __name__ == "__main__":
         experience_tensor.requires_grad_(True)
 
         # ft_input returns the input content
-        async def bw_get(coords, prompt):
+        async def bw_get(coords, trajactory):
             return ("Hello world in English", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, bw_get, [sympy.Integer(1)])

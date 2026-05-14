@@ -115,7 +115,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -210,15 +210,15 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         call_order = []
 
-        async def ok_get(coords, prompt):
+        async def ok_get(coords, trajactory):
             call_order.append("ok")
             return (f"ok{coords}", Status.confidence(1.0))
 
-        async def fail_get(coords, prompt):
+        async def fail_get(coords, trajactory):
             call_order.append("fail")
             return ("", Status.self_confidence_but_failed(0.5))
 
-        async def never_called_get(coords, prompt):
+        async def never_called_get(coords, trajactory):
             call_order.append("never")
             return ("never", Status.confidence(1.0))
 
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         call_order = []
 
-        async def overflow_get(coords, prompt):
+        async def overflow_get(coords, trajactory):
             call_order.append("overflow")
             return ("", Status.kContextOverflow)
 

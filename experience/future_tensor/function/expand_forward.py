@@ -69,9 +69,9 @@ def expand_forward(input: FutureTensor, target_shape: List[int]) -> FutureTensor
                 in_coords.append(out_coords[d])
         return in_coords
 
-    async def expanded_async_get(coordinates: List[int], prompt: str):
+    async def expanded_async_get(coordinates: List[int], trajactory: str):
         original_coords = map_coords(coordinates)
-        return await input.ft_async_get(original_coords, prompt)
+        return await input.ft_async_get(original_coords, trajactory)
 
     result = FutureTensor(
         input.ft_static_tensor.st_relative_to,
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         calls = []
 
-        async def tracking_get(coords, prompt):
+        async def tracking_get(coords, trajactory):
             calls.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 

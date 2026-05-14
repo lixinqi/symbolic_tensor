@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 print(f"    actual:   {actual}")
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     print("\nGroup 4: Lazy async_get")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def lazy_get(coords, prompt):
+        async def lazy_get(coords, trajactory):
             return (f"lazy_{coords[0]}", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, lazy_get, [sympy.Integer(2)])

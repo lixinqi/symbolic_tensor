@@ -185,9 +185,9 @@ def parse_terminal(text):
 def ft_coder_validator(body, max_iters=30):
     relative_to = body.ft_static_tensor.st_relative_to
 
-    async def _get(coords, prompt):
+    async def _get(coords, trajactory):
         i = coords[-1]
-        text, _ = await body.ft_async_get(coords, prompt)
+        text, _ = await body.ft_async_get(coords, trajactory)
         has_prompt, has_cmd = parse_terminal(text)
         lines = [l for l in text.split("\n") if l.strip()]
         # Check that "hello" appears in a non-prompt output line (not garbage in prompt)

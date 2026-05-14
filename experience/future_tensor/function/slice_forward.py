@@ -71,9 +71,9 @@ def slice_forward(input: FutureTensor, slices: List[Union[int, slice]]) -> Futur
 
     # Create new ft_async_get that delegates to input's ft_async_get
     # with remapped coordinates
-    async def sliced_async_get(coordinates: List[int], prompt: str) -> str:
+    async def sliced_async_get(coordinates: List[int], trajactory: str) -> str:
         original_coords = map_coords(coordinates)
-        return await input.ft_async_get(original_coords, prompt)
+        return await input.ft_async_get(original_coords, trajactory)
 
     result = FutureTensor(input.ft_static_tensor.st_relative_to, sliced_async_get, [sympy.Integer(s) for s in output_shape])
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     def make_forwarded_ft(shape, data_list, tmpdir):
         """Create a FutureTensor that's already materialized with given data."""
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         received = []
 
-        async def tracking_get(coords, prompt):
+        async def tracking_get(coords, trajactory):
             received.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 
@@ -362,7 +362,7 @@ if __name__ == "__main__":
         run_test("lazy 2D mapped [2] -> [1,2]", received2[2] == [1, 2])
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def step_get(coords, prompt):
+        async def step_get(coords, trajactory):
             return (str(coords), Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, step_get, [sympy.Integer(10)])

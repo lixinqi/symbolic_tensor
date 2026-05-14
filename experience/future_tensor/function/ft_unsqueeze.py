@@ -44,7 +44,7 @@ class FtUnsqueeze(torch.autograd.Function):
             # that any grad_fn chain is preserved rather than severed.
             shape = getattr(ctx, "output_shape", list(grad_output.shape))
             relative_to = ctx.input_ft.ft_static_tensor.st_relative_to
-            async def dummy_get(coords, prompt):
+            async def dummy_get(coords, trajactory):
                 return ("", Status.confidence(0.0))
             ref_ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
             if grad_output.numel() == 1:
@@ -136,7 +136,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -298,7 +298,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         received = []
 
-        async def tracking_get(coords, prompt):
+        async def tracking_get(coords, trajactory):
             received.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 
@@ -335,7 +335,7 @@ if __name__ == "__main__":
         run_test("73", read_ft_element(r, 4) == "r[4]")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def mid_get(coords, prompt):
+        async def mid_get(coords, trajactory):
             return (f"m{coords}", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, mid_get, [sympy.Integer(s) for s in [2, 3]])

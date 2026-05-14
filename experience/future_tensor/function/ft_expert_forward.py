@@ -104,7 +104,7 @@ def ft_expert_forward(
     _qkv_lock = threading.Lock()
 
     def _sync_expert_for_element(
-        coordinates: List[int], prompt: str,
+        coordinates: List[int], trajactory: str,
     ) -> Tuple[str, Status]:
         """Synchronous per-element expert: query, select, workspace, LLM, read output.
 
@@ -112,10 +112,10 @@ def ft_expert_forward(
         (inside TaskHandler / get_query_tensor) don't conflict with the
         outer event loop driving FutureTensor.ft_forward.
         """
-        # 1. Store the prompt into prompt_tensor for backward (= st_moe.context)
-        if isinstance(prompt, dict):
-            prompt = prompt.get("prompt", "")
-        st_setitem(prompt_tensor.ft_static_tensor, coordinates, prompt)
+        # 1. Store the trajactory into prompt_tensor for backward (= st_moe.context)
+        if isinstance(trajactory, dict):
+            trajactory = trajactory.get("trajactory", "")
+        st_setitem(prompt_tensor.ft_static_tensor, coordinates, trajactory)
 
         # 2. Build scalar_input from input[coordinates] (= st_moe.input)
         #    Coefficient-based check: input is always a FutureTensor, but may be
@@ -134,15 +134,15 @@ def ft_expert_forward(
                 [input_content] if input_content else ["TODO"],
                 input.ft_static_tensor.st_relative_to,
             )
-            scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
+            scalar_context = make_tensor([trajactory], input.ft_static_tensor.st_relative_to)
         else:
             scalar_input = make_tensor(
                 [input_content] if input_content else ["TODO"],
                 input.ft_static_tensor.st_relative_to,
             )
 
-            # 3. Build scalar_context from prompt (= st_moe.context, requires_grad=False)
-            scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
+            # 3. Build scalar_context from trajactory (= st_moe.context, requires_grad=False)
+            scalar_context = make_tensor([trajactory], input.ft_static_tensor.st_relative_to)
 
             # 4. Get query from scalar_input
             input_query = get_query_tensor(
@@ -223,7 +223,7 @@ def ft_expert_forward(
         return (output_content, Status.confidence(1.0))
 
     async def ft_expert_forward_async_get(
-        coordinates: List[int], prompt: str
+        coordinates: List[int], trajactory: str
     ) -> Tuple[str, Status]:
         # If output already computed at this coordinate, return from disk
         if output.ft_static_tensor.data[tuple(coordinates)].item() > 0:
@@ -233,12 +233,12 @@ def ft_expert_forward(
                 return (content, Status.confidence(1.0))
 
         # Ensure input is materialized at this coordinate (lazy pull + write-through)
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
+        if isinstance(trajactory, dict):
+            actual_trajactory = trajactory.get("trajactory", "")
         else:
-            actual_prompt = prompt
+            actual_trajactory = trajactory
         if not input.ft_forwarded and input.ft_static_tensor.data[tuple(coordinates)].item() == 0:
-            input_content, input_status = await input.ft_async_get(coordinates, actual_prompt)
+            input_content, input_status = await input.ft_async_get(coordinates, actual_trajactory)
             if input_content:
                 st_setitem(input.ft_static_tensor, coordinates, input_content,
                            coefficient=Status.convert_status_to_float(input_status))
@@ -246,7 +246,7 @@ def ft_expert_forward(
         import asyncio
         loop = asyncio.get_event_loop()
         result_content, result_status = await loop.run_in_executor(
-            None, _sync_expert_for_element, coordinates, prompt,
+            None, _sync_expert_for_element, coordinates, trajactory,
         )
 
         # Write-through: persist output so downstream ops can read from this tensor
@@ -349,7 +349,7 @@ if __name__ == "__main__":
     # ── Tests 4-7: Forward returns correct types and shapes ──
     print("Tests 4-7: Forward returns correct types and shapes")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def simple_get(coords, prompt):
+        async def simple_get(coords, trajactory):
             return (f"result_{coords}", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, simple_get, [sympy.Integer(2)])
@@ -378,7 +378,7 @@ if __name__ == "__main__":
         experience_tensor = make_tensor(experience_data, tmpdir)
 
         # Create a "none tensor" FutureTensor: ft_async_get returns empty with low coeff
-        async def none_get(coords, prompt):
+        async def none_get(coords, trajactory):
             return ("", Status.self_confidence_but_failed(0.0))
 
         ft_none_input = FutureTensor(tmpdir, none_get, [sympy.Integer(1)])
@@ -401,7 +401,7 @@ if __name__ == "__main__":
         experience_tensor = make_tensor(experience_data, tmpdir)
 
         # ft_input returns the input content that becomes st_moe.input
-        async def moe_get(coords, prompt):
+        async def moe_get(coords, trajactory):
             return ("Hello world in English", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, moe_get, [sympy.Integer(1)])
@@ -435,8 +435,8 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        async def prompt_capture_get(coords, prompt):
-            return (f"captured:{prompt[:10]}", Status.confidence(0.8))
+        async def prompt_capture_get(coords, trajactory):
+            return (f"captured:{trajactory[:10]}", Status.confidence(0.8))
 
         ft_input = FutureTensor(tmpdir, prompt_capture_get, [sympy.Integer(2)])
         output, prompt_tensor, indexes_map = ft_expert_forward(
@@ -472,7 +472,7 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        async def idx_get(coords, prompt):
+        async def idx_get(coords, trajactory):
             return (f"result_{coords}", Status.confidence(0.9))
 
         ft_input = FutureTensor(tmpdir, idx_get, [sympy.Integer(2)])
@@ -507,8 +507,8 @@ if __name__ == "__main__":
         ]
         experience_tensor = make_tensor(experience_data, tmpdir)
 
-        async def multi_get(coords, prompt):
-            return (f"element_{coords[0]}: {prompt[:20]}", Status.confidence(0.85))
+        async def multi_get(coords, trajactory):
+            return (f"element_{coords[0]}: {trajactory[:20]}", Status.confidence(0.85))
 
         ft_input = FutureTensor(tmpdir, multi_get, [sympy.Integer(3)])
         output, prompt_tensor, indexes_map = ft_expert_forward(

@@ -29,7 +29,7 @@ class ExpandGradFn(torch.autograd.Function):
         if not hasattr(grad_output, "ft_static_tensor"):
             shape = expanded_shape
             # Use a dummy FutureTensor to reconstruct attributes
-            async def dummy_get(coords, prompt):
+            async def dummy_get(coords, trajactory):
                 return ("", Status.confidence(0.0))
 
             ref_ft = FutureTensor(

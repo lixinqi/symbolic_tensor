@@ -51,13 +51,13 @@ def ft_validate_ctrl(input_ft: FutureTensor) -> FutureTensor:
     shape = input_ft.ft_capacity_shape
     relative_to = input_ft.ft_static_tensor.st_relative_to
 
-    async def validate_get(coordinates: List[int], prompt: str):
+    async def validate_get(coordinates: List[int], trajactory: str):
         if input_ft.ft_forwarded:
             _coeff, filepath = input_ft.ft_get_materialized_value(coordinates)
             with open(filepath, "r", encoding="utf-8") as f:
                 text = f.read()
         else:
-            text, _status = await input_ft.ft_async_get(coordinates, prompt)
+            text, _status = await input_ft.ft_async_get(coordinates, trajactory)
 
         # Extract first non-empty line
         lines = [l.strip() for l in text.split("\n") if l.strip()]

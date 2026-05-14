@@ -95,7 +95,7 @@ def make_forwarded_ft(shape, data_list, tmpdir):
             k *= s
         return [_unflatten(flat[i * k:(i + 1) * k], shp[1:]) for i in range(shp[0])]
 
-    async def dummy_get(coords, prompt):
+    async def dummy_get(coords, trajactory):
         return ("unused", Status.confidence(1.0))
 
     ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])

@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 print(f"    actual:   {actual}")
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])

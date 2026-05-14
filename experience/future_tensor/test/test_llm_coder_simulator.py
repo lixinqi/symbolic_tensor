@@ -122,9 +122,9 @@ def ft_coder_validator(
     """Validator: run iteration body, check if terminal shows command completion."""
     relative_to = iteration_body.ft_static_tensor.st_relative_to
 
-    async def _validator_async_get(coords, prompt):
+    async def _validator_async_get(coords, trajactory):
         i = coords[-1]
-        captured_text, _ = await iteration_body.ft_async_get(coords, prompt)
+        captured_text, _ = await iteration_body.ft_async_get(coords, trajactory)
 
         if i >= 1 and check_terminator_last_line(captured_text):
             return (captured_text, Status.confidence(1.0))

@@ -271,7 +271,7 @@ def _tensor_to_future(tensor: torch.Tensor, reference_ft) -> torch.Tensor:
     shape = list(tensor.shape)
     relative_to = reference_ft.ft_static_tensor.st_relative_to
 
-    async def dummy_get(coords, prompt):
+    async def dummy_get(coords, trajactory):
         return ("", Status.confidence(0.0))
 
     ft = FutureTensor(relative_to, dummy_get, [sympy.Integer(s) for s in shape])
@@ -310,8 +310,8 @@ if __name__ == "__main__":
 
     print("Test 1: FutureTensor is a scalar bfloat16 torch.Tensor")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def echo_get(coordinates, prompt):
-            return (f"output({coordinates}, {prompt})", Status.confidence(0.9))
+        async def echo_get(coordinates, trajactory):
+            return (f"output({coordinates}, {trajactory})", Status.confidence(0.9))
 
         ft = FutureTensor(tmpdir, echo_get, [sympy.Integer(3)])
         run_test("FT is torch.Tensor", isinstance(ft, torch.Tensor))
@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
     print("Test 2: ft_get_materialized_value / ft_reset_materialized_value")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def simple_get(coordinates, prompt):
+        async def simple_get(coordinates, trajactory):
             return (f"content_{coordinates[0]}", Status.confidence(0.8))
 
         ft = FutureTensor(tmpdir, simple_get, [sympy.Integer(2)])
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         counter = [0]
 
-        async def counting_get(coordinates, prompt):
+        async def counting_get(coordinates, trajactory):
             counter[0] += 1
             return ("x", Status.confidence(1.0))
 
@@ -389,7 +389,7 @@ if __name__ == "__main__":
 
     print("Test 5: FtMean")
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(4)])

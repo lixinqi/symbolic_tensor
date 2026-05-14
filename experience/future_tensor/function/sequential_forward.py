@@ -41,10 +41,10 @@ def sequential_forward(
                 f"expected {expected_shape}"
             )
 
-    async def sequential_async_get(coordinates: List[int], prompt: str):
+    async def sequential_async_get(coordinates: List[int], trajactory: str):
         last_result = None
         for inp in inputs:
-            result = await inp.ft_async_get(coordinates, prompt)
+            result = await inp.ft_async_get(coordinates, trajactory)
             status = result[1]
             if not status.is_confidence:
                 return result

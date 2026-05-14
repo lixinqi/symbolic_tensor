@@ -61,11 +61,11 @@ def slice_backward(
                 out_coords.append(indices.index(c))
         return out_coords
 
-    async def scatter_async_get(coordinates: List[int], prompt: str):
+    async def scatter_async_get(coordinates: List[int], trajactory: str):
         out_coords = reverse_map(coordinates)
         if out_coords is None:
             return ("", Status.confidence(0.0))  # Zero/empty for positions not in the slice
-        return await grad_output.ft_async_get(out_coords, prompt)
+        return await grad_output.ft_async_get(out_coords, trajactory)
 
     result = FutureTensor(grad_output.ft_static_tensor.st_relative_to, scatter_async_get, [sympy.Integer(s) for s in original_shape])
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         received = []
 
-        async def lazy_grad_get(coords, prompt):
+        async def lazy_grad_get(coords, trajactory):
             received.append(coords)
             return (f"lazy_{coords}", Status.confidence(1.0))
 
@@ -330,7 +330,7 @@ if __name__ == "__main__":
         run_test("lazy backward elem7 empty", read_ft_element(r, 7) == "")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def lazy_2d_get(coords, prompt):
+        async def lazy_2d_get(coords, trajactory):
             return (f"g{coords}", Status.confidence(1.0))
 
         grad = FutureTensor(tmpdir, lazy_2d_get, [sympy.Integer(2), sympy.Integer(2)])

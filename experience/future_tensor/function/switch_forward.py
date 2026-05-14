@@ -49,7 +49,7 @@ def switch_forward(
                 f"expected {expected_shape}"
             )
 
-    async def switch_async_get(coordinates: List[int], prompt: str):
+    async def switch_async_get(coordinates: List[int], trajactory: str):
         # Pull the condition at coordinates (broadcast to condition's shape).
         cond_shape = condition.ft_capacity_shape or []
         if len(cond_shape) == len(coordinates):
@@ -63,7 +63,7 @@ def switch_forward(
         condition_result = await condition.ft_async_get(
             cond_coords,
             {
-                "prompt": prompt,
+                "trajactory": trajactory,
                 "symbols": symbols,
                 "summaries": summaries,
                 "descriptions": descriptions,
@@ -77,7 +77,7 @@ def switch_forward(
                 selected_branch = branches[i]
                 break
 
-        return await selected_branch.ft_async_get(coordinates, prompt)
+        return await selected_branch.ft_async_get(coordinates, trajactory)
 
     result = FutureTensor(
         branches[0].ft_static_tensor.st_relative_to,

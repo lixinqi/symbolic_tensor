@@ -44,9 +44,9 @@ def unsqueeze_forward(input: FutureTensor, dim: int) -> FutureTensor:
         # out_coords[dim] is always 0 (since that dim has size 1)
         return out_coords[:dim] + out_coords[dim + 1:]
 
-    async def unsqueezed_async_get(coordinates: List[int], prompt: str) -> str:
+    async def unsqueezed_async_get(coordinates: List[int], trajactory: str) -> str:
         original_coords = map_coords(coordinates)
-        return await input.ft_async_get(original_coords, prompt)
+        return await input.ft_async_get(original_coords, trajactory)
 
     result = FutureTensor(input.ft_static_tensor.st_relative_to, unsqueezed_async_get, [sympy.Integer(s) for s in output_shape])
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         received = []
 
-        async def tracking_get(coords, prompt):
+        async def tracking_get(coords, trajactory):
             received.append(coords)
             return (f"val_{coords}", Status.confidence(1.0))
 
@@ -316,7 +316,7 @@ if __name__ == "__main__":
         run_test("lazy dim=1 result [4]", read_ft_element(r, 4) == "r[4]")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def simple_get(coords, prompt):
+        async def simple_get(coords, trajactory):
             return (f"x{coords}", Status.confidence(1.0))
 
         ft = FutureTensor(tmpdir, simple_get, [sympy.Integer(2), sympy.Integer(3)])

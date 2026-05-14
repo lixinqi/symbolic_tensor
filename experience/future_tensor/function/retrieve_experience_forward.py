@@ -84,7 +84,7 @@ def retrieve_experience_forward(
     _qkv_lock = threading.Lock()
 
     async def _async_get(
-        coordinates: List[int], prompt: str,
+        coordinates: List[int], trajactory: str,
     ) -> Tuple[str, Status]:
         # If already computed at this coordinate, read from disk
         if output.ft_static_tensor.data[tuple(coordinates)].item() > 0:
@@ -96,10 +96,10 @@ def retrieve_experience_forward(
                 return (content, Status.confidence(1.0))
 
         # Unwrap prompt
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
+        if isinstance(trajactory, dict):
+            actual_trajactory = trajactory.get("trajactory", "")
         else:
-            actual_prompt = prompt
+            actual_trajactory = trajactory
 
         # Materialize input at this coordinate if needed
         if (
@@ -107,7 +107,7 @@ def retrieve_experience_forward(
             and input.ft_static_tensor.data[tuple(coordinates)].item() == 0
         ):
             input_content_result, input_status = await input.ft_async_get(
-                coordinates, actual_prompt,
+                coordinates, actual_trajactory,
             )
             if input_content_result:
                 st_setitem(

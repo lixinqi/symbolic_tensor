@@ -54,7 +54,7 @@ def expand_backward(
             if input_shape[in_d] == 1 and expanded_shape[d] > 1:
                 expanded_dims.append(d)
 
-    async def reduced_async_get(coordinates: List[int], prompt: str):
+    async def reduced_async_get(coordinates: List[int], trajactory: str):
         """Sum over all expanded positions that map to these input coords."""
         # For each expanded dim, iterate over all positions in that dim;
         # for non-expanded dims, use the coordinate directly.
@@ -72,7 +72,7 @@ def expand_backward(
                 else:
                     out_coords[d] = coordinates[in_d]
 
-        return await grad_output.ft_async_get(out_coords, prompt)
+        return await grad_output.ft_async_get(out_coords, trajactory)
 
     result = FutureTensor(
         grad_output.ft_static_tensor.st_relative_to,
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             return f.read()
 
     def make_forwarded_ft(shape, data_list, tmpdir, coeffs=None):
-        async def dummy_get(coords, prompt):
+        async def dummy_get(coords, trajactory):
             return ("unused", Status.confidence(1.0))
         ft = FutureTensor(tmpdir, dummy_get, [sympy.Integer(s) for s in shape])
         nested = _unflatten_data(data_list, shape)
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     print("\nGroup 4: Lazy reduce")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        async def lazy_get(coords, prompt):
+        async def lazy_get(coords, trajactory):
             return (f"lazy_{coords}", Status.confidence(0.8))
 
         grad = FutureTensor(tmpdir, lazy_get, [sympy.Integer(4), sympy.Integer(3)])

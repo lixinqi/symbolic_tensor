@@ -106,7 +106,7 @@ def recurrent_forward(
     )
 
     async def recurrent_forward_async_get(
-        coordinates: List[int], prompt: str
+        coordinates: List[int], trajactory: str
     ) -> Tuple[str, Status]:
         prefix_coords = tuple(coordinates)
 
@@ -131,7 +131,7 @@ def recurrent_forward(
 
         # Write initial prompt into prompt_tensor at [*coordinates, 0] only on first start
         if start_i == 0:
-            st_setitem(prompt_tensor.ft_static_tensor, [*coordinates, 0], prompt)
+            st_setitem(prompt_tensor.ft_static_tensor, [*coordinates, 0], trajactory)
 
         last_i = start_i
         terminal_status = None  # set if we hit a terminal status (confidence etc.)
@@ -310,8 +310,8 @@ if __name__ == "__main__":
         # recurrent_dim=2, fail first, ok second
         call_log = []
 
-        async def logged_get(coords, prompt):
-            call_log.append((list(coords), prompt))
+        async def logged_get(coords, trajactory):
+            call_log.append((list(coords), trajactory))
             i = coords[-1]
             if i == 0:
                 return ("bad_output", Status.self_confidence_but_failed(0.3))
@@ -456,7 +456,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # kContextOverflow returns early
-        async def overflow_get(coords, prompt):
+        async def overflow_get(coords, trajactory):
             return ("overflow_content", Status.kContextOverflow)
 
         inp = FutureTensor(tmpdir, overflow_get, [sympy.Integer(2)])
@@ -470,7 +470,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # kConfidenceNotBounded returns with confidence(1.0)
-        async def not_bounded_get(coords, prompt):
+        async def not_bounded_get(coords, trajactory):
             return ("unbounded_output", Status.kConfidenceNotBounded)
 
         inp = FutureTensor(tmpdir, not_bounded_get, [sympy.Integer(2)])
@@ -738,7 +738,7 @@ if __name__ == "__main__":
         from experience.future_tensor.function.slice_forward import slice_forward
 
         # prefix [4], recurrent_dim=2 -> shape [4, 2]
-        async def comp_get(coords, prompt):
+        async def comp_get(coords, trajactory):
             prefix, i = coords
             return (f"p{prefix}_i{i}", Status.confidence(0.8))
 
@@ -759,7 +759,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         from experience.future_tensor.function.unsqueeze_forward import unsqueeze_forward
 
-        async def unsq_get(coords, prompt):
+        async def unsq_get(coords, trajactory):
             i = coords[-1]
             return (f"item_{i}", Status.confidence(0.85))
 
@@ -778,7 +778,7 @@ if __name__ == "__main__":
         from experience.future_tensor.function.slice_forward import slice_forward
 
         # 2D prefix + recurrent: shape [3, 3, 2]
-        async def big_get(coords, prompt):
+        async def big_get(coords, trajactory):
             r, c, i = coords
             if i == 0:
                 return (f"r{r}c{c}_i0", Status.self_confidence_but_failed(0.3))
