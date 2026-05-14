@@ -188,6 +188,7 @@ def ft_coder_validator(body, max_iters=30):
     v = FutureTensor(relative_to, _get,
                      [sympy.Integer(1), sympy.Integer(max_iters)])
     v.ft_capacity_shape = [1, max_iters]
+    v.requires_grad_(True)
     return v
 
 
@@ -310,7 +311,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     body = ft_sequential(switched, ft_sleep(expanded, 0.5), capture)
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
 
-    validator.requires_grad_(True)
     sds = torch.ones((), dtype=torch.bfloat16, requires_grad=True)
     output = ft_recurrent(need_reflection(validator, sds), step_budget=1)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
