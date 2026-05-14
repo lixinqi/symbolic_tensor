@@ -74,10 +74,12 @@ class FtExpert(torch.autograd.Function):
         retrieval_method: Optional[RetrievalMethodCallable] = None,
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
+        skip_query_gen: bool = False,
     ) -> FutureTensor:
         output, prompt_tensor, indexes_map = ft_expert_forward(
             input, experience, output_prompt, query_prompt, task_prompt, topk,
             retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env,
+            skip_query_gen=skip_query_gen,
         )
 
         # Save for backward — FutureTensors now, backward uses ._tensor after ft_forward
@@ -156,7 +158,7 @@ class FtExpert(torch.autograd.Function):
             "selected_experience_qkv_indexes_list": selected_experience_qkv_indexes_list,
             "llm_method": ctx.llm_method, "llm_env": ctx.llm_env,
         }):
-            return None, None, None, None, None, None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None, None, None, None, None, None
 
         # Call st_moe_backward with direct mapping:
         #   input = input_st (ft_expert.input)
@@ -189,8 +191,8 @@ class FtExpert(torch.autograd.Function):
 
         # Return grads for (input, experience, output_prompt, query_prompt,
         #                    grad_input_prompt, grad_exp_key_prompt, grad_exp_value_prompt,
-        #                    task_prompt, topk, retrieval_method, llm_method, llm_env)
-        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None
+        #                    task_prompt, topk, retrieval_method, llm_method, llm_env, skip_query_gen)
+        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None, None
 
 
 def ft_expert(
@@ -206,6 +208,7 @@ def ft_expert(
     retrieval_method: Optional[RetrievalMethodCallable] = None,
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
+    skip_query_gen: bool = False,
 ) -> FutureTensor:
     """FutureTensor Expert with autograd support.
 
@@ -235,7 +238,7 @@ def ft_expert(
     return FtExpert.apply(
         input, experience, output_prompt, query_prompt,
         grad_input_prompt, grad_exp_key_prompt, grad_exp_value_prompt,
-        task_prompt, topk, retrieval_method, llm_method, llm_env,
+        task_prompt, topk, retrieval_method, llm_method, llm_env, skip_query_gen,
     )
 
 

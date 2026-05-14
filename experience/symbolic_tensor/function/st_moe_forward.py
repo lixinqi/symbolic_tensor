@@ -10,7 +10,7 @@ from experience.symbolic_tensor.tensor_util.slice_view import slice_view
 from experience.symbolic_tensor.tensor_util.slice_tensor import slice_tensor
 from experience.symbolic_tensor.tensor_util.dump_view import dump_view
 from experience.symbolic_tensor.function.get_query_tensor import get_query_tensor, default_prompt_for_query
-from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes, default_retrieval_method
+from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes, default_retrieval_method, multi_similarity
 from experience.llm_client.agent_task import AgentTask
 from experience.llm_client.task_handler import TaskHandler
 
@@ -147,6 +147,7 @@ def st_moe_forward(
     retrieval_method: Optional[Callable[[str, str], float]] = None,
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
+    skip_query_gen: bool = False,
 ) -> Tuple[torch.Tensor, Any]:
     """
     Forward pass of the symbolic transform: translate input to output using
@@ -181,8 +182,14 @@ def st_moe_forward(
     # Create TODO-filled output tensor
     output = todo_tensor_like(input)
 
-    # Generate input query keywords
-    input_query = get_query_tensor(input, query_prompt=query_prompt, task_prompt=task_prompt, llm_method=llm_method, llm_env=llm_env)
+    if skip_query_gen:
+        # Use input content directly as query (no LLM keyword generation)
+        input_query = input
+        effective_retrieval = retrieval_method or multi_similarity
+    else:
+        # Generate input query keywords
+        input_query = get_query_tensor(input, query_prompt=query_prompt, task_prompt=task_prompt, llm_method=llm_method, llm_env=llm_env)
+        effective_retrieval = retrieval_method
 
     # Phase 1: Build requests per scalar element
     coords_list = _scalar_slice_indices(input.size())
@@ -209,12 +216,17 @@ def st_moe_forward(
             continue
 
         # Select top-k experience entries by similarity
-        select_experience_query_indexes = select_qkv_indexes(
+        select_experience_query_indexes, cold_start = select_qkv_indexes(
             experience, batch_input_file_content, topk,
-            retrieval_method=retrieval_method,
+            retrieval_method=effective_retrieval,
         )
         # Record selected indexes (list of tensors, one per dim)
         flat_selected_indexes.append(select_experience_query_indexes)
+
+        # Cold-start: no meaningful experience — skip LLM for this element
+        if cold_start:
+            continue
+
         # Replace last index tensor with full slice to keep q/k/v together
         select_experience_indexes = _replace_last_tensor_with_full_slice(
             select_experience_query_indexes, experience.size()[-1]

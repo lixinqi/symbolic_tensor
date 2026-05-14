@@ -41,6 +41,10 @@ def tmux_send_ctrl_forward(
         else:
             ctrl, _status = await input_ft.ft_async_get(coordinates, prompt)
 
+        # Guard: never send empty/whitespace ctrl sequence to the terminal
+        if not ctrl.strip():
+            return ("", Status.confidence(1.0))
+
         # Read instance_id from session_name_ft (broadcast coordinates)
         session_coords = _broadcast_coords(coordinates, session_shape, shape)
         if session_name_ft.ft_forwarded:

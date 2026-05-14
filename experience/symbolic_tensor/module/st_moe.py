@@ -45,6 +45,7 @@ class StMoeModule(nn.Module):
         topk: int = 16,
         retrieval_method: Optional[Callable] = None,
         llm_env: Optional[Dict[str, str]] = None,
+        skip_query_gen: bool = False,
     ):
         super().__init__()
         self.output_prompt = output_prompt
@@ -56,6 +57,7 @@ class StMoeModule(nn.Module):
         self.topk = topk
         self.retrieval_method = retrieval_method
         self.llm_env = llm_env
+        self.skip_query_gen = skip_query_gen
         self._experience_dir = tempfile.mkdtemp()
         self.experience = make_none_tensor(experience_shape, self._experience_dir)
         self.experience.requires_grad_(True)
@@ -69,7 +71,7 @@ class StMoeModule(nn.Module):
             self.output_prompt, self.query_prompt, self.grad_input_prompt,
             self.grad_exp_key_prompt, self.grad_exp_value_prompt,
             self.task_prompt, self.topk, self.retrieval_method,
-            "raw_llm_api", self.llm_env,
+            "raw_llm_api", self.llm_env, self.skip_query_gen,
         )
 
 

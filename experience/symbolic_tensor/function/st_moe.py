@@ -37,11 +37,13 @@ class StMoe(torch.autograd.Function):
         retrieval_method: Optional[Callable] = None,
         llm_method: str = "raw_llm_api",
         llm_env: Optional[Dict[str, str]] = None,
+        skip_query_gen: bool = False,
     ) -> Tuple[torch.Tensor, Any]:
         output, selected_experience_qkv_indexes_list = st_moe_forward(
             input, experience, context=context,
             output_prompt=output_prompt, query_prompt=query_prompt, task_prompt=task_prompt, topk=topk,
-            retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env
+            retrieval_method=retrieval_method, llm_method=llm_method, llm_env=llm_env,
+            skip_query_gen=skip_query_gen,
         )
 
         # Save tensors for backward
@@ -124,8 +126,8 @@ class StMoe(torch.autograd.Function):
 
         # Return grads for (input, experience, context, output_prompt, query_prompt, grad_input_prompt,
         #                    grad_exp_key_prompt, grad_exp_value_prompt, task_prompt, topk,
-        #                    retrieval_method, llm_method, llm_env)
-        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None, None
+        #                    retrieval_method, llm_method, llm_env, skip_query_gen)
+        return grad_input, grad_experience, None, None, None, None, None, None, None, None, None, None, None, None
 
 
 st_moe = StMoe.apply

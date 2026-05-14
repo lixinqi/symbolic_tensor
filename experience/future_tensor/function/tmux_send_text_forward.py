@@ -54,6 +54,10 @@ def tmux_send_text_forward(
         else:
             text, _status = await input_ft.ft_async_get(coordinates, prompt)
 
+        # Guard: never send empty/whitespace text to the terminal
+        if not text.strip():
+            return ("", Status.confidence(1.0))
+
         # Read instance_id from session_name_ft (broadcast coordinates)
         session_coords = _broadcast_coords(coordinates, session_shape, shape)
         if session_name_ft.ft_forwarded:

@@ -32,7 +32,7 @@ from experience.symbolic_tensor.tensor_util.slice_tensor import slice_tensor
 from experience.symbolic_tensor.tensor_util.dump_view import dump_view
 from experience.symbolic_tensor.tensor_util.make_tensor import make_tensor
 from experience.symbolic_tensor.function.get_query_tensor import get_query_tensor
-from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes
+from experience.symbolic_tensor.function.select_qkv_indexes import select_qkv_indexes, multi_similarity
 from experience.symbolic_tensor.function.st_moe_forward import (
     default_prompt_for_output,
     _copy_back_to_storage_view,
@@ -54,6 +54,7 @@ def ft_expert_forward(
     retrieval_method: Optional[Callable[[str, str], float]] = None,
     llm_method: str = "raw_llm_api",
     llm_env: Optional[Dict[str, str]] = None,
+    skip_query_gen: bool = False,
 ) -> Tuple[FutureTensor, FutureTensor, Any]:
     """Async FutureTensor version of st_moe_forward.
 
@@ -124,33 +125,50 @@ def ft_expert_forward(
             input_content = _read_file_content(input.ft_static_tensor, flat_idx)
         else:
             input_content = ""
-        scalar_input = make_tensor(
-            [input_content] if input_content else ["TODO"],
-            input.ft_static_tensor.st_relative_to,
-        )
 
-        # 3. Build scalar_context from prompt (= st_moe.context, requires_grad=False)
-        scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
+        if skip_query_gen:
+            # Use input_content directly as query (no LLM keyword generation)
+            batch_input_query_file_content = input_content or ""
+            effective_retrieval = retrieval_method or multi_similarity
+            scalar_input = make_tensor(
+                [input_content] if input_content else ["TODO"],
+                input.ft_static_tensor.st_relative_to,
+            )
+            scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
+        else:
+            scalar_input = make_tensor(
+                [input_content] if input_content else ["TODO"],
+                input.ft_static_tensor.st_relative_to,
+            )
 
-        # 4. Get query from scalar_input
-        input_query = get_query_tensor(
-            scalar_input, query_prompt=query_prompt,
-            task_prompt=task_prompt, llm_method=llm_method, llm_env=llm_env,
-        )
+            # 3. Build scalar_context from prompt (= st_moe.context, requires_grad=False)
+            scalar_context = make_tensor([prompt], input.ft_static_tensor.st_relative_to)
 
-        # 5. Read query file content
-        batch_input_query_file_content = _read_file_content(input_query, 0)
+            # 4. Get query from scalar_input
+            input_query = get_query_tensor(
+                scalar_input, query_prompt=query_prompt,
+                task_prompt=task_prompt, llm_method=llm_method, llm_env=llm_env,
+            )
+
+            # 5. Read query file content
+            batch_input_query_file_content = _read_file_content(input_query, 0)
+            effective_retrieval = retrieval_method
+
         if batch_input_query_file_content is None:
             _selected_indexes_map[tuple(coordinates)] = []
             return ("", Status.self_confidence_but_failed(0.1))
 
         # 6. Select topk experience entries (lock: creates cached qkv_data_view dir)
         with _qkv_lock:
-            select_experience_query_indexes = select_qkv_indexes(
+            select_experience_query_indexes, cold_start = select_qkv_indexes(
                 experience, batch_input_query_file_content, topk,
-                retrieval_method=retrieval_method,
+                retrieval_method=effective_retrieval,
             )
         _selected_indexes_map[tuple(coordinates)] = select_experience_query_indexes
+
+        # Cold-start: no meaningful experience — skip LLM entirely
+        if cold_start:
+            return ("", Status.self_confidence_but_failed(0.1))
 
         # Replace last index tensor with full slice to keep q/k/v
         select_experience_indexes = _replace_last_tensor_with_full_slice(

@@ -24,6 +24,23 @@ def default_retrieval_method(query_file_content: str, key_file_content: str) -> 
     return len(intersection) / len(union)
 
 
+def multi_similarity(query_content: str, key_content: str) -> float:
+    """Token-level similarity: max of Jaccard and containment.
+
+    Better than line-level Jaccard for raw content comparison
+    (no LLM keyword generation needed).
+    """
+    q_tokens = set(query_content.split())
+    k_tokens = set(key_content.split())
+    if not q_tokens and not k_tokens:
+        return 0.0
+    inter = q_tokens & k_tokens
+    union = q_tokens | k_tokens
+    jaccard = len(inter) / len(union) if union else 0.0
+    containment = len(inter) / len(k_tokens) if k_tokens else 0.0
+    return max(jaccard, containment)
+
+
 def _filter_last_coordinate_eq_zero(view_dir: str) -> List[str]:
     """Walk the view directory and return paths to data files where the last coordinate is 0.
 
@@ -77,7 +94,7 @@ def select_qkv_indexes(
     topk: int,
     retrieval_method: Optional[Callable[[str, str], float]] = None,
     random_noise: bool = True,
-) -> List[torch.Tensor]:
+) -> Tuple[List[torch.Tensor], bool]:
     """
     Select top-k entries from an Experience tensor by similarity,
     optionally adding Gaussian noise to similarity scores for exploration.
@@ -92,8 +109,11 @@ def select_qkv_indexes(
             Default True. Set False for deterministic test cases.
 
     Returns:
-        A list of torch.Tensor[int], one per dimension of the tensor
-        (excluding the last qkv dimension), containing the selected indices.
+        A tuple of (indexes, cold_start):
+        - indexes: list of torch.Tensor[int], one per dimension of the tensor
+          (excluding the last qkv dimension), containing the selected indices.
+        - cold_start: True when all Q-entry files were empty (no meaningful
+          experience available), False otherwise.
     """
     original_tensor_dir = os.path.join(
         weight_tensor.st_relative_to, weight_tensor.st_tensor_uid
@@ -160,8 +180,8 @@ def select_qkv_indexes(
                 result.append(torch.zeros(topk, dtype=torch.long))
             else:
                 result.append(torch.randint(0, weight_tensor.size(d), (topk,)))
-        return result
-    return ret
+        return result, True
+    return ret, False
 
 
 if __name__ == "__main__":
@@ -193,11 +213,12 @@ if __name__ == "__main__":
         # shape is [2, 3]
 
         # Query for python-related keywords (random_noise=False for deterministic test)
-        result = select_qkv_indexes(t, "python\nfunction", topk=1, random_noise=False)
+        result, cold_start = select_qkv_indexes(t, "python\nfunction", topk=1, random_noise=False)
         run_test("Returns list of tensors", isinstance(result, list))
         run_test("Two index tensors (2 dims)", len(result) == 2)
         # Row 0 has "python\nfunction\ndef" -> highest Jaccard with ["python", "function"]
         run_test("First dim index is 0", result[0].item() == 0)
+        run_test("Not cold-start", cold_start is False)
         print(f"    Selected indices: dim0={result[0].tolist()}, dim1={result[1].tolist()}")
 
     # Test 2: Top-2 selection
@@ -210,13 +231,14 @@ if __name__ == "__main__":
         ]
         t = make_tensor(data, tmpdir)
 
-        result = select_qkv_indexes(t, "alpha\nbeta", topk=2, random_noise=False)
+        result, cold_start = select_qkv_indexes(t, "alpha\nbeta", topk=2, random_noise=False)
         run_test("Two index tensors", len(result) == 2)
         run_test("Two results each", len(result[0]) == 2)
         # Row 0 has jaccard(["alpha","beta"], ["alpha","beta"]) = 1.0
         # Row 2 has jaccard(["alpha","beta"], ["alpha","gamma","epsilon"]) = 1/4 = 0.25
         # Row 1 has jaccard(["alpha","beta"], ["gamma","delta"]) = 0.0
         run_test("Best match is row 0", result[0][0].item() == 0)
+        run_test("Not cold-start", cold_start is False)
         print(f"    Selected: dim0={result[0].tolist()}, dim1={result[1].tolist()}")
 
     # Test 3: Cached view (second call reuses)
@@ -226,9 +248,9 @@ if __name__ == "__main__":
         t = make_tensor(data, tmpdir)
 
         view_dir = os.path.join(tmpdir, t.st_tensor_uid, "qkv_data_view")
-        result1 = select_qkv_indexes(t, "hello", topk=1, random_noise=False)
+        result1, _ = select_qkv_indexes(t, "hello", topk=1, random_noise=False)
         run_test("View dir created", os.path.isdir(view_dir))
-        result2 = select_qkv_indexes(t, "world", topk=1, random_noise=False)
+        result2, _ = select_qkv_indexes(t, "world", topk=1, random_noise=False)
         run_test("View dir still exists (cached)", os.path.isdir(view_dir))
         run_test("Same results shape", len(result1) == len(result2))
 
@@ -237,7 +259,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         data = [["keyword", "k", "v"]]
         t = make_tensor(data, tmpdir)
-        result = select_qkv_indexes(t, "", topk=1, random_noise=False)
+        result, cold_start = select_qkv_indexes(t, "", topk=1, random_noise=False)
         run_test("Still returns results", len(result) == 2)
 
     # Test 5: Random noise changes selection order
@@ -251,7 +273,7 @@ if __name__ == "__main__":
         t = make_tensor(data, tmpdir)
 
         # With random_noise=True, results may vary across runs
-        result_noisy = select_qkv_indexes(t, "alpha\nbeta", topk=2, random_noise=True)
+        result_noisy, cold_start = select_qkv_indexes(t, "alpha\nbeta", topk=2, random_noise=True)
         run_test("Noisy result still returns 2 index tensors", len(result_noisy) == 2)
         run_test("Noisy result still returns topk=2 entries", len(result_noisy[0]) == 2)
         print(f"    Noisy selected: dim0={result_noisy[0].tolist()}, dim1={result_noisy[1].tolist()}")
@@ -268,7 +290,7 @@ if __name__ == "__main__":
         def exact_match(query_content: str, key_content: str) -> float:
             return 1.0 if query_content.strip() == key_content.strip() else 0.0
 
-        result = select_qkv_indexes(
+        result, cold_start = select_qkv_indexes(
             t, "java\nclass\nobject", topk=1,
             retrieval_method=exact_match, random_noise=False,
         )

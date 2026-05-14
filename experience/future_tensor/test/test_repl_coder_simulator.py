@@ -32,6 +32,9 @@ from experience.future_tensor.function.ft_expert import ft_expert
 from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_expand import ft_expand
 from experience.future_tensor.function.ft_mean import ft_mean
+from experience.future_tensor.function.ft_first_line import ft_first_line
+from experience.future_tensor.function.ft_terminal_idle_gate import ft_terminal_idle_gate
+from experience.future_tensor.function.ft_validate_ctrl import ft_validate_ctrl
 from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
     need_reflection,
@@ -65,6 +68,9 @@ class ClaudeCodeMock:
 
     Knows nothing about the pipeline, tensors, autograd, or ft_forward.
     Only provides observe_and_update() to be called from the harness loop.
+
+    NEVER interacts with the terminal directly — only observes and writes
+    experience entries. All terminal actions come through the pipeline.
     """
 
     def __init__(self, session_name, decision_exp, cmd_exp, n_experience=8):
@@ -83,7 +89,11 @@ class ClaudeCodeMock:
                 break
 
     def observe_and_update(self):
-        """Look at the terminal. Write experience based on what we see."""
+        """Look at the terminal. Write experience based on what we see.
+
+        Only writes experience entries — NEVER sends keys or interacts
+        with the terminal directly.
+        """
         captured = self._pane.capture_pane()
         lines = [l for l in captured if l.strip()]
         if not lines:
@@ -92,8 +102,12 @@ class ClaudeCodeMock:
         has_prompt, has_cmd = self._parse(last_line)
 
         if has_cmd:
-            self._teach_decision(last_line, "命令已输入\n提示符后有命令", "ctrl:按回车执行")
-            self._teach_cmd("ctrl:按回车执行", "ctrl\nEnter", "Enter")
+            # Reinforce ctrl heavily: write 3 entries per observation so
+            # retrieval (topk=2) overwhelmingly selects ctrl examples.
+            for _ in range(min(3, self.n_experience - self._di)):
+                self._teach_decision(last_line, "命令已输入\n提示符后有命令", "ctrl:按回车执行")
+            for _ in range(min(3, self.n_experience - self._ci)):
+                self._teach_cmd("ctrl:按回车执行", "ctrl\nEnter", "Enter")
         elif has_prompt:
             self._teach_decision(last_line, "空提示符\n没有命令", "text:输入shell命令")
             self._teach_cmd("text:输入shell命令", "text\nshell命令", "echo hello world")
@@ -164,7 +178,10 @@ def ft_coder_validator(body, max_iters=30):
         text, _ = await body.ft_async_get(coords, prompt)
         has_prompt, has_cmd = parse_terminal(text)
         lines = [l for l in text.split("\n") if l.strip()]
-        if i >= 1 and has_prompt and not has_cmd and len(lines) >= 3:
+        # Check that "hello" appears in a non-prompt output line (not garbage in prompt)
+        output_lines = [l for l in lines if "λ" not in l and "$ " not in l and not l.rstrip().endswith("$")]
+        has_hello_output = any("hello" in l.lower() for l in output_lines)
+        if i >= 1 and has_prompt and not has_cmd and len(lines) >= 3 and has_hello_output:
             return (text, Status.confidence(1.0))
         return ("", Status.self_confidence_but_failed(0.9))
 
@@ -202,16 +219,97 @@ with tempfile.TemporaryDirectory() as tmpdir:
     decision_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
     cmd_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
 
-    # Expert chain → switch → body → validator → recurrent
-    decision = ft_expert(capture, decision_exp,
+    # ─── Inline output_prompt: reads files, embeds content in prompt text ───
+    # raw_llm_api cannot read file paths from the default prompt.
+    # This callable reads workspace files and puts content inline so the LLM
+    # actually sees the experience entries and input text.
+    def _read_exp_entries(exp_view_dir):
+        """Read experience QKV entries from disk. Returns list of (query, key, value) tuples."""
+        if not os.path.isdir(exp_view_dir):
+            return []
+        # Experience layout: <coord>/0/data.txt=query, <coord>/1/data.txt=key, <coord>/2/data.txt=value
+        entries = {}
+        for root, dirs, files in os.walk(exp_view_dir):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                rel = os.path.relpath(fpath, exp_view_dir)
+                parts = rel.replace("\\", "/").split("/")
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                except Exception:
+                    content = ""
+                # parts like ["0", "0", "data.txt"] → coord="0", qkv_idx=0
+                if len(parts) >= 3:
+                    coord = parts[0]
+                    qkv_idx = int(parts[1])
+                    if coord not in entries:
+                        entries[coord] = ["", "", ""]
+                    entries[coord][qkv_idx] = content
+        return [(e[0], e[1], e[2]) for e in entries.values() if any(e)]
+
+    def _read_input_text(input_view_dir):
+        """Read input text from the workspace."""
+        if not os.path.isdir(input_view_dir):
+            return ""
+        for root, dirs, files in os.walk(input_view_dir):
+            for fname in sorted(files):
+                fpath = os.path.join(root, fname)
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        return f.read().strip()
+                except Exception:
+                    pass
+        return ""
+
+    def _write_output(output_dir, text):
+        """Write output text to the workspace mutable output dir."""
+        for root, dirs, files in os.walk(output_dir):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                with open(fpath, "w", encoding="utf-8") as f:
+                    f.write(text)
+                return
+
+    def inline_output_prompt(task_prompt, workspace_dir, exp_view_dir, input_view_dir, output_dir):
+        entries = _read_exp_entries(exp_view_dir)
+        input_text = _read_input_text(input_view_dir)
+
+        # Build experience examples: show query → value (input-like → output)
+        if entries:
+            examples = []
+            for q, k, v in entries:
+                if v:
+                    # Show the query (which resembles the input) → value (the target output)
+                    label = q.replace("\n", " ") if q else k.replace("\n", " ")
+                    examples.append(f"  INPUT: {label}\n  OUTPUT: {v}")
+            exp_text = "\n\n".join(examples) if examples else "(no examples)"
+        else:
+            exp_text = "(no examples)"
+
+        return (
+            f"{task_prompt}\n\n"
+            f"Examples of correct input→output:\n{exp_text}\n\n"
+            f"Now for this input:\n{input_text}\n\n"
+            "Reply with ONLY the output. One line. No explanation. No prefix."
+        )
+
+    # Expert chain → filter → gate → switch → body → validator → recurrent
+    decision_raw = ft_expert(capture, decision_exp,
+        output_prompt=inline_output_prompt,
         task_prompt="观察终端最后一行。提示符后只有路径→text:输入shell命令。提示符后有命令→ctrl:按回车执行。只输出一行。",
-        topk=2)
+        topk=2, skip_query_gen=True)
+    decision = ft_first_line(decision_raw)
     cmd = ft_expert(decision, cmd_exp,
+        output_prompt=inline_output_prompt,
         task_prompt="text:开头→输出shell命令。ctrl:开头→输出Enter。只输出一行。",
-        topk=2)
+        topk=2, skip_query_gen=True)
+    cmd_clean = ft_first_line(cmd)
+    cmd_gated = ft_terminal_idle_gate(cmd_clean, expanded)
+    cmd_ctrl = ft_validate_ctrl(cmd_clean)
     switched = ft_switch(decision, [
-        ("text", "type", "send text", ft_tmux_send_text(cmd, expanded)),
-        ("ctrl", "ctrl", "send ctrl", ft_tmux_send_ctrl(cmd, expanded)),
+        ("text", "type", "send text", ft_tmux_send_text(cmd_gated, expanded)),
+        ("ctrl", "ctrl", "send ctrl", ft_tmux_send_ctrl(cmd_ctrl, expanded)),
     ])
     body = ft_sequential(switched, ft_sleep(expanded, 0.5), capture)
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
@@ -240,10 +338,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
         cc.observe_and_update()
 
-    # Verify
+    # Verify — require "hello" in command output, not just anywhere in pane
     content = read_ft_element(output)
-    ok = content is not None and "hello" in content.lower()
-    print(f"\n  {'✓' if ok else '✗'} pane contains 'hello' (exp: d={cc._di} c={cc._ci})")
+    if content:
+        content_lines = [l for l in content.split("\n") if l.strip()]
+        output_lines = [l for l in content_lines if "λ" not in l and "$ " not in l and not l.rstrip().endswith("$")]
+        ok = any("hello" in l.lower() for l in output_lines)
+    else:
+        ok = False
+    print(f"\n  {'✓' if ok else '✗'} output lines contain 'hello' (exp: d={cc._di} c={cc._ci})")
     if content:
         print(f"  {content.strip()}")
 
