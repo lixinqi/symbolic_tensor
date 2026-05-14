@@ -285,8 +285,7 @@ future_tensor/function/      # GradFn wrappers live next to their 1st-derivative
 ├── read_file_2nd.py         # ReadFileGradFn
 ├── sleep_2nd.py             # SleepGradFn
 ├── switch_2nd.py            # SwitchGradFn
-├── expand_2nd.py            # ExpandGradFn
-└── llm_query_2nd.py         # LlmQueryGradFn
+└── expand_2nd.py            # ExpandGradFn
 ```
 
 ---
