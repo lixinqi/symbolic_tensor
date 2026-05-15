@@ -175,6 +175,7 @@ with dispatch_policy(TracePolicy(records)):
 
 ## Roadmap
 
+0. **Stage 0: Tmux-forced coding agent capture (immediate).** Hook Claude Code (via MCP or shell wrapper) to route all bash commands through tmux sessions. Capture every terminal interaction as `(observation, decision, command)` triples. Write them directly into experience tensors for harness model cold start. No harness model needed — pure data harvesting from real coding sessions.
 1. **Adapter mechanism for existing coding agents.** Two directions:
    - **Agent → Harness Module**: wrap Claude Code / OpenCode / OpenClaw / Hermes as a Harness Module — their tool interfaces become `ft_*` ops in the compute graph, gaining autograd and self-improvement for free.
    - **Harness Module → Agent skill**: export a trained Harness Module as a coding agent tool/skill — any agent can invoke it as a composable capability without knowing the internals.
@@ -189,13 +190,16 @@ with dispatch_policy(TracePolicy(records)):
 
 ## Suggested Study: Progressive Research
 
-Three stages of increasing autonomy — each stage removes one human-in-the-loop dependency:
+Four stages of increasing autonomy — each stage removes one human-in-the-loop dependency:
 
 | Stage | Forward | Experience Update | Graph Update |
 |-------|---------|-------------------|--------------|
+| 0 | Claude Code in tmux | captured terminal sessions → experience | manual graph |
 | 1 | 0th reflection | coding agent directly | coding agent directly |
 | 2 | 0th reflection | 1st reflection (autograd) | coding agent guided by 2nd reflection trace |
 | 3 | 0th reflection | 1st reflection (autograd) | bootstrapped harness model guided by 2nd reflection trace |
+
+**Stage 0: Ground-truth capture for cold start.** Force Claude Code (or any coding agent) to run all bash commands through tmux sessions instead of direct shell execution. Capture the full terminal output stream — every command typed, every response observed, every decision made. These captured sessions become ground-truth experience entries for harness model cold start: terminal observation → decision → command triples, written directly into experience tensors. No harness model runs yet — this stage purely harvests real-world coding interactions as training data.
 
 **Stage 1: Manual iteration.** The harness runs forward (0th reflection). A coding agent (Claude Code, etc.) inspects results and directly edits experience tensors and the compute graph. This is the current working state — human-assisted improvement.
 
@@ -203,7 +207,7 @@ Three stages of increasing autonomy — each stage removes one human-in-the-loop
 
 **Stage 3: Fully autonomous.** Same as Stage 2, but the coding agent for graph updates is itself a trained harness model — a "meta-harness" whose experience is "how to improve compute graphs given 2nd derivative traces." The system bootstraps its own architecture search.
 
-**Current status:** Stage 1 implementing — forward pass, experience tensors, compute graph composition, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3 are TODO.
+**Current status:** Stage 0 ready (tmux capture infrastructure works), Stage 1 implementing — forward pass, experience tensors, compute graph composition, speculative multi-action dispatch, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3 are TODO.
 
 ## Thesis
 
