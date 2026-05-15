@@ -1,0 +1,48 @@
+#!/bin/bash
+# replay_screen: Replay screen captures from a Stage 0 symbolic tensor.
+#
+# Usage: replay_screen [tensor_dir] [delay]
+#
+#   tensor_dir  Path to the symbolic tensor directory
+#               (default: stage0_tensor/screen_stream)
+#   delay       Seconds between frames (default: 1)
+#
+# Full-screen replay using alternate screen buffer (like watch -t).
+# Press Ctrl-C to stop.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TENSOR_DIR="${1:-${SCRIPT_DIR}/../stage0_tensor/screen_stream}"
+DELAY="${2:-1}"
+
+if [ ! -f "${TENSOR_DIR}/shape" ]; then
+    echo "Error: no shape file at ${TENSOR_DIR}/shape" >&2
+    exit 1
+fi
+
+NUM=$(python3 -c "import json; print(json.load(open('${TENSOR_DIR}/shape'))[0])")
+
+if [ "$NUM" -eq 0 ]; then
+    echo "Tensor is empty (0 captures)." >&2
+    exit 0
+fi
+
+# Enter alternate screen buffer (like vim/watch does)
+tput smcup 2>/dev/null || true
+trap 'tput rmcup 2>/dev/null || true' EXIT INT TERM
+
+for i in $(seq 0 $((NUM - 1))); do
+    DIGITS=$(echo "$i" | fold -w1 | paste -sd'/' -)
+    DATA_FILE="${TENSOR_DIR}/storage/${DIGITS}/data"
+
+    if [ ! -f "$DATA_FILE" ]; then
+        continue
+    fi
+
+    # Move cursor to top-left and clear screen (like watch -t)
+    tput home
+    tput ed
+    cat "$DATA_FILE"
+    sleep "$DELAY"
+done
