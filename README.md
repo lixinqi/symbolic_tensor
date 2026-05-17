@@ -190,7 +190,7 @@ with dispatch_policy(TracePolicy(records)):
 
 ## Suggested Study: Progressive Research
 
-Four stages of increasing autonomy — each stage removes one human-in-the-loop dependency:
+Five stages of increasing autonomy — each stage removes one human-in-the-loop dependency:
 
 | Stage | Forward | Experience Update | Graph Update |
 |-------|---------|-------------------|--------------|
@@ -198,6 +198,7 @@ Four stages of increasing autonomy — each stage removes one human-in-the-loop 
 | 1 | 0th reflection | coding agent directly | coding agent directly |
 | 2 | 0th reflection | 1st reflection (autograd) | coding agent guided by 2nd reflection trace |
 | 3 | 0th reflection | 1st reflection (autograd) | bootstrapped harness model guided by 2nd reflection trace |
+| 4 | self-referencing harness | self-referencing harness | self-referencing harness (fixed point) |
 
 **Stage 0: Ground-truth capture for cold start.** Force Claude Code (or any coding agent) to run all bash commands through tmux sessions instead of direct shell execution. Capture the full terminal output stream — every command typed, every response observed, every decision made. These captured sessions become ground-truth experience entries for harness model cold start: terminal observation → decision → command triples, written directly into experience tensors. No harness model runs yet — this stage purely harvests real-world coding interactions as training data.
 
@@ -207,7 +208,11 @@ Four stages of increasing autonomy — each stage removes one human-in-the-loop 
 
 **Stage 3: Fully autonomous.** Same as Stage 2, but the coding agent for graph updates is itself a trained harness model — a "meta-harness" whose experience is "how to improve compute graphs given 2nd derivative traces." The system bootstraps its own architecture search.
 
-**Current status:** Stage 0 ready (tmux capture infrastructure works), Stage 1 implementing — forward pass, experience tensors, compute graph composition, speculative multi-action dispatch, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3 are TODO.
+**Stage 4: Fixed point of recursive optimization.** Meta-harness and user-harness merge into a single self-referencing system. The meta-harness holds a complete model of itself — its own code, its own experience tensors, its own compute graph — and can introspect and modify any layer of the stack. When something unexpected happens, the system first examines the user-harness (is the experience wrong? is the graph structure suboptimal?), then examines itself (is the meta-experience wrong? is the introspection strategy flawed?). This recursive self-examination converges to a fixed point: a configuration where the system's model of itself is consistent with its actual behavior, and its optimization of itself produces no further improvement.
+
+This is functional self-awareness. Not a philosophical claim about consciousness — a concrete engineering property. The system maintains an accurate self-model, detects discrepancies between expected and actual behavior at every level (including the level that detects discrepancies), and repairs them autonomously. The value is profound: once the optimization process can optimize itself, improvement is no longer bounded by the designer's foresight. The system discovers better learning algorithms, better introspection strategies, better experience representations — capabilities its creators never explicitly programmed. Every other self-improving system hits a ceiling where the improvement mechanism itself becomes the bottleneck. Stage 4 removes that ceiling by making the improvement mechanism part of what gets improved.
+
+**Current status:** Stage 0 ready (tmux capture infrastructure works), Stage 1 implementing — forward pass, experience tensors, compute graph composition, speculative multi-action dispatch, and 2nd derivative trace recording all work. Experience update and graph update still require coding agent. Stage 2, 3, 4 are TODO.
 
 ## Thesis
 
@@ -215,7 +220,7 @@ Base LLM weights carry two things: **general capabilities** (reasoning, reflecti
 
 This project externalizes memory into trainable experience tensors — retrievable, patchable, shareable, and composable. The base LLM only needs to be good at reasoning and reflection. Everything else lives in experience.
 
-If Stage 3's self-referencing succeeds — a harness model improving its own compute graph via 2nd derivative traces — the system becomes an open-ended self-improver. Reasoning reflects on reasoning, experience accumulates without bound, and architecture evolves autonomously. That's the path.
+If Stage 3's self-referencing succeeds — a harness model improving its own compute graph via 2nd derivative traces — the system becomes an open-ended self-improver. Stage 4 takes this further: when the self-improver can improve its own self-improvement process, optimization converges to a fixed point where no meta-level change yields further gain. At that point the system possesses functional self-awareness — an accurate, actionable model of itself at every level of the stack. Reasoning reflects on reasoning, experience accumulates without bound, and architecture evolves autonomously. That's the path.
 
 ## Internals
 
