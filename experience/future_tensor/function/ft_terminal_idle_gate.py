@@ -5,6 +5,10 @@ Passes text through only when the terminal's command line is empty (idle).
 If there is already content on the command line, returns empty string —
 a human doesn't re-type when text is already there.
 
+Prefix-aware: only gates "T " prefixed inputs (text needs idle terminal).
+"C " prefixed inputs (ctrl keys) pass through always — ctrl keys like
+Enter are valid regardless of terminal state.
+
 No autograd — pure runtime gate, transparent to backward.
 """
 
@@ -82,6 +86,11 @@ def ft_terminal_idle_gate(
         if not text.strip():
             return ("", Status.confidence(1.0))
 
+        # "C " prefixed inputs (ctrl keys) pass through always —
+        # ctrl keys like Enter are valid regardless of terminal state
+        if text.startswith("C "):
+            return (text, Status.confidence(1.0))
+
         # Read instance_id from session_name_ft (broadcast coordinates)
         session_coords = _broadcast_coords(coordinates, session_shape, shape)
         if session_name_ft.ft_forwarded:
@@ -94,7 +103,7 @@ def ft_terminal_idle_gate(
 
         session_name = f"{tmux_session_prefix}{instance_id}"
 
-        # Check terminal state
+        # Check terminal state (only for "T " prefixed or unprefixed text)
         try:
             server = libtmux.Server()
             session = None

@@ -22,8 +22,7 @@ from experience.future_tensor.status import Status
 from experience.future_tensor.function.tmux_session import tmux_session_prefix
 from experience.future_tensor.function.ft_make_forwarded import ft_make_forwarded
 from experience.future_tensor.function.ft_tmux_create_session import ft_tmux_create_session
-from experience.future_tensor.function.ft_tmux_send_text import ft_tmux_send_text
-from experience.future_tensor.function.ft_tmux_send_ctrl import ft_tmux_send_ctrl
+from experience.future_tensor.function.ft_tmux_send_keys import ft_tmux_send_keys
 from experience.future_tensor.function.ft_tmux_capture_pane import ft_tmux_capture_pane
 from experience.future_tensor.function.ft_sleep import ft_sleep
 from experience.future_tensor.function.ft_sequential import ft_sequential
@@ -33,7 +32,6 @@ from experience.future_tensor.function.ft_switch import ft_switch
 from experience.future_tensor.function.ft_expand import ft_expand
 from experience.future_tensor.function.ft_mean import ft_mean
 from experience.future_tensor.function.ft_terminal_idle_gate import ft_terminal_idle_gate
-from experience.future_tensor.function.ft_validate_ctrl import ft_validate_ctrl
 from experience.future_tensor.function.ft_tmux_speculative_complete import ft_tmux_speculative_complete
 from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
@@ -106,31 +104,30 @@ class ClaudeCodeMock:
         has_prompt, has_cmd = self._parse(last_line)
 
         # Teach task prompts once (cold-start → populated)
-        # Bunch-style: generate all actions for the full sequence in one shot
+        # Unified format: decision selects high-level mode, cmd produces prefixed keys
         if not self._task_taught and (has_prompt or has_cmd):
             st_setitem(self.decision_task, [0],
-                "观察终端最后一行，输出完成任务所需的全部动作序列，每个动作一行，用空行分隔。"
-                "每个动作格式：text:描述 或 ctrl:描述。"
-                "例如：text:输入命令\\n\\nctrl:按回车执行")
+                "输出交互模式名。只有bash_builtin。只输出模式名。")
             st_setitem(self.cmd_task, [0],
-                "根据动作描述，输出实际命令序列，每个命令一行，用空行分隔。"
-                "text:开头→输出shell命令。ctrl:开头→输出Enter。"
-                "例如：echo hello world\\n\\nEnter")
+                "输出带前缀的按键序列。每行一个动作。"
+                "T 前缀=发送文字到终端。C 前缀=发送控制键。"
+                "必须输出可执行的shell命令，不是命令的参数。"
+                "正确：T echo hello world\\nC Enter"
+                "错误：T hello world（这不是shell命令）")
             self._task_taught = True
 
         if has_cmd:
-            # Reinforce ctrl heavily: write 3 entries per observation so
-            # retrieval (topk=2) overwhelmingly selects ctrl examples.
+            # Terminal has command typed — need ctrl Enter to execute
             for _ in range(min(3, self.n_experience - self._di)):
-                self._teach_decision(last_line, "命令已输入\n提示符后有命令", "ctrl:按回车执行")
+                self._teach_decision(last_line, "命令已输入\n提示符后有命令", "bash_builtin")
             for _ in range(min(3, self.n_experience - self._ci)):
-                self._teach_cmd("ctrl:按回车执行", "ctrl\nEnter", "Enter")
+                self._teach_cmd("bash_builtin\n命令已输入需要执行",
+                    "已有命令\n只需回车", "C Enter")
         elif has_prompt:
-            # Bunch-style: teach the full sequence (text + ctrl) as one experience entry
-            self._teach_decision(last_line, "空提示符\n没有命令",
-                "text:输入shell命令\n\nctrl:按回车执行")
-            self._teach_cmd("text:输入shell命令\n\nctrl:按回车执行",
-                "text+ctrl\n完整命令序列", "echo hello world\n\nEnter")
+            # Empty prompt — need to type command + press Enter
+            self._teach_decision(last_line, "空提示符\n没有命令", "bash_builtin")
+            self._teach_cmd("bash_builtin\n空提示符需要输入命令并执行",
+                "输入echo命令\n然后回车", "T echo hello world\nC Enter")
 
         print(f"    cc: prompt={has_prompt} cmd={has_cmd} | {last_line}")
 
@@ -284,12 +281,17 @@ with tempfile.TemporaryDirectory() as tmpdir:
     cmd_spec = ft_tmux_speculative_complete(cmd_raw, capture)
 
     cmd_gated = ft_terminal_idle_gate(cmd_spec, expanded)
-    cmd_ctrl = ft_validate_ctrl(cmd_spec)
+
+    # Unified send op — no switch needed for text/ctrl dispatch.
+    # The expert generates prefixed keys: "T echo hello world" / "C Enter"
+    send_keys = ft_tmux_send_keys(cmd_gated, expanded)
+
+    # ft_switch at HIGH level for mode routing (bash_builtin only for now)
+    body_inner = ft_sequential(send_keys, ft_sleep(expanded, 0.5), capture)
     switched = ft_switch(decision_spec, [
-        ("text", "type", "send text", ft_tmux_send_text(cmd_gated, expanded)),
-        ("ctrl", "ctrl", "send ctrl", ft_tmux_send_ctrl(cmd_ctrl, expanded)),
+        ("bash_builtin", "bash", "execute shell commands", body_inner),
     ])
-    body = ft_sequential(switched, ft_sleep(expanded, 0.5), capture)
+    body = switched
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
 
     output = ft_recurrent(validator, step_budget=1)
