@@ -286,10 +286,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     setup = ft_sequential(ft_tmux_create_session(workspace), ft_sleep(workspace, 0.5))
     setup.ft_forward(st_make_tensor(["启动终端会话"], tmpdir))
 
-    expanded = ft_expand(workspace, [1, MAX_ITERS])
-    reflection_starter = ft_reflection_starter()
-    capture = need_reflection(ft_tmux_capture_pane(expanded), reflection_starter)
-
     # Experience (TODO — cold-start)
     decision_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
     cmd_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
@@ -302,6 +298,25 @@ with tempfile.TemporaryDirectory() as tmpdir:
     cmd_task.requires_grad_(True)
     ps1_task = st_make_tensor([""], tmpdir)
     ps1_task.requires_grad_(True)
+
+    # Stage 1 operator (knows nothing about the pipeline above)
+    cc = ClaudeCodeMock(SESSION_NAME, decision_exp, cmd_exp, ps1_exp,
+                        decision_task, cmd_task, ps1_task, N_EXPERIENCE)
+
+    # Teach all experience before REPL loop
+    cc.teach_all()
+
+    # PS1 detection: one-shot capture → expert → materialize regexp at setup time
+    setup_capture = ft_tmux_capture_pane(workspace)
+    ps1_raw = ft_expert(setup_capture, ps1_exp, ps1_task,
+        output_prompt=inline_output_prompt, topk=2, skip_query_gen=True)
+    ps1_raw.ft_forward(st_make_tensor(["检测PS1提示符模式"], tmpdir))
+    # Broadcast materialized PS1 regexp to [1, MAX_ITERS]
+    ps1_expanded = ft_expand(ps1_raw, [1, MAX_ITERS])
+
+    expanded = ft_expand(workspace, [1, MAX_ITERS])
+    reflection_starter = ft_reflection_starter()
+    capture = need_reflection(ft_tmux_capture_pane(expanded), reflection_starter)
 
     # Expert chain: retrieve → build context → LLM call (composed via ft_expert)
     # No ft_first_line between experts — speculative complete handles multi-action dispatch
@@ -321,13 +336,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # The expert generates prefixed keys: "T echo hello world" / "C Enter"
     send_keys = ft_tmux_send_keys(cmd_gated, expanded)
 
-    # PS1 expert: observes capture, produces regexp for idle-prompt detection
-    ps1_raw = ft_expert(capture, ps1_exp, ps1_task,
-        output_prompt=inline_output_prompt, topk=2, skip_query_gen=True)
-
     # Post-send capture + PS1 polling: skip sleep when prompt already back
     post_capture = ft_tmux_capture_pane(expanded)
-    ps1_check = ft_ps1_shows_up(ps1_raw, post_capture)
+    ps1_check = ft_ps1_shows_up(ps1_expanded, post_capture)
 
     conditional_wait = ft_switch(ps1_check, [
         ("true", "done", "command finished", post_capture),
@@ -344,13 +355,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     output = ft_recurrent(validator, step_budget=8)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
-
-    # Stage 1 operator (knows nothing about the pipeline above)
-    cc = ClaudeCodeMock(SESSION_NAME, decision_exp, cmd_exp, ps1_exp,
-                        decision_task, cmd_task, ps1_task, N_EXPERIENCE)
-
-    # Teach all experience before REPL loop
-    cc.teach_all()
 
     # REPL loop
     for step in range(MAX_ITERS):
