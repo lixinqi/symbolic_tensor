@@ -67,21 +67,25 @@ class ClaudeCodeMock:
     """Mock human operator. Observes a tmux session, writes experience.
 
     Knows nothing about the pipeline, tensors, autograd, or ft_forward.
-    Only provides observe_and_update() to be called from the harness loop.
+    Only provides teach_all() and observe_and_update() to be called from the harness loop.
 
     NEVER interacts with the terminal directly — only observes and writes
     experience entries. All terminal actions come through the pipeline.
     """
 
-    def __init__(self, session_name, decision_exp, cmd_exp, decision_task, cmd_task, n_experience=8):
+    def __init__(self, session_name, decision_exp, cmd_exp, ps1_exp,
+                 decision_task, cmd_task, ps1_task, n_experience=8):
         self.session_name = session_name
         self.decision_exp = decision_exp
         self.cmd_exp = cmd_exp
+        self.ps1_exp = ps1_exp
         self.decision_task = decision_task
         self.cmd_task = cmd_task
+        self.ps1_task = ps1_task
         self.n_experience = n_experience
         self._di = 0
         self._ci = 0
+        self._pi = 0
         self._task_taught = False
 
         server = libtmux.Server()
@@ -90,6 +94,40 @@ class ClaudeCodeMock:
             if s.session_name == session_name:
                 self._pane = s.active_window.active_pane
                 break
+
+    def teach_all(self):
+        """Pre-teach all experience before the REPL loop starts."""
+        # Task prompts
+        st_setitem(self.decision_task, [0],
+            "输出交互模式名。只有bash_builtin。只输出模式名。")
+        st_setitem(self.cmd_task, [0],
+            "输出带前缀的按键序列。每行一个动作。"
+            "T 前缀=发送文字到终端。C 前缀=发送控制键。"
+            "必须输出可执行的shell命令，不是命令的参数。"
+            "正确：T echo hello world\\nC Enter"
+            "错误：T hello world（这不是shell命令）")
+        st_setitem(self.ps1_task, [0],
+            "根据终端输出，输出一个能匹配PS1提示符的正则表达式。"
+            "只输出正则表达式，不要解释。")
+        self._task_taught = True
+
+        # Decision experience
+        self._teach_decision("$ ", "空提示符\n没有命令", "bash_builtin")
+        self._teach_decision("$ ls", "命令已输入\n提示符后有命令", "bash_builtin")
+
+        # Cmd experience
+        self._teach_cmd("bash_builtin\n空提示符需要输入命令并执行",
+            "输入echo命令\n然后回车", "T echo hello world\nC Enter")
+        self._teach_cmd("bash_builtin\n命令已输入需要执行",
+            "已有命令\n只需回车", "C Enter")
+
+        # PS1 experience
+        self._teach_ps1("(base) λ b6048c6be068 /workspace/Experience",
+            "conda环境+lambda提示符", r"[λ$]\s*$")
+        self._teach_ps1("user@host:~$ ",
+            "标准bash提示符", r"\$\s*$")
+        self._teach_ps1("(base) λ host /tmp echo hello\nhello\n(base) λ host /tmp",
+            "命令执行后回到提示符", r"[λ$]\s*$")
 
     def observe_and_update(self):
         """Look at the terminal. Write experience based on what we see.
@@ -104,19 +142,6 @@ class ClaudeCodeMock:
         last_line = lines[-1]
         has_prompt, has_cmd = self._parse(last_line)
 
-        # Teach task prompts once (cold-start → populated)
-        # Unified format: decision selects high-level mode, cmd produces prefixed keys
-        if not self._task_taught and (has_prompt or has_cmd):
-            st_setitem(self.decision_task, [0],
-                "输出交互模式名。只有bash_builtin。只输出模式名。")
-            st_setitem(self.cmd_task, [0],
-                "输出带前缀的按键序列。每行一个动作。"
-                "T 前缀=发送文字到终端。C 前缀=发送控制键。"
-                "必须输出可执行的shell命令，不是命令的参数。"
-                "正确：T echo hello world\\nC Enter"
-                "错误：T hello world（这不是shell命令）")
-            self._task_taught = True
-
         if has_cmd:
             # Terminal has command typed — need ctrl Enter to execute
             for _ in range(min(3, self.n_experience - self._di)):
@@ -129,6 +154,7 @@ class ClaudeCodeMock:
             self._teach_decision(last_line, "空提示符\n没有命令", "bash_builtin")
             self._teach_cmd("bash_builtin\n空提示符需要输入命令并执行",
                 "输入echo命令\n然后回车", "T echo hello world\nC Enter")
+            self._teach_ps1(last_line, "当前提示符", r"[λ$]\s*$")
 
         print(f"    cc: prompt={has_prompt} cmd={has_cmd} | {last_line}")
 
@@ -155,6 +181,11 @@ class ClaudeCodeMock:
         if self._ci < self.n_experience:
             self._write(self.cmd_exp, self._ci, q, k, v)
             self._ci += 1
+
+    def _teach_ps1(self, q, k, v):
+        if self._pi < self.n_experience:
+            self._write(self.ps1_exp, self._pi, q, k, v)
+            self._pi += 1
 
     def _write(self, tensor, idx, q, k, v):
         st_setitem(tensor, [idx, 0], q)
@@ -262,12 +293,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # Experience (TODO — cold-start)
     decision_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
     cmd_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
+    ps1_exp = st_make_tensor([["", "", ""]] * N_EXPERIENCE, tmpdir)
 
     # Task prompts (trainable 0D symbolic tensors — cold-start, taught by ClaudeCodeMock)
     decision_task = st_make_tensor([""], tmpdir)
     decision_task.requires_grad_(True)
     cmd_task = st_make_tensor([""], tmpdir)
     cmd_task.requires_grad_(True)
+    ps1_task = st_make_tensor([""], tmpdir)
+    ps1_task.requires_grad_(True)
 
     # Expert chain: retrieve → build context → LLM call (composed via ft_expert)
     # No ft_first_line between experts — speculative complete handles multi-action dispatch
@@ -287,12 +321,13 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # The expert generates prefixed keys: "T echo hello world" / "C Enter"
     send_keys = ft_tmux_send_keys(cmd_gated, expanded)
 
-    # PS1 pattern for idle-prompt detection (broadcastable [1])
-    ps1_expanded = ft_make_forwarded(tmpdir, [1], ["$"])
+    # PS1 expert: observes capture, produces regexp for idle-prompt detection
+    ps1_raw = ft_expert(capture, ps1_exp, ps1_task,
+        output_prompt=inline_output_prompt, topk=2, skip_query_gen=True)
 
     # Post-send capture + PS1 polling: skip sleep when prompt already back
     post_capture = ft_tmux_capture_pane(expanded)
-    ps1_check = ft_ps1_shows_up(ps1_expanded, post_capture)
+    ps1_check = ft_ps1_shows_up(ps1_raw, post_capture)
 
     conditional_wait = ft_switch(ps1_check, [
         ("true", "done", "command finished", post_capture),
@@ -311,7 +346,11 @@ with tempfile.TemporaryDirectory() as tmpdir:
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
 
     # Stage 1 operator (knows nothing about the pipeline above)
-    cc = ClaudeCodeMock(SESSION_NAME, decision_exp, cmd_exp, decision_task, cmd_task, N_EXPERIENCE)
+    cc = ClaudeCodeMock(SESSION_NAME, decision_exp, cmd_exp, ps1_exp,
+                        decision_task, cmd_task, ps1_task, N_EXPERIENCE)
+
+    # Teach all experience before REPL loop
+    cc.teach_all()
 
     # REPL loop
     for step in range(MAX_ITERS):
