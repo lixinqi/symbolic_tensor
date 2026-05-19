@@ -33,6 +33,7 @@ from experience.future_tensor.function.ft_expand import ft_expand
 from experience.future_tensor.function.ft_mean import ft_mean
 from experience.future_tensor.function.ft_terminal_idle_gate import ft_terminal_idle_gate
 from experience.future_tensor.function.ft_tmux_speculative_complete import ft_tmux_speculative_complete
+from experience.future_tensor.function.ft_ps1_shows_up import ft_ps1_shows_up
 from experience.future_tensor.backward_dispatch import (
     dispatch_policy,
     need_reflection,
@@ -286,15 +287,27 @@ with tempfile.TemporaryDirectory() as tmpdir:
     # The expert generates prefixed keys: "T echo hello world" / "C Enter"
     send_keys = ft_tmux_send_keys(cmd_gated, expanded)
 
+    # PS1 pattern for idle-prompt detection (broadcastable [1])
+    ps1_expanded = ft_make_forwarded(tmpdir, [1], ["$"])
+
+    # Post-send capture + PS1 polling: skip sleep when prompt already back
+    post_capture = ft_tmux_capture_pane(expanded)
+    ps1_check = ft_ps1_shows_up(ps1_expanded, post_capture)
+
+    conditional_wait = ft_switch(ps1_check, [
+        ("true", "done", "command finished", post_capture),
+        ("false", "wait", "still running", ft_sequential(ft_sleep(expanded, 0.5), ft_tmux_capture_pane(expanded))),
+    ])
+
     # ft_switch at HIGH level for mode routing (bash_builtin only for now)
-    body_inner = ft_sequential(send_keys, ft_sleep(expanded, 0.5), capture)
+    body_inner = ft_sequential(send_keys, conditional_wait)
     switched = ft_switch(decision_spec, [
         ("bash_builtin", "bash", "execute shell commands", body_inner),
     ])
     body = switched
     validator = ft_coder_validator(body, max_iters=MAX_ITERS)
 
-    output = ft_recurrent(validator, step_budget=1)
+    output = ft_recurrent(validator, step_budget=8)
     prompt = st_make_tensor(["在终端中输出问候语hello world"], tmpdir)
 
     # Stage 1 operator (knows nothing about the pipeline above)
